@@ -1,0 +1,85 @@
+name: kdtd_ver2_1
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  get:
+  device_info_plus:
+  battery_plus:
+  connectivity_plus:
+  network_info_plus:
+  flutter_blue_plus :
+  nfc_manager :
+  sensors_plus:
+  geolocator :
+  vibration:
+  camera:
+  local_auth:
+  permission_handler :
+  audioplayers :
+  record:
+  proximity_sensor :
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+
+
+
+
+  flutter_lints: ^5.0.0
+
+
+
+
+
+flutter:
+  uses-material-design: true
+
+  # Assets
+  assets:
+    - assets/diag_rules.json
+    - assets/diag_thresholds.json
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

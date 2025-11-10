@@ -1,0 +1,111 @@
+{
+  "osmodel": {
+    "pass": "exists(platform) && platform in ['android','ios'] && exists(model) && model != ''",
+    "fail": "platform == 'unknown' || !exists(model)"
+  },
+  "battery": {
+    "pass": "level >= 0 && level <= 100",
+    "fail": "level < 0 || level > 100"
+  },
+  "charge": {
+    "pass": "exists(state)",
+    "skip": "platform == 'ios' && !exists(source)"
+  },
+  "mobile": {
+    "pass": "connected == true && dbm >= T.mobile.dbm_min && dbm <= T.mobile.dbm_max",
+    "fail": "connected == true && (dbm < T.mobile.dbm_min || dbm > T.mobile.dbm_max || !exists(dbm))",
+    "skip": "!connected || perm_denied('phone_state')"
+  },
+  "wifi": {
+    "pass": "connected == true && exists(ssid) && ssid != ''",
+    "fail": "connected == true && (!exists(ssid) || ssid == '')",
+    "skip": "!connected || !location_service_on()"
+  },
+  "bt": {
+    "pass": "enabled == true && scanOk == true",
+    "fail": "enabled == true && scanOk == false",
+    "skip": "perm_denied('bluetoothScan') || (is_miui() && !location_service_on())"
+  },
+  "nfc": {
+    "pass": "available == true",
+    "fail": "required_by_profile('nfc') && available == false",
+    "skip": "!required_by_profile('nfc') && available == false"
+  },
+  "sim": {
+    "pass": "slotCount >= 1 && exists(states)",
+    "fail": "slotCount == 0 && expected_slots() > 0",
+    "skip": "perm_denied('phone_state') || rom_blocks_api()"
+  },
+  "sensors": {
+    "pass": "accelerometer == true && gyroscope == true",
+    "fail": "accelerometer == false || gyroscope == false",
+    "skip": "sensor_missing()"
+  },
+  "gps": {
+    "pass": "serviceOn == true && accuracyM <= T.gps.accuracy_m_pass",
+    "fail": "serviceOn == true && (accuracyM > T.gps.accuracy_m_pass || !exists(accuracyM))",
+    "skip": "!serviceOn || perm_denied('location')"
+  },
+  "lock": {
+    "pass": "required_by_profile('secure_lock') ? secure == true : true",
+    "fail": "required_by_profile('secure_lock') && secure == false",
+    "skip": "!required_by_profile('secure_lock')"
+  },
+  "spen": {
+    "pass": "required_by_profile('spen') ? detected == true : true",
+    "fail": "required_by_profile('spen') && detected == false",
+    "skip": "!required_by_profile('spen')"
+  },
+  "bio": {
+    "pass": "supported == true",
+    "fail": "required_by_profile('bio') && supported == false",
+    "skip": "user_not_set_pin() || !required_by_profile('bio')"
+  },
+  "vibrate": {
+    "pass": "userConfirm == true",
+    "fail": "userConfirm == false"
+  },
+  "keys": {
+    "pass": "userConfirm == true",
+    "fail": "userConfirm == false"
+  },
+  "touch": {
+    "pass": "passRatio >= T.touch.pass_ratio_min && (deadZones == null || len(deadZones) == 0)",
+    "fail": "passRatio < T.touch.pass_ratio_min || len(deadZones) > 0"
+  },
+  "screen": {
+    "pass": "hasIssue == false || (userConfirm == true && hasIssue != true)",
+    "fail": "hasIssue == true"
+  },
+  "camera": {
+    "pass": "len(photos) >= 1 && userConfirm == true",
+    "fail": "len(photos) == 0 || userConfirm == false",
+    "skip": "perm_denied('camera')"
+  },
+  "speaker": {
+    "pass": "userConfirm == true",
+    "fail": "userConfirm == false"
+  },
+  "ear": {
+    "pass": "userConfirm == true",
+    "fail": "userConfirm == false"
+  },
+  "mic": {
+    "pass": "userConfirm == true && (rms == null || rms >= T.audio.mic_rms_min)",
+    "fail": "userConfirm == false || (rms != null && rms < T.audio.mic_rms_min)",
+    "skip": "perm_denied('microphone')"
+  },
+  "ram": {
+    "pass": "exists(totalBytes) && totalBytes > 0",
+    "fail": "!exists(totalBytes) || totalBytes == 0"
+  },
+  "rom": {
+    "pass": "exists(totalBytes) && totalBytes > 0 && exists(freeBytes)",
+    "fail": "!exists(totalBytes) || totalBytes == 0"
+  },
+  "wired": {
+    "pass": "true",
+    "skip": "!has_headphone_jack()"
+  }
+}
+

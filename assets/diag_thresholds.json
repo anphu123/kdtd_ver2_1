@@ -1,0 +1,155 @@
+{
+  "thresholds": {
+    "mobile": {
+      "dbm_min": -120,
+      "dbm_max": -40
+    },
+    "gps": {
+      "accuracy_m_pass": 50,
+      "timeout_sec": 8
+    },
+    "touch": {
+      "pass_ratio_min": 0.98
+    },
+    "audio": {
+      "mic_rms_min": -20
+    },
+    "runner": {
+      "auto_step_timeout_sec": 8
+    }
+  },
+  "requirements_by_profile": {
+    "samsung_s21": {
+      "require": ["nfc"],
+      "spen": false,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 1,
+      "auto_screen_test": false
+    },
+    "samsung_s21_ultra": {
+      "require": ["nfc"],
+      "spen": true,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 1,
+      "auto_screen_test": false
+    },
+    "samsung_note20_ultra": {
+      "require": ["nfc"],
+      "spen": true,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 1,
+      "auto_screen_test": false
+    },
+    "samsung_a52": {
+      "require": ["nfc"],
+      "spen": false,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 2,
+      "auto_screen_test": false
+    },
+    "xiaomi_12": {
+      "require": ["nfc"],
+      "spen": false,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 2,
+      "auto_screen_test": false
+    },
+    "xiaomi_redmi_note_11": {
+      "require": [],
+      "spen": false,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 3,
+      "auto_screen_test": false
+    },
+    "oppo_findx5": {
+      "require": [],
+      "spen": false,
+      "bio": true,
+      "secure_lock": false,
+      "tier": 2,
+      "auto_screen_test": false
+    },
+    "iphone_13": {
+      "require": ["nfc"],
+      "spen": false,
+      "bio": true,
+      "secure_lock": true,
+      "tier": 1,
+      "auto_screen_test": false
+    },
+    "tier_5_old_devices": {
+      "require": [],
+      "spen": false,
+      "bio": false,
+      "secure_lock": false,
+      "tier": 5,
+      "auto_screen_test": true,
+      "description": "Máy cũ/giá thấp - tự động test màn hình"
+    },
+    "default": {
+      "require": [],
+      "spen": false,
+      "bio": false,
+      "secure_lock": false,
+      "tier": 3,
+      "auto_screen_test": false
+    }
+  },
+  "brand_quirks": {
+    "xiaomi": {
+      "wifi_requires_location": true,
+      "bt_requires_location": true,
+      "rom_blocks_sim_api": false
+    },
+    "oppo": {
+      "wifi_requires_location": true,
+      "bt_requires_location": true,
+      "bt_requires_nearby_devices": true,
+      "rom_blocks_sim_api": false
+    },
+    "samsung": {
+      "wifi_requires_location": false,
+      "bt_requires_location": false,
+      "rom_blocks_sim_api": false
+    },
+    "apple": {
+      "charge_source_unavailable": true,
+      "rom_blocks_sim_api": true
+    }
+  },
+  "tier_definitions": {
+    "1": {
+      "name": "Loại 1 - Cao cấp",
+      "description": "Flagship, máy mới, đầy đủ tính năng",
+      "score_min": 90
+    },
+    "2": {
+      "name": "Loại 2 - Tốt",
+      "description": "Tầm trung cao, tính năng tốt",
+      "score_min": 75
+    },
+    "3": {
+      "name": "Loại 3 - Khá",
+      "description": "Tầm trung, phổ thông",
+      "score_min": 60
+    },
+    "4": {
+      "name": "Loại 4 - Trung bình",
+      "description": "Máy cũ 1-2 năm, tính năng cơ bản",
+      "score_min": 40
+    },
+    "5": {
+      "name": "Loại 5 - Cơ bản",
+      "description": "Máy cũ >2 năm, giá thấp, kiểm tra kỹ màn hình",
+      "score_min": 0,
+      "auto_screen_test": true
+    }
+  }
+}
+
