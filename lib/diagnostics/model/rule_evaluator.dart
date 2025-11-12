@@ -47,58 +47,104 @@ class RuleEvaluator {
 
   /// Evaluate a diagnostic step
   EvalResult evaluate(String code, Map<String, dynamic> payload) {
+    print('      [RuleEval] Evaluating: $code');
+    print('      [RuleEval] Payload: $payload');
+
+    EvalResult result;
     switch (code) {
       case 'osmodel':
-        return _evalOsModel(payload);
+        result = _evalOsModel(payload);
+        break;
       case 'battery':
-        return _evalBattery(payload);
+        result = _evalBattery(payload);
+        break;
       case 'charge':
-        return _evalCharge(payload);
+        result = _evalCharge(payload);
+        break;
       case 'mobile':
-        return _evalMobile(payload);
+        result = _evalMobile(payload);
+        break;
       case 'wifi':
-        return _evalWifi(payload);
+        result = _evalWifi(payload);
+        break;
       case 'bt':
-        return _evalBluetooth(payload);
+        result = _evalBluetooth(payload);
+        break;
       case 'nfc':
-        return _evalNfc(payload);
+        result = _evalNfc(payload);
+        break;
       case 'sim':
-        return _evalSim(payload);
+        result = _evalSim(payload);
+        break;
       case 'sensors':
-        return _evalSensors(payload);
+        result = _evalSensors(payload);
+        break;
       case 'gps':
-        return _evalGps(payload);
+        result = _evalGps(payload);
+        break;
       case 'lock':
-        return _evalLock(payload);
+        result = _evalLock(payload);
+        break;
       case 'spen':
-        return _evalSPen(payload);
+        result = _evalSPen(payload);
+        break;
       case 'bio':
-        return _evalBio(payload);
+        result = _evalBio(payload);
+        break;
       case 'vibrate':
-        return _evalVibrate(payload);
+        result = _evalVibrate(payload);
+        break;
       case 'keys':
-        return _evalKeys(payload);
+        result = _evalKeys(payload);
+        break;
       case 'touch':
-        return _evalTouch(payload);
+        result = _evalTouch(payload);
+        break;
       case 'screen':
-        return _evalScreen(payload);
+        result = _evalScreen(payload);
+        break;
       case 'camera':
-        return _evalCamera(payload);
+        result = _evalCamera(payload);
+        break;
       case 'speaker':
-        return _evalSpeaker(payload);
+        result = _evalSpeaker(payload);
+        break;
       case 'ear':
-        return _evalEar(payload);
+        result = _evalEar(payload);
+        break;
       case 'mic':
-        return _evalMic(payload);
+        result = _evalMic(payload);
+        break;
       case 'ram':
-        return _evalRam(payload);
+        result = _evalRam(payload);
+        break;
       case 'rom':
-        return _evalRom(payload);
+        result = _evalRom(payload);
+        break;
       case 'wired':
-        return _evalWired(payload);
+        result = _evalWired(payload);
+        break;
       default:
-        return EvalResult.skip; // Unknown test
+        result = EvalResult.skip; // Unknown test
     }
+
+    print('      [RuleEval] Result: ${result.toString().split('.').last.toUpperCase()}');
+    return result;
+  }
+
+  /// Helper: classify radio generation
+  int _radioGeneration(String? radio) {
+    if (radio == null || radio.isEmpty) return 0; // unknown
+    final r = radio.toUpperCase();
+    // 2G technologies
+    if (r.contains('GPRS') || r.contains('EDGE') || r.contains('GSM') || r.contains('CDMA') || r.contains('1X')) return 2;
+    // 3G technologies
+    if (r.contains('UMTS') || r.contains('HSPA') || r.contains('HSDPA') || r.contains('HSUPA') || r.contains('HSPAP') || r.contains('EVDO')) return 3;
+    // 4G technologies
+    if (r.contains('LTE') || r.contains('WIMAX')) return 4;
+    // 5G
+    if (r.contains('NR') || r.contains('5G')) return 5;
+    return 0; // unknown
   }
 
   /// Get human-readable reason for the result
@@ -106,6 +152,10 @@ class RuleEvaluator {
     switch (code) {
       case 'osmodel':
         if (result == EvalResult.fail) {
+          final sdk = payload['sdk'];
+            if (payload['platform'] == 'android' && sdk is int && sdk < 21) {
+              return 'Không hỗ trợ thu mua (Android <5)';
+            }
           return 'Không đọc được thông tin thiết bị';
         }
         return 'Đọc được thông tin thiết bị';
@@ -125,10 +175,15 @@ class RuleEvaluator {
           return 'Không kết nối mạng di động';
         }
         final dbm = payload['dbm'];
+        final radio = payload['radio'];
+        final gen = _radioGeneration(radio is String ? radio : null);
         if (result == EvalResult.fail) {
+          if (gen != 0 && gen < 3) {
+            return 'Không hỗ trợ thu mua (mạng <3G: $radio)';
+          }
           return 'Tín hiệu yếu: $dbm dBm';
         }
-        return 'Tín hiệu: $dbm dBm';
+        return 'Tín hiệu: $dbm dBm • Radio: $radio';
 
       case 'wifi':
         if (result == EvalResult.skip) {
@@ -236,6 +291,13 @@ class RuleEvaluator {
     if (platform == null || platform == 'unknown' || model == null || model == '') {
       return EvalResult.fail;
     }
+    // Auto fail purchase support if Android <5 (API <21)
+    if (platform == 'android') {
+      final sdk = p['sdk'];
+      if (sdk is int && sdk < 21) {
+        return EvalResult.fail;
+      }
+    }
     return EvalResult.pass;
   }
 
@@ -267,6 +329,12 @@ class RuleEvaluator {
     if (dbm is! num) return EvalResult.fail;
 
     if (dbm < thresholds.mobile.dbmMin || dbm > thresholds.mobile.dbmMax) {
+      return EvalResult.fail;
+    }
+    // Generation check: Fail if radio tech below 3G
+    final radio = p['radio'];
+    final gen = _radioGeneration(radio is String ? radio : null);
+    if (gen != 0 && gen < 3) {
       return EvalResult.fail;
     }
     return EvalResult.pass;
@@ -458,4 +526,3 @@ class RuleEvaluator {
     return EvalResult.pass;
   }
 }
-

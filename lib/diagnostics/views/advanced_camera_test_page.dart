@@ -414,45 +414,54 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
   void _showCameraInfo(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      // Attach the sheet to the root Navigator/Overlay to avoid reparenting
+      // issues when the app uses nested navigators (GetMaterialApp etc.).
+      useRootNavigator: true,
       backgroundColor: Colors.grey.shade900,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '📷 Thông Tin Camera',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+      builder: (context) => SafeArea(
+        // Use a Builder to ensure the inner context belongs to the sheet
+        child: Builder(
+          builder: (sheetContext) => Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '📷 Thông Tin Camera',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Divider(color: Colors.white24),
+                const SizedBox(height: 12),
+
+                _InfoRow('Tổng số camera:', '${_cameraInfo['totalCameras'] ?? 0}'),
+                _InfoRow('Camera trước:', '${_cameraInfo['frontCameras'] ?? 0}'),
+                _InfoRow('Camera sau:', '${_cameraInfo['backCameras'] ?? 0}'),
+
+                if (_cameraInfo['current'] != null) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Camera hiện tại:',
+                    style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoRow('Tên:', _cameraInfo['current']['name']),
+                  _InfoRow('Hướng:', _cameraInfo['current']['direction']),
+                  _InfoRow('Độ phân giải:', _cameraInfo['current']['resolution']),
+                  _InfoRow('Sensor orientation:', '${_cameraInfo['current']['sensorOrientation']}°'),
+                ],
+
+                const SizedBox(height: 16),
+                _InfoRow('Mức rung:', '${_shakeLevel.toStringAsFixed(2)} rad/s'),
+                _InfoRow('Trạng thái:', _isShaking ? '⚠️ Đang rung' : '✓ Ổn định'),
+
+              ],
             ),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 12),
-
-            _InfoRow('Tổng số camera:', '${_cameraInfo['totalCameras'] ?? 0}'),
-            _InfoRow('Camera trước:', '${_cameraInfo['frontCameras'] ?? 0}'),
-            _InfoRow('Camera sau:', '${_cameraInfo['backCameras'] ?? 0}'),
-
-            if (_cameraInfo['current'] != null) ...[
-              const SizedBox(height: 16),
-              const Text(
-                'Camera hiện tại:',
-                style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              _InfoRow('Tên:', _cameraInfo['current']['name']),
-              _InfoRow('Hướng:', _cameraInfo['current']['direction']),
-              _InfoRow('Độ phân giải:', _cameraInfo['current']['resolution']),
-              _InfoRow('Sensor orientation:', '${_cameraInfo['current']['sensorOrientation']}°'),
-            ],
-
-            const SizedBox(height: 16),
-            _InfoRow('Mức rung:', '${_shakeLevel.toStringAsFixed(2)} rad/s'),
-            _InfoRow('Trạng thái:', _isShaking ? '⚠️ Đang rung' : '✓ Ổn định'),
-          ],
+          ),
         ),
       ),
     );

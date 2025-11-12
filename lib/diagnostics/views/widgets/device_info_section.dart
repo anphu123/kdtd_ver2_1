@@ -27,6 +27,7 @@ class DeviceInfoSection extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(20),
+
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -39,8 +40,9 @@ class DeviceInfoSection extends StatelessWidget {
                 Container(
                   width: 120,
                   height: 140,
+
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: theme.colorScheme.outline.withOpacity(0.3),
@@ -55,14 +57,14 @@ class DeviceInfoSection extends StatelessWidget {
                           padding: const EdgeInsets.all(8),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Icon(
                                 Icons.smartphone_rounded,
                                 size: 48,
-                                color: theme.colorScheme.primary,
+                                color: Colors.blue,
                               ),
                             ),
                           ),
@@ -95,13 +97,13 @@ class DeviceInfoSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 // Brand/Series
-                Text(
-                  brand.isNotEmpty && brand != '-' ? '$brand Series' : platform,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
+                // Text(
+                //   brand.isNotEmpty && brand != '-' ? '$brand Series' : platform,
+                //   textAlign: TextAlign.center,
+                //   style: theme.textTheme.bodySmall?.copyWith(
+                //     color: theme.colorScheme.onSurface.withOpacity(0.6),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -127,7 +129,7 @@ class DeviceInfoSection extends StatelessWidget {
                         child: CircularProgressIndicator(
                           value: 1,
                           strokeWidth: 12,
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: Colors.grey.withOpacity(0.5),
                         ),
                       ),
                       // Progress circle
@@ -143,7 +145,7 @@ class DeviceInfoSection extends StatelessWidget {
                               value: value,
                               strokeWidth: 12,
                               strokeCap: StrokeCap.round,
-                              color: theme.colorScheme.primary,
+                              color: Colors.blue,
                             ),
                           );
                         },

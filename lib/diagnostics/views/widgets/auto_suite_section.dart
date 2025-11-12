@@ -1,4 +1,5 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// Auto Suite Section - Button to start automated tests
 class AutoSuiteSection extends StatelessWidget {
@@ -19,10 +20,10 @@ class AutoSuiteSection extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: AppColors.greyE5E5E5.withOpacity(0.2),
         ),
       ),
       child: Column(
@@ -38,7 +39,7 @@ class AutoSuiteSection extends StatelessWidget {
           Text(
             'Runs all automated hardware checks\nwithout user interaction.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: AppColors.gray8F8F8F,
               height: 1.4,
             ),
           ),
@@ -67,4 +68,3 @@ class AutoSuiteSection extends StatelessWidget {
     );
   }
 }
-

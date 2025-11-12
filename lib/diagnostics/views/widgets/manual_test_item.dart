@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../model/diag_step.dart';
 
 /// Manual Test Item Widget
@@ -20,10 +21,10 @@ class ManualTestItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: AppColors.greyE5E5E5.withValues(alpha: 0.2),
         ),
       ),
       child: Material(
@@ -40,7 +41,7 @@ class ManualTestItem extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: statusInfo.color.withOpacity(0.1),
+                    color: statusInfo.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -63,7 +64,7 @@ class ManualTestItem extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: statusInfo.color.withOpacity(0.1),
+                    color: statusInfo.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -100,7 +101,7 @@ class ManualTestItem extends StatelessWidget {
                 // Arrow
                 Icon(
                   Icons.chevron_right,
-                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  color: AppColors.gray8F8F8F,
                 ),
               ],
             ),
@@ -114,31 +115,31 @@ class ManualTestItem extends StatelessWidget {
     switch (status) {
       case DiagStatus.passed:
         return StatusInfo(
-          color: Colors.green,
+          color: AppColors.green03B134,
           icon: Icons.check_circle,
           label: 'Passed',
         );
       case DiagStatus.failed:
         return StatusInfo(
-          color: Colors.red,
+          color: AppColors.redE82B2B,
           icon: Icons.cancel,
           label: 'Failed',
         );
       case DiagStatus.running:
         return StatusInfo(
-          color: Colors.orange,
+          color: AppColors.yellowFEA400,
           icon: Icons.autorenew,
           label: 'Running',
         );
       case DiagStatus.skipped:
         return StatusInfo(
-          color: Colors.grey,
+          color: AppColors.gray969696,
           icon: Icons.remove_circle_outline,
           label: 'Skipped',
         );
       default:
         return StatusInfo(
-          color: Colors.blue,
+          color: AppColors.blue006FFD,
           icon: Icons.play_circle_outline,
           label: 'Pending',
         );
@@ -179,4 +180,3 @@ class StatusInfo {
     required this.label,
   });
 }
-

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../core/routes/app_routes.dart';
+import '../core/theme/app_colors.dart';
+
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});
 
@@ -103,7 +105,7 @@ class _OnboardingViewState extends State<OnboardingView>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: AppColors.neutral01,
       body: SafeArea(
         child: Stack(
           children: [
@@ -114,7 +116,7 @@ class _OnboardingViewState extends State<OnboardingView>
               child: TextButton(
                 onPressed: _startDiagnostics,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white70,
+                  foregroundColor: AppColors.white,
                 ),
                 child: const Text(
                   'Skip',
@@ -321,4 +323,3 @@ class _PageIndicator extends StatelessWidget {
     );
   }
 }
-

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../controllers/auto_diagnostics_controller.dart';
 
 /// Hardware Details Section - Displays camera and sensor information
@@ -29,7 +30,7 @@ class HardwareDetailsSection extends StatelessWidget {
               ),
               Icon(
                 Icons.keyboard_arrow_down,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ],
           ),
@@ -196,32 +197,22 @@ class _HardwareExpandableState extends State<HardwareExpandable> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
+        color: AppColors.grayF3F3F3,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: AppColors.grayE5E5E5.withOpacity(0.2)),
       ),
       child: Column(
         children: [
           Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              },
+              onTap: () => setState(() => _isExpanded = !_isExpanded),
               borderRadius: BorderRadius.circular(12),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(
-                      widget.icon,
-                      color: theme.colorScheme.primary,
-                      size: 22,
-                    ),
+                    Icon(widget.icon, color: AppColors.primaryApp, size: 22),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -233,7 +224,7 @@ class _HardwareExpandableState extends State<HardwareExpandable> {
                     ),
                     Icon(
                       _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: AppColors.gray8F8F8F,
                     ),
                   ],
                 ),
@@ -243,9 +234,7 @@ class _HardwareExpandableState extends State<HardwareExpandable> {
           if (_isExpanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: widget.children,
-              ),
+              child: Column(children: widget.children),
             ),
         ],
       ),
@@ -276,29 +265,20 @@ class HardwareDetailRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-          ),
+          Icon(icon, size: 18, color: AppColors.gray8F8F8F),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
           if (isWorking != null)
             Icon(
               isWorking! ? Icons.check_circle : Icons.cancel,
               size: 16,
-              color: isWorking! ? Colors.green : Colors.red,
+              color: isWorking! ? AppColors.green03B134 : AppColors.redE82B2B,
             ),
           const SizedBox(width: 8),
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: AppColors.gray8F8F8F,
             ),
           ),
         ],
@@ -306,4 +286,3 @@ class HardwareDetailRow extends StatelessWidget {
     );
   }
 }
-

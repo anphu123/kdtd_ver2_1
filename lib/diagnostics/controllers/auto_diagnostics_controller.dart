@@ -27,6 +27,7 @@ import '../views/speaker_test_page.dart';
 import '../views/touch_grid_test_page.dart';
 import '../views/screen_burnin_test_page.dart';
 import '../views/auto_screen_burnin_test_page.dart';
+import '../views/keys_test_page.dart';
 
 const _channel = MethodChannel('com.fidobox/diagnostics');
 
@@ -50,7 +51,8 @@ class AutoDiagnosticsController extends GetxController {
 
   String get brand => (info['osmodel']?['brand'] as String?) ?? '';
 
-  String get manufacturer => (info['osmodel']?['manufacturer'] as String?) ?? '';
+  String get manufacturer =>
+      (info['osmodel']?['manufacturer'] as String?) ?? '';
 
   String get modelName => (info['osmodel']?['model'] as String?) ?? '';
 
@@ -94,32 +96,32 @@ class AutoDiagnosticsController extends GetxController {
   /// Initialize the rule evaluator system
   Future<void> _initializeEvaluator() async {
     try {
-      // Wait for OS info to be collected
+      print('🔧 Initializing Rule Evaluator...');
       await Future.delayed(const Duration(milliseconds: 500));
-
-      // Get device info
       final osInfo = info['osmodel'] as Map<String, dynamic>? ?? {};
       final deviceBrand = osInfo['brand'] as String? ?? '';
       final deviceModel = osInfo['model'] as String? ?? '';
-      final devicePlatform = osInfo['platform'] as String? ?? 'android';
-
-      // Load profile manager
+      print('   ├─ Device Brand: $deviceBrand');
+      print('   ├─ Device Model: $deviceModel');
+      print('   ├─ Platform: ${osInfo['platform'] ?? 'android'}');
+      print('   ├─ Loading ProfileManager...');
       final profileManager = await ProfileManager.getInstance();
       _profile = profileManager.getProfile(deviceModel, deviceBrand);
-
-      // Build environment
+      print('   ├─ Profile loaded: ${_profile?.name ?? "default"}');
+      if (_profile != null) {
+        print('   │  ├─ Tier: ${_profile!.tier}');
+        print('   │  ├─ S-Pen: ${_profile!.sPen}');
+        print('   │  ├─ Biometrics: ${_profile!.bio}');
+        print('   │  └─ Auto screen test: ${_profile!.autoScreenTest}');
+      }
+      print('   ├─ Building environment...');
       await _updateEnvironment();
-
-      // Create evaluator
-      _evaluator = await RuleEvaluator.create(
-        profile: _profile!,
-        environment: _environment,
-      );
-
-      print('✅ Rule evaluator initialized for: ${_profile?.name}');
+      print('   ├─ Creating RuleEvaluator...');
+      _evaluator = await RuleEvaluator.create(profile: _profile!, environment: _environment);
+      print('   └─ ✅ Rule evaluator initialized successfully!\n');
     } catch (e) {
-      print('⚠️ Failed to initialize evaluator: $e');
-      // Use default profile
+      print('   └─ ⚠️ Failed to initialize evaluator: $e');
+      print('      Using default profile as fallback\n');
       _profile = const DeviceProfile(name: 'default');
     }
   }
@@ -280,9 +282,7 @@ class AutoDiagnosticsController extends GetxController {
         code: 'keys',
         title: 'Phím vật lý (xác nhận)',
         kind: DiagKind.manual,
-        interact: _confirm(
-          'Nhấn phím Âm lượng và Nguồn — hoạt động bình thường?',
-        ),
+        interact: _openKeysTest, // replaced generic confirm
       ),
       DiagStep(
         code: 'touch',
@@ -328,18 +328,29 @@ class AutoDiagnosticsController extends GetxController {
       _cams = await availableCameras();
 
       // Store camera info
-      final front = _cams.where((c) => c.lensDirection == CameraLensDirection.front).toList();
-      final back = _cams.where((c) => c.lensDirection == CameraLensDirection.back).toList();
+      final front =
+          _cams
+              .where((c) => c.lensDirection == CameraLensDirection.front)
+              .toList();
+      final back =
+          _cams
+              .where((c) => c.lensDirection == CameraLensDirection.back)
+              .toList();
 
       final cameraInfo = {
         'total': _cams.length,
         'front': front.length,
         'back': back.length,
-        'cameras': _cams.map((c) => {
-          'name': c.name,
-          'direction': c.lensDirection.toString().split('.').last,
-          'sensorOrientation': c.sensorOrientation,
-        }).toList(),
+        'cameras':
+            _cams
+                .map(
+                  (c) => {
+                    'name': c.name,
+                    'direction': c.lensDirection.toString().split('.').last,
+                    'sensorOrientation': c.sensorOrientation,
+                  },
+                )
+                .toList(),
       };
 
       info['camera_specs'] = cameraInfo;
@@ -377,113 +388,135 @@ class AutoDiagnosticsController extends GetxController {
     passedCount.value = 0;
     failedCount.value = 0;
     skippedCount.value = 0;
-
-    // Ensure evaluator is ready
+    print('\n╔═══════════════════════════════════════════════���════════════╗');
+    print('║       BẮT ĐẦU QUÁ TRÌNH KIỂM ĐỊNH TỰ ĐỘNG                 ║');
+    print('╚═══════════════════════════════���═══════════════════════���════╝');
+    print('⏰ Thời gian: ${DateTime.now()}\n');
     if (_evaluator == null) {
+      print('🔧 Khởi tạo Rule Evaluator...');
       await _initializeEvaluator();
     }
-
-    // Update environment before running tests
+    if (_evaluator != null) {
+      print('✅ Rule Evaluator đã sẵn sàng');
+      print('   ├─ Device Profile: ${_profile?.name ?? "default"}');
+      print('   ├─ Platform: $platform');
+      print('   └─ Brand: $brand\n');
+    } else {
+      print('⚠️  Rule Evaluator không khả dụng - sử dụng fallback logic\n');
+    }
+    print('🔄 Cập nhật môi trường...');
     await _updateEnvironment();
-
+    print('   ├─ Location Service: ${_environment.locationServiceOn ? "ON" : "OFF"}');
+    print('   ├─ Granted Perms: ${_environment.grantedPerms.length}');
+    print('   └─ Denied Perms: ${_environment.deniedPerms.length}\n');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━\n');
     for (final s in steps) {
       s.status = DiagStatus.running;
       steps.refresh();
-
+      print('🔍 Test: ${s.code} - ${s.title}');
+      print('   ├─ Type: ${s.kind == DiagKind.auto ? "Auto" : "Manual"}');
       bool runSuccess = false;
       try {
-        // Execute the test
         if (s.kind == DiagKind.auto && s.run != null) {
+          print('   ├─ Đang chạy test tự động...');
           runSuccess = await s.run!();
+          print('   ├─ Kết quả thực thi: ${runSuccess ? "SUCCESS" : "FAILED"}');
         } else if (s.kind == DiagKind.manual && s.interact != null) {
+          print('   ├─ Đang chạy test thủ công...');
           runSuccess = await s.interact!();
+          print('   ├─ Kết quả tương tác: ${runSuccess ? "SUCCESS" : "FAILED"}');
         } else {
+          print('   ├─ ⚠️  Không có hàm thực thi');
           s.status = DiagStatus.skipped;
           s.note = 'Không có hàm thực thi';
           skippedCount.value++;
           steps.refresh();
+          print('   └─ Status: SKIPPED\n');
           continue;
         }
       } catch (e) {
+        print('   ├─ ❌ Lỗi: $e');
         s.note = 'Lỗi: ${e.toString()}';
         s.status = DiagStatus.failed;
         failedCount.value++;
         steps.refresh();
+        print('   └─ Status: FAILED\n');
         continue;
       }
-
-      // Evaluate result using rule evaluator
       if (_evaluator != null && info[s.code] != null) {
-        final payload = info[s.code] is Map
-            ? (info[s.code] as Map).cast<String, dynamic>()
-            : {'value': info[s.code]};
-
+        final payload = info[s.code] is Map ? (info[s.code] as Map).cast<String, dynamic>() : {'value': info[s.code]};
+        print('   ├─ Dữ liệu thu thập: $payload');
         final evalResult = _evaluator!.evaluate(s.code, payload);
         final reason = _evaluator!.getReason(s.code, payload, evalResult);
-
+        print('   ├─ Rule Evaluation: ${evalResult.toString().split('.').last.toUpperCase()}');
+        print('   ├─ Lý do: $reason');
         switch (evalResult) {
           case EvalResult.pass:
             s.status = DiagStatus.passed;
             s.note = reason;
             passedCount.value++;
+            print('   └─ ✅ Status: PASSED\n');
             break;
           case EvalResult.fail:
             s.status = DiagStatus.failed;
             s.note = reason;
             failedCount.value++;
+            print('   └─ ❌ Status: FAILED\n');
             break;
           case EvalResult.skip:
             s.status = DiagStatus.skipped;
             s.note = reason;
             skippedCount.value++;
+            print('   └─ ⊝ Status: SKIPPED\n');
             break;
         }
       } else {
-        // Fallback to simple pass/fail based on run result
+        print('   ├─ Sử dụng fallback logic (không có evaluator hoặc data)');
         if (runSuccess) {
           s.status = DiagStatus.passed;
           passedCount.value++;
+          print('   └─ ✅ Status: PASSED (fallback)\n');
         } else {
           s.status = DiagStatus.failed;
           failedCount.value++;
+          print('   └─ ❌ Status: FAILED (fallback)\n');
         }
       }
-
       steps.refresh();
     }
-
     isRunning.value = false;
-
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     final total = steps.length;
     final score = (passedCount.value * 100 / total).round();
-    final grade =
-        (score >= 90)
-            ? 'Loại 1'
-            : (score >= 75)
-            ? 'Loại 2'
-            : (score >= 60)
-            ? 'Loại 3'
-            : (score >= 40)
-            ? 'Loại 4'
-            : 'Loại 5';
-    Get.snackbar(
-      'Kết quả kiểm định',
-      'Điểm: $score • $grade',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 3),
-    );
+    final grade = (score >= 90) ? 'Loại 1' : (score >= 75) ? 'Loại 2' : (score >= 60) ? 'Loại 3' : (score >= 40) ? 'Loại 4' : 'Loại 5';
+    print('📊 KẾT QUẢ CUỐI CÙNG:');
+    print('   ├─ Tổng số test: $total');
+    print('   ├─ ✅ Passed: ${passedCount.value}');
+    print('   ├─ ❌ Failed: ${failedCount.value}');
+    print('   ├─ ⊝ Skipped: ${skippedCount.value}');
+    print('   ├─ 📈 Điểm số: $score/100');
+    print('   └─ 🏆 Xếp loại: $grade\n');
+    printTestResults();
+    // Defer snackbar until after current frame to avoid overlay assertion
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.context != null) {
+        Get.snackbar('Kết quả kiểm định', 'Điểm: $score • $grade', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 3));
+      }
+    });
   }
 
   // ================== PRINT TEST RESULTS ==================
   /// Prints detailed test results to console
   void printTestResults() {
-    print('\n╔════════════════════════════════════════════════════════════╗');
+    print('\n╔═══════════════════════════════════════════════���════════════╗');
     print('║           KẾT QUẢ KIỂM ĐỊNH THIẾT BỊ                      ║');
     print('╚════════════════════════════════════════════════════════════╝\n');
 
     // Device Information
     print('📱 THÔNG TIN THIẾT BỊ:');
-    print('   ├─ Model: ${modelName.isNotEmpty ? modelName : "Không xác định"}');
+    print(
+      '   ├─ Model: ${modelName.isNotEmpty ? modelName : "Không xác định"}',
+    );
     print('   ├─ Hãng: ${brand.isNotEmpty ? brand : manufacturer}');
     print('   ├─ Platform: $platform');
     print('   └─ IMEI: ${info["imei"] ?? "N/A"}\n');
@@ -500,7 +533,8 @@ class AutoDiagnosticsController extends GetxController {
 
     // Test Results Summary
     final total = steps.length;
-    final completed = passedCount.value + failedCount.value + skippedCount.value;
+    final completed =
+        passedCount.value + failedCount.value + skippedCount.value;
     final score = total > 0 ? (passedCount.value * 100 / total).round() : 0;
     final grade = _calculateGrade(score);
 
@@ -525,7 +559,9 @@ class AutoDiagnosticsController extends GetxController {
 
       print('   $prefix [$statusIcon] ${step.title}');
       print('   ${isLast ? "  " : "│"}     Status: $statusText');
-      print('   ${isLast ? "  " : "│"}     Type: ${step.kind == DiagKind.auto ? "Auto" : "Manual"}');
+      print(
+        '   ${isLast ? "  " : "│"}     Type: ${step.kind == DiagKind.auto ? "Auto" : "Manual"}',
+      );
 
       if (step.note != null && step.note!.isNotEmpty) {
         print('   ${isLast ? "  " : "│"}     Note: ${step.note}');
@@ -534,7 +570,7 @@ class AutoDiagnosticsController extends GetxController {
       if (!isLast) print('   │');
     }
 
-    print('\n╔════════════════════════════════════════════════════════════╗');
+    print('\n╔═══════════════════════════════════════���════════════════════╗');
     print('║  Generated: ${DateTime.now().toString().split('.')[0]}   ║');
     print('╚════════════════════════════════════════════════════════════╝\n');
   }
@@ -679,8 +715,7 @@ class AutoDiagnosticsController extends GetxController {
   Future<Map<String, dynamic>> _getOsAndModel() async {
     try {
       final a = await _deviceInfo.androidInfo;
-      final vendor =
-          (a.manufacturer?.toLowerCase() ?? a.brand?.toLowerCase() ?? '');
+      final vendor = a.manufacturer.toLowerCase();
       return {
         'platform': 'android',
         'sdk': a.version.sdkInt,
@@ -688,7 +723,7 @@ class AutoDiagnosticsController extends GetxController {
         'model': a.model,
         'brand': a.brand,
         'manufacturer': a.manufacturer,
-        'vendor': vendor, // normalized brand/manufacturer
+        'vendor': vendor,
         'isSamsung': vendor == 'samsung',
         'isApple': false,
       };
@@ -904,7 +939,8 @@ class AutoDiagnosticsController extends GetxController {
   Future<bool> _openScreenBurnInTest() async {
     // Tier 5 (máy cũ/giá thấp) → tự động test
     if (_profile?.shouldAutoTestScreen == true) {
-      return (await Get.to<bool>(() => const AutoScreenBurnInTestPage())) == true;
+      return (await Get.to<bool>(() => const AutoScreenBurnInTestPage())) ==
+          true;
     }
     // Các tier khác → manual test
     return (await Get.to<bool>(() => const ScreenBurnInTestPage())) == true;
@@ -917,7 +953,9 @@ class AutoDiagnosticsController extends GetxController {
       if (_cams.isEmpty) return false;
 
       // Use advanced camera test with specs, obstruction & shake detection
-      final ok = await Get.to<bool>(() => AdvancedCameraTestPage(cameras: _cams));
+      final ok = await Get.to<bool>(
+        () => AdvancedCameraTestPage(cameras: _cams),
+      );
       return ok == true;
     } catch (_) {
       return false;
@@ -932,4 +970,14 @@ class AutoDiagnosticsController extends GetxController {
 
   Future<bool> _openEarpieceTest() async =>
       (await Get.to<bool>(() => const EarpieceTestPage())) == true;
+
+  Future<bool> _openKeysTest() async {
+    final result = await Get.to<Map<String, dynamic>?>(() => const KeysTestPage());
+    if (result == null) return false;
+    // Store granular result for evaluator
+    info['keys'] = result;
+    // Basic pass condition: userConfirm flag present & true OR both volume keys
+    final passed = (result['userConfirm'] == true) || (result['volumeUp'] == true && result['volumeDown'] == true);
+    return passed;
+  }
 }
