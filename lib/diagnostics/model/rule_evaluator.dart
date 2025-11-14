@@ -27,7 +27,9 @@ class RuleEvaluator {
     required DiagEnvironment environment,
   }) async {
     // Load thresholds
-    final thresholdsJson = await rootBundle.loadString('assets/diag_thresholds.json');
+    final thresholdsJson = await rootBundle.loadString(
+      'assets/diag_thresholds.json',
+    );
     final thresholdsData = json.decode(thresholdsJson);
     final thresholds = DiagThresholds.fromJson(thresholdsData);
 
@@ -128,7 +130,9 @@ class RuleEvaluator {
         result = EvalResult.skip; // Unknown test
     }
 
-    print('      [RuleEval] Result: ${result.toString().split('.').last.toUpperCase()}');
+    print(
+      '      [RuleEval] Result: ${result.toString().split('.').last.toUpperCase()}',
+    );
     return result;
   }
 
@@ -137,9 +141,20 @@ class RuleEvaluator {
     if (radio == null || radio.isEmpty) return 0; // unknown
     final r = radio.toUpperCase();
     // 2G technologies
-    if (r.contains('GPRS') || r.contains('EDGE') || r.contains('GSM') || r.contains('CDMA') || r.contains('1X')) return 2;
+    if (r.contains('GPRS') ||
+        r.contains('EDGE') ||
+        r.contains('GSM') ||
+        r.contains('CDMA') ||
+        r.contains('1X'))
+      return 2;
     // 3G technologies
-    if (r.contains('UMTS') || r.contains('HSPA') || r.contains('HSDPA') || r.contains('HSUPA') || r.contains('HSPAP') || r.contains('EVDO')) return 3;
+    if (r.contains('UMTS') ||
+        r.contains('HSPA') ||
+        r.contains('HSDPA') ||
+        r.contains('HSUPA') ||
+        r.contains('HSPAP') ||
+        r.contains('EVDO'))
+      return 3;
     // 4G technologies
     if (r.contains('LTE') || r.contains('WIMAX')) return 4;
     // 5G
@@ -148,14 +163,18 @@ class RuleEvaluator {
   }
 
   /// Get human-readable reason for the result
-  String getReason(String code, Map<String, dynamic> payload, EvalResult result) {
+  String getReason(
+    String code,
+    Map<String, dynamic> payload,
+    EvalResult result,
+  ) {
     switch (code) {
       case 'osmodel':
         if (result == EvalResult.fail) {
           final sdk = payload['sdk'];
-            if (payload['platform'] == 'android' && sdk is int && sdk < 21) {
-              return 'Không hỗ trợ thu mua (Android <5)';
-            }
+          if (payload['platform'] == 'android' && sdk is int && sdk < 21) {
+            return 'Không hỗ trợ thu mua (Android <5)';
+          }
           return 'Không đọc được thông tin thiết bị';
         }
         return 'Đọc được thông tin thiết bị';
@@ -278,8 +297,8 @@ class RuleEvaluator {
         return result == EvalResult.pass
             ? 'Đạt'
             : result == EvalResult.fail
-                ? 'Lỗi'
-                : 'Bỏ qua';
+            ? 'Lỗi'
+            : 'Bỏ qua';
     }
   }
 
@@ -288,7 +307,10 @@ class RuleEvaluator {
   EvalResult _evalOsModel(Map<String, dynamic> p) {
     final platform = p['platform'];
     final model = p['model'];
-    if (platform == null || platform == 'unknown' || model == null || model == '') {
+    if (platform == null ||
+        platform == 'unknown' ||
+        model == null ||
+        model == '') {
       return EvalResult.fail;
     }
     // Auto fail purchase support if Android <5 (API <21)
@@ -352,7 +374,8 @@ class RuleEvaluator {
 
   EvalResult _evalBluetooth(Map<String, dynamic> p) {
     if (environment.isPermDenied('bluetoothScan')) return EvalResult.skip;
-    if (environment.isMiui && !environment.locationServiceOn) return EvalResult.skip;
+    if (environment.isMiui && !environment.locationServiceOn)
+      return EvalResult.skip;
 
     final enabled = p['enabled'] == true;
     if (!enabled) return EvalResult.skip;
@@ -387,7 +410,8 @@ class RuleEvaluator {
     final gyro = p['gyroscope'] == true;
 
     // Check if device should have these sensors
-    if (!accel && !environment.hasSensor('accelerometer')) return EvalResult.skip;
+    if (!accel && !environment.hasSensor('accelerometer'))
+      return EvalResult.skip;
     if (!gyro && !environment.hasSensor('gyroscope')) return EvalResult.skip;
 
     if (!accel || !gyro) return EvalResult.fail;
@@ -458,14 +482,43 @@ class RuleEvaluator {
   }
 
   EvalResult _evalScreen(Map<String, dynamic> p) {
-    // Screen burn-in test is manual confirmation
+    // Kiểm tra kết quả từ auto detection
+    final passed = p['passed'] == true;
+    final defects = p['defects'] as List? ?? [];
+    final defectCount = p['defectCount'] as int? ?? 0;
+
+    // Không có lỗi → Pass
+    if (passed && defectCount == 0) {
+      return EvalResult.pass;
+    }
+
+    // Có lỗi → Phân tích loại lỗi
+    if (defectCount > 0) {
+      // Kiểm tra xem có lỗi màn hình trong không
+      final hasInnerScreenDefect = _hasInnerScreenDefect(defects);
+
+      if (hasInnerScreenDefect) {
+        // Màn hình trong có lỗi → FAIL (Loại 5)
+        print('      ⚠️ CRITICAL: Màn hình trong có lỗi → Loại 5');
+        return EvalResult.fail;
+      }
+
+      // Chỉ có lỗi màn hình ngoài → Đánh giá mức độ
+      final severity = _getOuterScreenSeverity(defects);
+      if (severity == 'severe') {
+        return EvalResult.fail; // Vỡ nặng
+      } else if (severity == 'moderate') {
+        return EvalResult.pass; // Xước vừa - vẫn pass nhưng giảm giá
+      } else {
+        return EvalResult.pass; // Xước nhẹ
+      }
+    }
+
+    // Fallback: Manual confirmation (backward compatible)
     final confirm = p['userConfirm'] == true;
     final hasIssue = p['hasIssue'] == true;
 
-    // If user confirmed screen has burn-in/lines → fail
     if (hasIssue) return EvalResult.fail;
-
-    // If user confirmed no issues → pass
     if (confirm) return EvalResult.pass;
 
     // Default: pass if no explicit issue reported
@@ -524,5 +577,71 @@ class RuleEvaluator {
     // Most modern phones don't have headphone jack
     // This is informational only, always pass
     return EvalResult.pass;
+  }
+
+  /// Kiểm tra có lỗi màn hình trong không
+  bool _hasInnerScreenDefect(List defects) {
+    final innerScreenDefects = [
+      'Dead pixel',
+      'Dead Pixel',
+      'Bright pixel',
+      'Bright Pixel',
+      'Chảy mực',
+      'Burn-in',
+      'Vết ám',
+      'Color Banding',
+      'Nhấp nháy',
+      'Flickering',
+    ];
+
+    for (var defect in defects) {
+      final type = defect['type'] as String? ?? '';
+      final description = defect['description'] as String? ?? '';
+
+      // Kiểm tra type hoặc description có chứa keyword màn hình trong
+      for (var keyword in innerScreenDefects) {
+        if (type.toLowerCase().contains(keyword.toLowerCase()) ||
+            description.toLowerCase().contains(keyword.toLowerCase())) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /// Đánh giá mức độ nghiêm trọng của lỗi màn hình ngoài
+  String _getOuterScreenSeverity(List defects) {
+    int scratchCount = 0;
+    int crackCount = 0;
+    bool hasShattered = false;
+
+    for (var defect in defects) {
+      final type = defect['type'] as String? ?? '';
+      final description = defect['description'] as String? ?? '';
+      final combined = '$type $description'.toLowerCase();
+
+      if (combined.contains('vỡ') || combined.contains('shattered')) {
+        hasShattered = true;
+      } else if (combined.contains('nứt') || combined.contains('crack')) {
+        crackCount++;
+      } else if (combined.contains('xước') || combined.contains('scratch')) {
+        scratchCount++;
+      }
+    }
+
+    // Vỡ → Severe
+    if (hasShattered) return 'severe';
+
+    // Nhiều vết nứt → Severe
+    if (crackCount >= 3) return 'severe';
+
+    // Vài vết nứt hoặc nhiều xước → Moderate
+    if (crackCount >= 1 || scratchCount >= 10) return 'moderate';
+
+    // Ít xước → Minor
+    if (scratchCount >= 1) return 'minor';
+
+    return 'none';
   }
 }

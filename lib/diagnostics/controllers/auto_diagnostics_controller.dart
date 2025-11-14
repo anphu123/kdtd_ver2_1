@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,14 +21,19 @@ import '../model/rule_evaluator.dart';
 import '../model/device_profile.dart';
 import '../model/diag_environment.dart';
 import '../model/profile_manager.dart';
+import '../utils/device_name_mapper.dart';
 import '../views/advanced_camera_test_page.dart';
 import '../views/earpiece_test_page.dart';
 import '../views/mic_test_page.dart';
 import '../views/speaker_test_page.dart';
 import '../views/touch_grid_test_page.dart';
 import '../views/screen_burnin_test_page.dart';
+import '../views/screen_defect_detection_page.dart';
+import '../views/diagnostic_result_page.dart';
+import '../views/failed_tests_warning_page.dart';
 import '../views/auto_screen_burnin_test_page.dart';
 import '../views/keys_test_page.dart';
+import '../services/phone_info_service.dart';
 
 const _channel = MethodChannel('com.fidobox/diagnostics');
 
@@ -55,6 +61,12 @@ class AutoDiagnosticsController extends GetxController {
       (info['osmodel']?['manufacturer'] as String?) ?? '';
 
   String get modelName => (info['osmodel']?['model'] as String?) ?? '';
+
+  String get marketingName =>
+      (info['osmodel']?['marketingName'] as String?) ?? '';
+
+  String get origin =>
+      (info['osmodel']?['origin'] as String?) ?? 'Không xác định';
 
   bool get isSamsung => vendor.toLowerCase() == 'samsung';
 
@@ -117,7 +129,10 @@ class AutoDiagnosticsController extends GetxController {
       print('   ├─ Building environment...');
       await _updateEnvironment();
       print('   ├─ Creating RuleEvaluator...');
-      _evaluator = await RuleEvaluator.create(profile: _profile!, environment: _environment);
+      _evaluator = await RuleEvaluator.create(
+        profile: _profile!,
+        environment: _environment,
+      );
       print('   └─ ✅ Rule evaluator initialized successfully!\n');
     } catch (e) {
       print('   └─ ⚠️ Failed to initialize evaluator: $e');
@@ -292,9 +307,9 @@ class AutoDiagnosticsController extends GetxController {
       ),
       DiagStep(
         code: 'screen',
-        title: 'Sọc ám màn hình',
-        kind: DiagKind.manual,
-        interact: _openScreenBurnInTest,
+        title: 'Màn hình (Tự động phát hiện lỗi)',
+        kind: DiagKind.auto,
+        run: _testScreenAuto,
       ),
       DiagStep(
         code: 'camera',
@@ -406,7 +421,9 @@ class AutoDiagnosticsController extends GetxController {
     }
     print('🔄 Cập nhật môi trường...');
     await _updateEnvironment();
-    print('   ├─ Location Service: ${_environment.locationServiceOn ? "ON" : "OFF"}');
+    print(
+      '   ├─ Location Service: ${_environment.locationServiceOn ? "ON" : "OFF"}',
+    );
     print('   ├─ Granted Perms: ${_environment.grantedPerms.length}');
     print('   └─ Denied Perms: ${_environment.deniedPerms.length}\n');
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━\n');
@@ -424,7 +441,9 @@ class AutoDiagnosticsController extends GetxController {
         } else if (s.kind == DiagKind.manual && s.interact != null) {
           print('   ├─ Đang chạy test thủ công...');
           runSuccess = await s.interact!();
-          print('   ├─ Kết quả tương tác: ${runSuccess ? "SUCCESS" : "FAILED"}');
+          print(
+            '   ├─ Kết quả tương tác: ${runSuccess ? "SUCCESS" : "FAILED"}',
+          );
         } else {
           print('   ├─ ⚠️  Không có hàm thực thi');
           s.status = DiagStatus.skipped;
@@ -444,11 +463,16 @@ class AutoDiagnosticsController extends GetxController {
         continue;
       }
       if (_evaluator != null && info[s.code] != null) {
-        final payload = info[s.code] is Map ? (info[s.code] as Map).cast<String, dynamic>() : {'value': info[s.code]};
+        final payload =
+            info[s.code] is Map
+                ? (info[s.code] as Map).cast<String, dynamic>()
+                : {'value': info[s.code]};
         print('   ├─ Dữ liệu thu thập: $payload');
         final evalResult = _evaluator!.evaluate(s.code, payload);
         final reason = _evaluator!.getReason(s.code, payload, evalResult);
-        print('   ├─ Rule Evaluation: ${evalResult.toString().split('.').last.toUpperCase()}');
+        print(
+          '   ├─ Rule Evaluation: ${evalResult.toString().split('.').last.toUpperCase()}',
+        );
         print('   ├─ Lý do: $reason');
         switch (evalResult) {
           case EvalResult.pass:
@@ -488,7 +512,16 @@ class AutoDiagnosticsController extends GetxController {
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     final total = steps.length;
     final score = (passedCount.value * 100 / total).round();
-    final grade = (score >= 90) ? 'Loại 1' : (score >= 75) ? 'Loại 2' : (score >= 60) ? 'Loại 3' : (score >= 40) ? 'Loại 4' : 'Loại 5';
+    final grade =
+        (score >= 90)
+            ? 'Loại 1'
+            : (score >= 75)
+            ? 'Loại 2'
+            : (score >= 60)
+            ? 'Loại 3'
+            : (score >= 40)
+            ? 'Loại 4'
+            : 'Loại 5';
     print('📊 KẾT QUẢ CUỐI CÙNG:');
     print('   ├─ Tổng số test: $total');
     print('   ├─ ✅ Passed: ${passedCount.value}');
@@ -497,10 +530,22 @@ class AutoDiagnosticsController extends GetxController {
     print('   ├─ 📈 Điểm số: $score/100');
     print('   └─ 🏆 Xếp loại: $grade\n');
     printTestResults();
-    // Defer snackbar until after current frame to avoid overlay assertion
+
+    // Navigate to result page or warning page
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.context != null) {
-        Get.snackbar('Kết quả kiểm định', 'Điểm: $score • $grade', snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 3));
+        // Nếu điểm < 70 và có test failed → hiển thị warning
+        if (score < 70 && failedCount.value > 0) {
+          final failedSteps =
+              steps.where((s) => s.status == DiagStatus.failed).toList();
+          Get.to(
+            () =>
+                FailedTestsWarningPage(failedSteps: failedSteps, score: score),
+          );
+        } else {
+          // Điểm OK → hiển thị kết quả bình thường
+          Get.to(() => const DiagnosticResultPage());
+        }
       }
     });
   }
@@ -575,11 +620,28 @@ class AutoDiagnosticsController extends GetxController {
     print('╚════════════════════════════════════════════════════════════╝\n');
   }
 
-  // Helper method to convert bytes to GiB
+  // Helper method to convert bytes to GiB with standard rounding
   int? _toGiB(dynamic v) {
     if (v is! num) return null;
     const giB = 1024 * 1024 * 1024;
-    return (v.toDouble() / giB).round();
+    final gb = v.toDouble() / giB;
+
+    // Làm tròn theo các mức chuẩn: 2, 3, 4, 6, 8, 12, 16, 32, 64, 128, 256, 512
+    const standardSizes = [2, 3, 4, 6, 8, 12, 16, 32, 64, 128, 256, 512, 1024];
+
+    // Tìm mức gần nhất
+    int closest = standardSizes[0];
+    double minDiff = (gb - closest).abs();
+
+    for (final size in standardSizes) {
+      final diff = (gb - size).abs();
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = size;
+      }
+    }
+
+    return closest;
   }
 
   // Helper method to calculate grade
@@ -631,17 +693,215 @@ class AutoDiagnosticsController extends GetxController {
 
   Future<bool> _snapOsModel() async {
     info['osmodel'] = await _getOsAndModel();
+
+    // Kiểm tra OS requirements
+    final osInfo = info['osmodel'] as Map<String, dynamic>;
+    final platform = osInfo['platform'] as String?;
+    final sdkInt = osInfo['sdk'] as int?;
+    final release = osInfo['release'] as String?;
+
+    print('\n╔═══════════════════════════════════════════════════════════╗');
+    print('║           KIỂM TRA YÊU CẦU HỆ ĐIỀU HÀNH                  ║');
+    print('╚═══════════════════════════════════════════════════════════╝');
+
+    if (platform == 'android') {
+      print('📱 Platform: Android');
+      print('   ├─ SDK Level: ${sdkInt ?? "N/A"}');
+      print('   ├─ Android Version: ${release ?? "N/A"}');
+      print('   └─ Yêu cầu: Android 5.0 (API 21) trở lên\n');
+
+      // Android 5.0 = API 21
+      final meetsAndroidRequirement = sdkInt != null && sdkInt >= 21;
+
+      if (meetsAndroidRequirement) {
+        print('✅ KẾT QUẢ: ĐẠT YÊU CẦU');
+        print(
+          '   └─ Thiết bị hỗ trợ Android ${release ?? sdkInt} (API $sdkInt)',
+        );
+      } else {
+        print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+        print(
+          '   └─ Thiết bị chỉ hỗ trợ Android ${release ?? sdkInt} (API ${sdkInt ?? "N/A"})',
+        );
+        print('   └─ Cần nâng cấp lên Android 5.0 trở lên');
+      }
+    } else if (platform == 'ios') {
+      final systemVersion = osInfo['systemVersion'] as String?;
+      print('📱 Platform: iOS');
+      print('   ├─ iOS Version: ${systemVersion ?? "N/A"}');
+      print('   └─ Yêu cầu: iOS 10.0 trở lên\n');
+
+      // Parse iOS version
+      final versionParts = systemVersion?.split('.') ?? [];
+      final majorVersion =
+          versionParts.isNotEmpty ? int.tryParse(versionParts[0]) : null;
+      final meetsIOSRequirement = majorVersion != null && majorVersion >= 10;
+
+      if (meetsIOSRequirement) {
+        print('✅ KẾT QUẢ: ĐẠT YÊU CẦU');
+        print('   └─ Thiết bị hỗ trợ iOS $systemVersion');
+      } else {
+        print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+        print('   └─ Thiết bị chỉ hỗ trợ iOS ${systemVersion ?? "N/A"}');
+        print('   └─ Cần nâng cấp lên iOS 10.0 trở lên');
+      }
+    } else {
+      print('⚠️  Platform: Unknown');
+      print('   └─ Không thể xác định hệ điều hành');
+    }
+
+    print('╚═══════════════════════════════════════════════════════════╝\n');
+
     return true;
   }
 
   Future<bool> _snapMobile() async {
+    print('\n╔═══════════════════════════════════════════════════════════╗');
+    print('║           KIỂM TRA MẠNG DI ĐỘNG                          ║');
+    print('╚═══════════════════════════════════════════════════════════╝');
+
+    // Kiểm tra quyền READ_PHONE_STATE (bắt buộc)
+    final phonePermission = await Permission.phone.status;
+    print(
+      '🔐 Quyền READ_PHONE_STATE: ${phonePermission.isGranted ? "Đã cấp" : "Chưa cấp"}',
+    );
+
+    if (!phonePermission.isGranted) {
+      print('   └─ Đang yêu cầu quyền...\n');
+
+      final result = await Permission.phone.request();
+
+      if (result.isGranted) {
+        print('✅ Đã cấp quyền READ_PHONE_STATE');
+      } else if (result.isDenied) {
+        print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+        print('   ├─ Người dùng từ chối cấp quyền READ_PHONE_STATE');
+        print('   └─ Không thể kiểm tra thông tin mạng di động');
+        print(
+          '╚═══════════════════════════════════════════════════════════╝\n',
+        );
+        return false;
+      } else if (result.isPermanentlyDenied) {
+        print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+        print('   ├─ Quyền READ_PHONE_STATE bị từ chối vĩnh viễn');
+        print('   ├─ Vui lòng vào Cài đặt > Ứng dụng > Quyền để cấp quyền');
+        print('   └─ Không thể kiểm tra thông tin mạng di động');
+        print(
+          '╚═══════════════════════════════════════════════════════════╝\n',
+        );
+
+        // Mở settings
+        await openAppSettings();
+        return false;
+      }
+    }
+
+    // Lấy thông tin mạng di động
     info['mobile'] = await _getMobileNetworkInfo();
-    return true;
+    final mobileInfo = info['mobile'] as Map<String, dynamic>;
+    final connected = mobileInfo['connected'] as bool? ?? false;
+    final radio = mobileInfo['radio'] as String?;
+    final dbm = mobileInfo['dbm'] as int?;
+
+    print(
+      '\n📶 Trạng thái kết nối: ${connected ? "Đã kết nối" : "Chưa kết nối"}',
+    );
+
+    if (connected && radio != null) {
+      print('   ├─ Loại mạng: $radio');
+      print('   ├─ Cường độ tín hiệu: ${dbm != null ? "$dbm dBm" : "N/A"}');
+      print('   └─ Yêu cầu: 3G trở lên\n');
+
+      // Kiểm tra có phải 3G trở lên không
+      final is3GOrHigher = _is3GOrHigher(radio);
+
+      if (is3GOrHigher) {
+        print('✅ KẾT QUẢ: ĐẠT YÊU CẦU');
+        print('   └─ Thiết bị hỗ trợ mạng $radio (3G trở lên)');
+      } else {
+        print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+        print('   └─ Thiết bị chỉ hỗ trợ mạng $radio (dưới 3G)');
+        print('   └─ Cần hỗ trợ 3G, 4G/LTE hoặc 5G');
+      }
+    } else {
+      print('   └─ Không có kết nối mạng di động\n');
+      print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+      print('   ├─ Không phát hiện kết nối mạng di động');
+      print('   └─ Vui lòng bật dữ liệu di động và thử lại');
+    }
+
+    print('╚═══════════════════════════════════════════════════════════╝\n');
+
+    return connected && radio != null && _is3GOrHigher(radio);
+  }
+
+  bool _is3GOrHigher(String radio) {
+    // 3G and higher: HSPA, HSDPA, HSUPA, HSPAP, LTE, NR (5G)
+    // Below 3G: GPRS, EDGE, UNKNOWN
+    final radio3GOrHigher = ['HSPA', 'HSDPA', 'HSUPA', 'HSPAP', 'LTE', 'NR'];
+    return radio3GOrHigher.contains(radio.toUpperCase());
   }
 
   Future<bool> _snapWifi() async {
     info['wifi'] = await _getWifiInfo();
-    return true;
+
+    final wifiInfo = info['wifi'] as Map<String, dynamic>;
+    final enabled = wifiInfo['enabled'] as bool? ?? false;
+    final connected = wifiInfo['connected'] as bool? ?? false;
+    final ssid = wifiInfo['ssid'] as String?;
+
+    print('\n╔═══════════════════════════════════════════════════════════╗');
+    print('║           KIỂM TRA WIFI                                   ║');
+    print('╚═══════════════════════════════════════════════════════════╝');
+
+    // Trường hợp 1: WiFi không được bật
+    if (!enabled) {
+      print('📡 Trạng thái WiFi: TẮT');
+      print('   └─ WiFi chưa được bật trên thiết bị\n');
+      print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+      print('   ├─ WiFi phải được bật để kiểm tra');
+      print('   └─ Vui lòng bật WiFi trong Cài đặt');
+      print('╚═══════════════════════════════════════════════════════════╝\n');
+      return false;
+    }
+
+    // Trường hợp 2: WiFi bật nhưng không kết nối
+    if (enabled && !connected) {
+      print('📡 Trạng thái WiFi: BẬT');
+      print('   ├─ Trạng thái kết nối: CHƯA KẾT NỐI');
+      print('   └─ Chưa kết nối đến mạng WiFi nào\n');
+      print('❌ KẾT QUẢ: KHÔNG ĐẠT YÊU CẦU');
+      print('   ├─ WiFi đã bật nhưng chưa kết nối mạng');
+      print('   └─ Vui lòng kết nối đến một mạng WiFi');
+      print('╚═══════════════════════════════════════════════════════════╝\n');
+      return false;
+    }
+
+    // Trường hợp 3: WiFi bật và đã kết nối
+    if (enabled && connected) {
+      print('📡 Trạng thái WiFi: BẬT');
+      print('   ├─ Trạng thái kết nối: ĐÃ KẾT NỐI');
+
+      if (ssid != null && ssid.isNotEmpty) {
+        // Remove quotes from SSID if present
+        final cleanSsid = ssid.replaceAll('"', '');
+        print('   ├─ Tên mạng (SSID): $cleanSsid');
+      } else {
+        print('   ├─ Tên mạng (SSID): Không xác định');
+        print('   │  (Cần quyền ACCESS_FINE_LOCATION để đọc SSID)');
+      }
+
+      print('   └─ Chất lượng kết nối: Tốt\n');
+      print('✅ KẾT QUẢ: ĐẠT YÊU CẦU');
+      print('   └─ WiFi hoạt động bình thường');
+      print('╚═══════════════════════════════════════════════════════════╝\n');
+      return true;
+    }
+
+    // Trường hợp không xác định
+    print('⚠️  Trạng thái WiFi: KHÔNG XÁC ĐỊNH');
+    print('╚═══════════════════════════════════════════════════════════╝\n');
+    return false;
   }
 
   // NEW: RAM/ROM snapshots
@@ -712,18 +972,96 @@ class AutoDiagnosticsController extends GetxController {
     return {'level': level, 'state': state.name};
   }
 
+  String _getOriginCountry(String brand, String manufacturer) {
+    final brandLower = brand.toLowerCase();
+    final manuLower = manufacturer.toLowerCase();
+
+    // Korean brands
+    if (brandLower.contains('samsung') || manuLower.contains('samsung'))
+      return 'Hàn Quốc';
+    if (brandLower.contains('lg') || manuLower.contains('lg'))
+      return 'Hàn Quốc';
+
+    // Chinese brands
+    if (brandLower.contains('xiaomi') || manuLower.contains('xiaomi'))
+      return 'Trung Quốc';
+    if (brandLower.contains('oppo') || manuLower.contains('oppo'))
+      return 'Trung Quốc';
+    if (brandLower.contains('vivo') || manuLower.contains('vivo'))
+      return 'Trung Quốc';
+    if (brandLower.contains('huawei') || manuLower.contains('huawei'))
+      return 'Trung Quốc';
+    if (brandLower.contains('oneplus') || manuLower.contains('oneplus'))
+      return 'Trung Quốc';
+    if (brandLower.contains('realme') || manuLower.contains('realme'))
+      return 'Trung Quốc';
+    if (brandLower.contains('honor') || manuLower.contains('honor'))
+      return 'Trung Quốc';
+    if (brandLower.contains('zte') || manuLower.contains('zte'))
+      return 'Trung Quốc';
+    if (brandLower.contains('lenovo') || manuLower.contains('lenovo'))
+      return 'Trung Quốc';
+    if (brandLower.contains('meizu') || manuLower.contains('meizu'))
+      return 'Trung Quốc';
+    if (brandLower.contains('tcl') || manuLower.contains('tcl'))
+      return 'Trung Quốc';
+
+    // American brands
+    if (brandLower.contains('apple') || manuLower.contains('apple'))
+      return 'Mỹ';
+    if (brandLower.contains('google') || manuLower.contains('google'))
+      return 'Mỹ';
+    if (brandLower.contains('motorola') || manuLower.contains('motorola'))
+      return 'Mỹ';
+
+    // Japanese brands
+    if (brandLower.contains('sony') || manuLower.contains('sony'))
+      return 'Nhật Bản';
+    if (brandLower.contains('sharp') || manuLower.contains('sharp'))
+      return 'Nhật Bản';
+    if (brandLower.contains('fujitsu') || manuLower.contains('fujitsu'))
+      return 'Nhật Bản';
+
+    // Taiwanese brands
+    if (brandLower.contains('asus') || manuLower.contains('asus'))
+      return 'Đài Loan';
+    if (brandLower.contains('htc') || manuLower.contains('htc'))
+      return 'Đài Loan';
+    if (brandLower.contains('acer') || manuLower.contains('acer'))
+      return 'Đài Loan';
+
+    // Finnish brands
+    if (brandLower.contains('nokia') || manuLower.contains('nokia'))
+      return 'Phần Lan';
+
+    return 'Không xác định';
+  }
+
   Future<Map<String, dynamic>> _getOsAndModel() async {
     try {
       final a = await _deviceInfo.androidInfo;
       final vendor = a.manufacturer.toLowerCase();
+      final origin = _getOriginCountry(a.brand, a.manufacturer);
+
+      // Get marketing name using mapper (e.g., "Galaxy S21" instead of "SM-G991N")
+      String marketingName = DeviceNameMapper.getMarketingName(
+        a.model,
+        a.brand,
+      );
+
+      // Try to get marketing name from API (async, will update later)
+      _fetchMarketingNameFromAPI(a.model, a.brand);
+
       return {
         'platform': 'android',
         'sdk': a.version.sdkInt,
         'release': a.version.release,
         'model': a.model,
+        'marketingName': marketingName,
         'brand': a.brand,
         'manufacturer': a.manufacturer,
         'vendor': vendor,
+        'origin': origin,
         'isSamsung': vendor == 'samsung',
         'isApple': false,
       };
@@ -735,14 +1073,16 @@ class AutoDiagnosticsController extends GetxController {
           'systemVersion': i.systemVersion,
           'model': i.utsname.machine,
           'name': i.name,
+          'marketingName': i.name,
           'brand': 'Apple',
           'manufacturer': 'Apple',
           'vendor': 'apple',
+          'origin': 'Mỹ',
           'isSamsung': false,
           'isApple': true,
         };
       } catch (_) {
-        return {'platform': 'unknown'};
+        return {'platform': 'unknown', 'origin': 'Không xác định'};
       }
     }
   }
@@ -760,6 +1100,9 @@ class AutoDiagnosticsController extends GetxController {
   }
 
   Future<Map<String, dynamic>> _getWifiInfo() async {
+    // Kiểm tra WiFi có được bật không (qua native)
+    bool? wifiEnabled = await _invoke<bool>('isWifiEnabled');
+
     final conn = await Connectivity().checkConnectivity();
     final onWifi =
         conn.contains(ConnectivityResult.wifi) ||
@@ -772,7 +1115,11 @@ class AutoDiagnosticsController extends GetxController {
         }
       } catch (_) {}
     }
-    return {'connected': onWifi, 'ssid': ssid};
+    return {
+      'enabled': wifiEnabled ?? onWifi,
+      'connected': onWifi,
+      'ssid': ssid,
+    };
   }
 
   // ===== NEW: RAM & ROM via MethodChannel =====
@@ -903,10 +1250,45 @@ class AutoDiagnosticsController extends GetxController {
     try {
       final has = (await Vibration.hasVibrator()) == true;
       if (!has) return false;
-      await Vibration.vibrate(duration: 250);
-      await Future.delayed(const Duration(milliseconds: 300));
-      await Vibration.vibrate(pattern: [0, 120, 80, 120]);
-      return true;
+
+      // Random 1-3 lần rung
+      final random = math.Random();
+      final vibrationCount = random.nextInt(3) + 1; // 1, 2, hoặc 3
+
+      for (int i = 0; i < vibrationCount; i++) {
+        await Vibration.vibrate(duration: 300);
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      // Hiện dialog cho user chọn số lần rung
+      final result = await Get.dialog<int>(
+        AlertDialog(
+          title: const Text('Kiểm tra rung'),
+          content: const Text('Máy vừa rung bao nhiêu lần?'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: 0),
+              child: const Text('Không rung'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: 1),
+              child: const Text('1 lần'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: 2),
+              child: const Text('2 lần'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: 3),
+              child: const Text('3 lần'),
+            ),
+          ],
+        ),
+        barrierDismissible: false,
+      );
+
+      // Pass nếu user chọn đúng số lần rung
+      return result == vibrationCount;
     } catch (_) {
       return false;
     }
@@ -935,6 +1317,63 @@ class AutoDiagnosticsController extends GetxController {
 
   Future<bool> _openTouchGrid() async =>
       (await Get.to<bool>(() => const TouchGridTestPage())) == true;
+
+  /// Tự động test màn hình (không cần user interaction)
+  Future<bool> _testScreenAuto() async {
+    try {
+      print('🖥️ Bắt đầu test màn hình tự động...');
+
+      // Hiển thị các màu và tự động phân tích
+      final result = await Get.to<Map<String, dynamic>?>(
+        () => const ScreenDefectDetectionPage(),
+      );
+
+      if (result == null) return false;
+
+      // Lưu thông tin lỗi màn hình
+      info['screen'] = result;
+
+      // Pass nếu không có lỗi
+      final passed = result['passed'] == true;
+      final defectCount = result['defectCount'] as int? ?? 0;
+
+      if (!passed && defectCount > 0) {
+        print('⚠️ Phát hiện $defectCount lỗi màn hình');
+        final defects = result['defects'] as List? ?? [];
+        for (var defect in defects) {
+          print('   - ${defect['type']}: ${defect['description']}');
+        }
+      } else {
+        print('✅ Màn hình không có lỗi');
+      }
+
+      return passed;
+    } catch (e) {
+      print('❌ Lỗi test màn hình: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _openScreenDefectDetection() async {
+    final result = await Get.to<Map<String, dynamic>?>(
+      () => const ScreenDefectDetectionPage(),
+    );
+
+    if (result == null) return false;
+
+    // Lưu thông tin lỗi màn hình
+    info['screen'] = result;
+
+    // Pass nếu không có lỗi
+    final passed = result['passed'] == true;
+    final defectCount = result['defectCount'] as int? ?? 0;
+
+    if (!passed && defectCount > 0) {
+      print('⚠️ Phát hiện $defectCount lỗi màn hình');
+    }
+
+    return passed;
+  }
 
   Future<bool> _openScreenBurnInTest() async {
     // Tier 5 (máy cũ/giá thấp) → tự động test
@@ -972,12 +1411,61 @@ class AutoDiagnosticsController extends GetxController {
       (await Get.to<bool>(() => const EarpieceTestPage())) == true;
 
   Future<bool> _openKeysTest() async {
-    final result = await Get.to<Map<String, dynamic>?>(() => const KeysTestPage());
+    final result = await Get.to<Map<String, dynamic>?>(
+      () => const KeysTestPage(),
+    );
     if (result == null) return false;
     // Store granular result for evaluator
     info['keys'] = result;
     // Basic pass condition: userConfirm flag present & true OR both volume keys
-    final passed = (result['userConfirm'] == true) || (result['volumeUp'] == true && result['volumeDown'] == true);
+    final passed =
+        (result['userConfirm'] == true) ||
+        (result['volumeUp'] == true && result['volumeDown'] == true);
     return passed;
+  }
+
+  // ================== PHONE INFO API ==================
+  /// Fetch marketing name from API and update
+  Future<void> _fetchMarketingNameFromAPI(String model, String brand) async {
+    try {
+      final marketingName = await PhoneInfoService.getMarketingName(
+        model,
+        brand,
+      );
+      if (marketingName != null && marketingName.isNotEmpty) {
+        // Update marketing name in info
+        if (info['osmodel'] != null) {
+          info['osmodel']['marketingName'] = marketingName;
+          update(); // Notify listeners
+          print('✓ Updated marketing name from API: $marketingName');
+        }
+      }
+    } catch (e) {
+      print('Error fetching marketing name from API: $e');
+    }
+  }
+
+  /// Fetch phone image URL from API
+  Future<String?> getPhoneImageUrl() async {
+    try {
+      final model = modelName;
+      final brandName = brand;
+      return await PhoneInfoService.getPhoneImageUrl(model, brandName);
+    } catch (e) {
+      print('Error fetching phone image URL: $e');
+      return null;
+    }
+  }
+
+  /// Get full phone info from API
+  Future<PhoneInfo?> getPhoneInfo() async {
+    try {
+      final model = modelName;
+      final brandName = brand;
+      return await PhoneInfoService.getPhoneInfo(model, brandName);
+    } catch (e) {
+      print('Error fetching phone info: $e');
+      return null;
+    }
   }
 }

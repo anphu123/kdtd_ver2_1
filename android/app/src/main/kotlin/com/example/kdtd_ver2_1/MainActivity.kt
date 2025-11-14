@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
@@ -159,6 +160,22 @@ class MainActivity : FlutterActivity() {
                     "getRamInfo" -> result.success(getRamInfo())
                     "getRomInfo" -> result.success(getRomInfo())
 
+                    // Marketing Name
+                    "getMarketingName" -> {
+                        val marketingName = getDeviceMarketingName()
+                        result.success(marketingName)
+                    }
+
+                    // Check if WiFi is enabled
+                    "isWifiEnabled" -> {
+                        try {
+                            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                            result.success(wifiManager.isWifiEnabled)
+                        } catch (e: Exception) {
+                            result.success(null)
+                        }
+                    }
+
                     else -> result.notImplemented()
                 }
             }
@@ -236,5 +253,123 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             mapOf("freeBytes" to null, "totalBytes" to null)
         }
+    }
+
+    // Get device marketing name (e.g., "Galaxy S21" instead of "SM-G991N")
+    private fun getDeviceMarketingName(): String {
+        val model = Build.MODEL.uppercase()
+        val brand = Build.MANUFACTURER.uppercase()
+        
+        // Samsung devices
+        if (brand.contains("SAMSUNG")) {
+            return when {
+                // Galaxy S Series
+                model.contains("SM-G991") -> "Galaxy S21 5G"
+                model.contains("SM-G996") -> "Galaxy S21+"
+                model.contains("SM-G998") -> "Galaxy S21 Ultra"
+                model.contains("SM-G990") -> "Galaxy S21 FE"
+                model.contains("SM-S901") -> "Galaxy S22"
+                model.contains("SM-S906") -> "Galaxy S22+"
+                model.contains("SM-S908") -> "Galaxy S22 Ultra"
+                model.contains("SM-S911") -> "Galaxy S23"
+                model.contains("SM-S916") -> "Galaxy S23+"
+                model.contains("SM-S918") -> "Galaxy S23 Ultra"
+                model.contains("SM-S921") -> "Galaxy S24"
+                model.contains("SM-S926") -> "Galaxy S24+"
+                model.contains("SM-S928") -> "Galaxy S24 Ultra"
+                
+                // Galaxy A Series
+                model.contains("SM-A536") -> "Galaxy A53 5G"
+                model.contains("SM-A546") -> "Galaxy A54 5G"
+                model.contains("SM-A556") -> "Galaxy A55 5G"
+                model.contains("SM-A336") -> "Galaxy A33 5G"
+                model.contains("SM-A346") -> "Galaxy A34 5G"
+                model.contains("SM-A356") -> "Galaxy A35 5G"
+                model.contains("SM-A736") -> "Galaxy A73 5G"
+                model.contains("SM-A146") -> "Galaxy A14"
+                model.contains("SM-A156") -> "Galaxy A15"
+                model.contains("SM-A256") -> "Galaxy A25"
+                model.contains("SM-A056") -> "Galaxy A05"
+                
+                // Galaxy Z Series (Foldable)
+                model.contains("SM-F936") -> "Galaxy Z Fold4"
+                model.contains("SM-F946") -> "Galaxy Z Fold5"
+                model.contains("SM-F956") -> "Galaxy Z Fold6"
+                model.contains("SM-F731") -> "Galaxy Z Flip5"
+                model.contains("SM-F741") -> "Galaxy Z Flip6"
+                
+                // Galaxy Note Series
+                model.contains("SM-N986") -> "Galaxy Note20 Ultra"
+                model.contains("SM-N981") -> "Galaxy Note20"
+                
+                else -> "Samsung ${Build.MODEL}"
+            }
+        }
+        
+        // Xiaomi devices
+        if (brand.contains("XIAOMI")) {
+            return when {
+                model.contains("2201123G") || model.contains("2201123C") -> "Xiaomi 12"
+                model.contains("2206123SC") -> "Xiaomi 12 Pro"
+                model.contains("2211133C") -> "Xiaomi 13"
+                model.contains("2210132C") -> "Xiaomi 13 Pro"
+                model.contains("23013RK75C") -> "Xiaomi 14"
+                model.contains("23116PN5BC") -> "Xiaomi 14 Pro"
+                model.contains("M2012K11AG") -> "Redmi Note 10 Pro"
+                model.contains("21091116AG") -> "Redmi Note 11"
+                model.contains("22101316G") -> "Redmi Note 12"
+                model.contains("23021RAAEG") -> "Redmi Note 13"
+                model.contains("M2101K6G") -> "POCO X3 Pro"
+                model.contains("22101320G") -> "POCO X5 Pro"
+                else -> "Xiaomi ${Build.MODEL}"
+            }
+        }
+        
+        // Oppo devices
+        if (brand.contains("OPPO")) {
+            return when {
+                model.contains("CPH2451") -> "Oppo Find X5 Pro"
+                model.contains("CPH2525") -> "Oppo Find X6 Pro"
+                model.contains("CPH2437") -> "Oppo Reno8 Pro"
+                model.contains("CPH2481") -> "Oppo Reno9 Pro"
+                model.contains("CPH2531") -> "Oppo Reno10 Pro"
+                model.contains("CPH2415") -> "Oppo A77"
+                model.contains("CPH2565") -> "Oppo A78"
+                else -> "Oppo ${Build.MODEL}"
+            }
+        }
+        
+        // Vivo devices
+        if (brand.contains("VIVO")) {
+            return when {
+                model.contains("V2227") -> "Vivo X90 Pro"
+                model.contains("V2250") -> "Vivo X80 Pro"
+                model.contains("V2231") -> "Vivo V27 Pro"
+                model.contains("V2254") -> "Vivo V25 Pro"
+                model.contains("V2207") -> "Vivo Y35"
+                else -> "Vivo ${Build.MODEL}"
+            }
+        }
+        
+        // Apple devices (iOS won't reach here, but just in case)
+        if (brand.contains("APPLE")) {
+            return "iPhone ${Build.MODEL}"
+        }
+        
+        // Google Pixel
+        if (brand.contains("GOOGLE")) {
+            return when {
+                model.contains("PIXEL 8 PRO") -> "Pixel 8 Pro"
+                model.contains("PIXEL 8") -> "Pixel 8"
+                model.contains("PIXEL 7 PRO") -> "Pixel 7 Pro"
+                model.contains("PIXEL 7") -> "Pixel 7"
+                model.contains("PIXEL 6 PRO") -> "Pixel 6 Pro"
+                model.contains("PIXEL 6") -> "Pixel 6"
+                else -> Build.MODEL
+            }
+        }
+        
+        // Default: return brand + model
+        return "${Build.MANUFACTURER} ${Build.MODEL}"
     }
 }

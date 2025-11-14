@@ -74,8 +74,8 @@
     "fail": "passRatio < T.touch.pass_ratio_min || len(deadZones) > 0"
   },
   "screen": {
-    "pass": "hasIssue == false || (userConfirm == true && hasIssue != true)",
-    "fail": "hasIssue == true"
+    "pass": "passed == true || (exists(hasIssue) && hasIssue == false)",
+    "fail": "passed == false || (exists(hasIssue) && hasIssue == true)"
   },
   "camera": {
     "pass": "len(photos) >= 1 && userConfirm == true",

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,14 +10,11 @@ class TouchGridTestPage extends StatefulWidget {
 }
 
 class _TouchGridTestPageState extends State<TouchGridTestPage> {
-  // KÍCH THƯỚC Ô CỐ ĐỊNH
-  static const double kCell = 48.0;
-
   final Set<int> _hit = <int>{};
 
   // Lưu layout hiện tại để dùng ngoài build
   int _rows = 0, _cols = 0, _total = 0;
-  Rect _gridRect = Rect.zero;
+  double _cellSize = 0;
 
   Timer? _idleTimer;
   Timer? _finalizeTimer;
@@ -81,15 +77,11 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
     _startIdleTimer();
   }
 
-  void _markAtLocal(Offset globalLocal) {
+  void _markAtLocal(Offset localPosition) {
     _onUserInteraction();
 
-    // Chỉ nhận nếu chạm trong vùng lưới
-    if (!_gridRect.contains(globalLocal)) return;
-
-    final local = globalLocal - _gridRect.topLeft;
-    final r = (local.dy / kCell).floor().clamp(0, _rows - 1);
-    final c = (local.dx / kCell).floor().clamp(0, _cols - 1);
+    final r = (localPosition.dy / _cellSize).floor().clamp(0, _rows - 1);
+    final c = (localPosition.dx / _cellSize).floor().clamp(0, _cols - 1);
     final i = r * _cols + c;
 
     if (_hit.contains(i)) return;
@@ -108,25 +100,17 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
         final fullW = constraints.maxWidth;
         final fullH = constraints.maxHeight;
 
-        // Tính số cột/hàng dựa trên kích thước ô cố định
-        _cols = math.max(1, (fullW / kCell).floor());
-        _rows = math.max(1, (fullH / kCell).floor());
+        // Tính số cột/hàng để ô vuông vừa phải (khoảng 60-80px)
+        // Ưu tiên 6 cột cho màn hình dọc, tự động tính hàng
+        _cols = 6;
+        _cellSize = fullW / _cols;
+        _rows = (fullH / _cellSize).floor();
         _total = _rows * _cols;
-
-        // Kích thước lưới thật sự (giữ nguyên size ô)
-        final gridW = _cols * kCell;
-        final gridH = _rows * kCell;
-
-        // Căn giữa
-        final gridLeft = (fullW - gridW) / 2;
-        final gridTop = (fullH - gridH) / 2;
-        _gridRect = Rect.fromLTWH(gridLeft, gridTop, gridW, gridH);
 
         return Stack(
           children: [
-            // Lưới kích thước cố định, ô luôn vuông kCell × kCell
-            Positioned.fromRect(
-              rect: _gridRect,
+            // Lưới full màn hình
+            Positioned.fill(
               child: GridView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
@@ -139,19 +123,61 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
                 itemCount: _total,
                 itemBuilder: (_, i) {
                   final on = _hit.contains(i);
-                  return SizedBox.square(
-                    dimension: kCell,
-                    child: Container(
-                      color: on ? Colors.white : Colors.blue.shade900,
-                      foregroundDecoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.blue.shade100.withOpacity(0.5),
-                          width: 0.5,
-                        ),
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: on ? Colors.green.shade400 : Colors.blue.shade900,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        width: 1,
                       ),
                     ),
+                    child:
+                        on
+                            ? const Icon(
+                              Icons.check_circle,
+                              color: Colors.white,
+                              size: 32,
+                            )
+                            : null,
                   );
                 },
+              ),
+            ),
+
+            // Progress indicator
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tiến độ: ${_hit.length}/$_total',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${(_hit.length / _total * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
 
@@ -161,7 +187,7 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
                 child: IgnorePointer(
                   child: Container(
                     alignment: Alignment.center,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
