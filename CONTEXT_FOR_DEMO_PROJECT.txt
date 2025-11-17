@@ -1,0 +1,43 @@
+=== CONTEXT FOR AI ASSISTANT ===
+
+Project: diagnostics_demo (Demo app using phone_diagnostics_sdk)
+Location: D:\diagnostics_demo
+
+STRUCTURE:
+D:\
+├── kdtd_ver2_1\              # SDK source (original project)
+├── phone_diagnostics_sdk\    # Flutter package
+└── diagnostics_demo\         # Current demo app
+
+DEPENDENCIES:
+- phone_diagnostics_sdk (path: ../phone_diagnostics_sdk)
+- get: ^4.6.6
+
+SDK USAGE:
+```dart
+import 'package:phone_diagnostics_sdk/phone_diagnostics_sdk.dart';
+
+// Start diagnostics
+Get.put(AutoDiagnosticsController());
+Get.to(() => const AutoDiagnosticsView());
+```
+
+AVAILABLE SDK COMPONENTS:
+- AutoDiagnosticsController
+- AutoDiagnosticsView
+- DiagnosticResultPage
+- FailedTestsWarningPage
+- PhoneInfoService
+- DiagStep, DeviceProfile, RuleEvaluator models
+- Various widgets
+
+CURRENT STATUS:
+✅ SDK package created
+✅ Demo app created  
+✅ Basic integration done
+⏳ Ready for customization
+
+WHAT I NEED:
+[Your specific requirements here]
+
+=== END CONTEXT ===
