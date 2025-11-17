@@ -1,9 +1,17 @@
 workflows:
-  # Android Build Workflow
-  android-workflow:
-    name: Android Build
-    max_build_duration: 60
+  # Android Only - Tối ưu cho gói Free
+  android-free:
+    name: Android Free Build
+    max_build_duration: 45  # Giới hạn 45 phút để tránh build kéo dài
     instance_type: mac_mini_m1
+    triggering:
+      events:
+        - tag  # Chỉ build khi tạo tag (release)
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+      cancel_previous_builds: true  # Hủy build cũ nếu có build mới
+    
     environment:
       android_signing:
         - keystore_reference
@@ -13,28 +21,20 @@ workflows:
         PACKAGE_NAME: "com.fidobox.kdtd"
         GOOGLE_PLAY_TRACK: internal
       flutter: stable
-      xcode: latest
-      cocoapods: default
+    
+    cache:
+      cache_paths:
+        - $FLUTTER_ROOT/.pub-cache
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+        - $HOME/Library/Caches/CocoaPods
     
     scripts:
-      - name: Set up local.properties
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
-      
       - name: Get Flutter packages
         script: |
-          flutter packages pub get
+          flutter pub get
       
-      - name: Flutter analyze
-        script: |
-          flutter analyze
-      
-      - name: Flutter unit tests
-        script: |
-          flutter test
-        ignore_failure: true
-      
-      - name: Build AAB
+      - name: Build AAB (Release only)
         script: |
           flutter build appbundle --release \
             --build-name=1.0.$BUILD_NUMBER \
@@ -43,7 +43,6 @@ workflows:
     artifacts:
       - build/**/outputs/**/*.aab
       - build/**/outputs/**/mapping.txt
-      - flutter_drive.log
     
     publishing:
       email:
@@ -58,13 +57,22 @@ workflows:
         track: $GOOGLE_PLAY_TRACK
         submit_as_draft: true
 
-  # iOS Build Workflow
-  ios-workflow:
-    name: iOS Build
-    max_build_duration: 60
+  # iOS Only - Tối ưu cho gói Free
+  ios-free:
+    name: iOS Free Build
+    max_build_duration: 45
     instance_type: mac_mini_m1
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+      cancel_previous_builds: true
+    
     integrations:
       app_store_connect: codemagic
+    
     environment:
       ios_signing:
         distribution_type: app_store
@@ -72,45 +80,39 @@ workflows:
       groups:
         - app_store_credentials
       vars:
-        APP_STORE_APPLE_ID: 1234567890
         BUNDLE_ID: "com.fidobox.kdtd"
+        XCODE_WORKSPACE: "Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
       flutter: stable
       xcode: latest
       cocoapods: default
     
+    cache:
+      cache_paths:
+        - $FLUTTER_ROOT/.pub-cache
+        - $HOME/Library/Caches/CocoaPods
+    
     scripts:
-      - name: Set up code signing settings on Xcode project
+      - name: Set up code signing
         script: |
           xcode-project use-profiles
       
       - name: Get Flutter packages
         script: |
-          flutter packages pub get
+          flutter pub get
       
       - name: Install pods
         script: |
           find . -name "Podfile" -execdir pod install \;
       
-      - name: Flutter analyze
-        script: |
-          flutter analyze
-      
-      - name: Flutter unit tests
-        script: |
-          flutter test
-        ignore_failure: true
-      
-      - name: Build ipa for distribution
+      - name: Build IPA
         script: |
           flutter build ipa --release \
             --build-name=1.0.$BUILD_NUMBER \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+            --build-number=$BUILD_NUMBER
     
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
     
     publishing:
       email:
@@ -125,39 +127,42 @@ workflows:
         submit_to_testflight: true
         beta_groups:
           - Internal Testers
-        submit_to_app_store: false
 
-  # Development Build (Both platforms)
-  dev-build:
-    name: Development Build
-    max_build_duration: 60
+  # Quick Test - Chỉ chạy test, không build
+  quick-test:
+    name: Quick Test
+    max_build_duration: 15
     instance_type: mac_mini_m1
+    triggering:
+      events:
+        - pull_request
+      branch_patterns:
+        - pattern: '*'
+          include: true
+      cancel_previous_builds: true
+    
     environment:
       flutter: stable
-      xcode: latest
-      cocoapods: default
+    
+    cache:
+      cache_paths:
+        - $FLUTTER_ROOT/.pub-cache
     
     scripts:
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
+      - name: Get packages
+        script: flutter pub get
       
-      - name: Build Android APK
-        script: |
-          flutter build apk --debug
+      - name: Analyze
+        script: flutter analyze
+        ignore_failure: true
       
-      - name: Build iOS (no signing)
-        script: |
-          flutter build ios --debug --no-codesign
-    
-    artifacts:
-      - build/**/outputs/**/*.apk
-      - build/ios/iphoneos/*.app
+      - name: Run tests
+        script: flutter test
+        ignore_failure: true
     
     publishing:
       email:
         recipients:
           - dev@fidobox.com
         notify:
-          success: true
-          failure: true
+          failure: true  # Chỉ thông báo khi fail
