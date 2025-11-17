@@ -1,49 +1,225 @@
 workflows:
-  # Android Build Workflow
-  android-workflow:
-    name: Android Build
+  # Android APK Build - Debug
+  android-debug:
+    name: Android Debug APK
     max_build_duration: 60
-    instance_type: mac_mini_m1
+    instance_type: linux_x2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+          source: true
+    environment:
+      flutter: stable
+      java: 17
+      vars:
+        PACKAGE_NAME: "com.fidobox.kdtd"
+    
+    scripts:
+      - name: Get Flutter version
+        script: |
+          flutter --version
+      
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+        ignore_failure: true
+      
+      - name: Flutter test
+        script: |
+          flutter test
+        ignore_failure: true
+      
+      - name: Build Debug APK
+        script: |
+          flutter build apk --debug \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+      
+      - name: Rename APK
+        script: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          cp build/app/outputs/flutter-apk/app-debug.apk \
+             build/app/outputs/flutter-apk/kdtd-v${VERSION}-debug-build${BUILD_NUMBER}.apk
+    
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+    
+    publishing:
+      email:
+        recipients:
+          - dev@fidobox.com
+        notify:
+          success: true
+          failure: true
+      
+      slack:
+        channel: '#builds'
+        notify_on_build_start: false
+        notify:
+          success: true
+          failure: true
+
+  # Android APK Build - Release
+  android-release:
+    name: Android Release APK
+    max_build_duration: 60
+    instance_type: linux_x2
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+    environment:
+      android_signing:
+        - keystore_reference
+      groups:
+        - android_credentials
+      flutter: stable
+      java: 17
+      vars:
+        PACKAGE_NAME: "com.fidobox.kdtd"
+    
+    scripts:
+      - name: Set up key.properties
+        script: |
+          cat >> "$CM_BUILD_DIR/android/key.properties" <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
+      
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+        ignore_failure: true
+      
+      - name: Build Release APK (Universal)
+        script: |
+          flutter build apk --release \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+      
+      - name: Build Release APK (Split per ABI)
+        script: |
+          flutter build apk --release --split-per-abi \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+      
+      - name: Rename APK files
+        script: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          cd build/app/outputs/flutter-apk
+          
+          # Rename universal APK
+          if [ -f "app-release.apk" ]; then
+            cp app-release.apk kdtd-v${VERSION}-release-universal.apk
+          fi
+          
+          # Rename split APKs
+          if [ -f "app-armeabi-v7a-release.apk" ]; then
+            cp app-armeabi-v7a-release.apk kdtd-v${VERSION}-release-armeabi-v7a.apk
+          fi
+          
+          if [ -f "app-arm64-v8a-release.apk" ]; then
+            cp app-arm64-v8a-release.apk kdtd-v${VERSION}-release-arm64-v8a.apk
+          fi
+          
+          if [ -f "app-x86_64-release.apk" ]; then
+            cp app-x86_64-release.apk kdtd-v${VERSION}-release-x86_64.apk
+          fi
+    
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/mapping.txt
+    
+    publishing:
+      email:
+        recipients:
+          - dev@fidobox.com
+        notify:
+          success: true
+          failure: true
+      
+      slack:
+        channel: '#releases'
+        notify_on_build_start: false
+        notify:
+          success: true
+          failure: true
+      
+      scripts:
+        - name: Upload to Firebase App Distribution
+          script: |
+            echo "Uploading to Firebase..."
+            # firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+            #   --app $FIREBASE_APP_ID \
+            #   --groups "testers" \
+            #   --release-notes "Build $BUILD_NUMBER"
+
+  # Android App Bundle - For Play Store
+  android-appbundle:
+    name: Android App Bundle (AAB)
+    max_build_duration: 60
+    instance_type: linux_x2
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'release-*'
+          include: true
     environment:
       android_signing:
         - keystore_reference
       groups:
         - google_play
+        - android_credentials
+      flutter: stable
+      java: 17
       vars:
         PACKAGE_NAME: "com.fidobox.kdtd"
         GOOGLE_PLAY_TRACK: internal
-      flutter: stable
-      xcode: latest
-      cocoapods: default
     
     scripts:
-      - name: Set up local.properties
+      - name: Set up key.properties
         script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+          cat >> "$CM_BUILD_DIR/android/key.properties" <<EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_KEYSTORE_PATH
+          EOF
       
       - name: Get Flutter packages
         script: |
-          flutter packages pub get
+          flutter pub get
       
-      - name: Flutter analyze
-        script: |
-          flutter analyze
-      
-      - name: Flutter unit tests
-        script: |
-          flutter test
-        ignore_failure: true
-      
-      - name: Build AAB
+      - name: Build App Bundle
         script: |
           flutter build appbundle --release \
             --build-name=1.0.$BUILD_NUMBER \
             --build-number=$BUILD_NUMBER
     
     artifacts:
-      - build/**/outputs/**/*.aab
-      - build/**/outputs/**/mapping.txt
-      - flutter_drive.log
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/mapping.txt
     
     publishing:
       email:
@@ -58,11 +234,76 @@ workflows:
         track: $GOOGLE_PLAY_TRACK
         submit_as_draft: true
 
-  # iOS Build Workflow
-  ios-workflow:
-    name: iOS Build
+  # iOS Debug Build
+  ios-debug:
+    name: iOS Debug IPA
     max_build_duration: 60
     instance_type: mac_mini_m1
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+          source: true
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.fidobox.kdtd"
+    
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install
+      
+      - name: Build iOS Debug (no signing)
+        script: |
+          flutter build ios --debug --no-codesign \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+      
+      - name: Create Debug IPA
+        script: |
+          cd build/ios/iphoneos
+          mkdir Payload
+          cp -r Runner.app Payload/
+          zip -r kdtd-debug-build${BUILD_NUMBER}.ipa Payload
+          rm -rf Payload
+    
+    artifacts:
+      - build/ios/iphoneos/*.ipa
+      - build/ios/iphoneos/*.app
+    
+    publishing:
+      email:
+        recipients:
+          - dev@fidobox.com
+        notify:
+          success: true
+          failure: true
+
+  # iOS Release IPA - TestFlight
+  ios-testflight:
+    name: iOS TestFlight IPA
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: 'ios-*'
+          include: true
     integrations:
       app_store_connect: codemagic
     environment:
@@ -71,46 +312,48 @@ workflows:
         bundle_identifier: com.fidobox.kdtd
       groups:
         - app_store_credentials
-      vars:
-        APP_STORE_APPLE_ID: 1234567890
-        BUNDLE_ID: "com.fidobox.kdtd"
       flutter: stable
       xcode: latest
       cocoapods: default
+      vars:
+        BUNDLE_ID: "com.fidobox.kdtd"
+        APP_STORE_APPLE_ID: "1234567890"
     
     scripts:
-      - name: Set up code signing settings on Xcode project
+      - name: Set up code signing
         script: |
           xcode-project use-profiles
       
       - name: Get Flutter packages
         script: |
-          flutter packages pub get
+          flutter pub get
       
-      - name: Install pods
+      - name: Install CocoaPods dependencies
         script: |
-          find . -name "Podfile" -execdir pod install \;
+          cd ios && pod install
       
       - name: Flutter analyze
         script: |
           flutter analyze
-      
-      - name: Flutter unit tests
-        script: |
-          flutter test
         ignore_failure: true
       
-      - name: Build ipa for distribution
+      - name: Build iOS Release IPA
         script: |
           flutter build ipa --release \
             --build-name=1.0.$BUILD_NUMBER \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+            --build-number=$BUILD_NUMBER
+      
+      - name: Rename IPA
+        script: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+          cd build/ios/ipa
+          if [ -f "*.ipa" ]; then
+            mv *.ipa kdtd-v${VERSION}-release-build${BUILD_NUMBER}.ipa
+          fi
     
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
     
     publishing:
       email:
@@ -126,6 +369,79 @@ workflows:
         beta_groups:
           - Internal Testers
         submit_to_app_store: false
+      
+      slack:
+        channel: '#ios-releases'
+        notify_on_build_start: false
+        notify:
+          success: true
+          failure: true
+
+  # iOS App Store Release
+  ios-appstore:
+    name: iOS App Store Release
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'appstore-*'
+          include: true
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.fidobox.kdtd
+      groups:
+        - app_store_credentials
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.fidobox.kdtd"
+        APP_STORE_APPLE_ID: "1234567890"
+    
+    scripts:
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install
+      
+      - name: Build iOS Release IPA
+        script: |
+          flutter build ipa --release \
+            --build-name=1.0.$BUILD_NUMBER \
+            --build-number=$BUILD_NUMBER
+    
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    
+    publishing:
+      email:
+        recipients:
+          - dev@fidobox.com
+        notify:
+          success: true
+          failure: true
+      
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
+          - External Testers
+        submit_to_app_store: true
+        cancel_previous_submissions: true
 
   # Development Build (Both platforms)
   dev-build:

@@ -1,0 +1,151 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        cache: 'gradle'
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.29.3'
+        channel: 'stable'
+        cache: true
+    
+    - name: Get Flutter dependencies
+      run: flutter pub get
+    
+    - name: Run Flutter analyze
+      run: flutter analyze
+      continue-on-error: true
+    
+    - name: Run Flutter tests
+      run: flutter test
+      continue-on-error: true
+    
+    - name: Build Debug APK
+      if: github.event.inputs.build_type == 'debug' || github.event_name != 'workflow_dispatch'
+      run: flutter build apk --debug
+    
+    - name: Build Release APK
+      if: github.event.inputs.build_type == 'release'
+      run: flutter build apk --release --split-per-abi
+    
+    - name: Get version from pubspec
+      id: version
+      run: |
+        VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        BUILD=$(grep '^version:' pubspec.yaml | cut -d '+' -f 2)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "build=$BUILD" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION+$BUILD"
+    
+    - name: Rename APK files
+      run: |
+        mkdir -p artifacts
+        if [ -f "build/app/outputs/flutter-apk/app-debug.apk" ]; then
+          cp build/app/outputs/flutter-apk/app-debug.apk artifacts/kdtd-v${{ steps.version.outputs.version }}-debug.apk
+        fi
+        if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+          cp build/app/outputs/flutter-apk/app-release.apk artifacts/kdtd-v${{ steps.version.outputs.version }}-release.apk
+        fi
+        if [ -d "build/app/outputs/flutter-apk" ]; then
+          find build/app/outputs/flutter-apk -name "*.apk" -exec cp {} artifacts/ \;
+        fi
+    
+    - name: Upload APK artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: apk-builds-${{ github.run_number }}
+        path: artifacts/*.apk
+        retention-days: 30
+    
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}-build${{ steps.version.outputs.build }}
+        name: Release v${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: false
+        files: artifacts/*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Send notification
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Build successful!"
+        else
+          echo "❌ Build failed!"
+        fi
+
+  build-appbundle:
+    name: Build Android App Bundle (AAB)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        cache: 'gradle'
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.29.3'
+        channel: 'stable'
+        cache: true
+    
+    - name: Get Flutter dependencies
+      run: flutter pub get
+    
+    - name: Build App Bundle
+      run: flutter build appbundle --release
+    
+    - name: Get version
+      id: version
+      run: |
+        VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Upload AAB artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aab-build-${{ github.run_number }}
+        path: build/app/outputs/bundle/release/app-release.aab
+        retention-days: 30
