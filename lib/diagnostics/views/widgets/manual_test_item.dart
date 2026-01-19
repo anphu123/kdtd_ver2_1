@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+
 import '../../model/diag_step.dart';
 import 'status_info.dart';
 
@@ -18,7 +19,7 @@ class ManualTestItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.white, 
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.greyE5E5E5.withValues(alpha: 0.2)),
       ),

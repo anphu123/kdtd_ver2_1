@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,8 @@ import '../views/failed_tests_warning_page.dart';
 import '../views/auto_screen_burnin_test_page.dart';
 import '../views/keys_test_page.dart';
 import '../services/phone_info_service.dart';
+import '../services/permission_precheck_service.dart';
+import '../utils/device_info_helper.dart';
 
 const _channel = MethodChannel('com.fidobox/diagnostics');
 
@@ -96,8 +99,52 @@ class AutoDiagnosticsController extends GetxController {
     super.onInit();
     steps.assignAll(_buildSteps());
     _prepareCameras();
-    _collectInfoEarly(); // thu thập thông tin sớm để hiển thị
-    _initializeEvaluator(); // Initialize rule evaluator
+    _startInitialization();
+  }
+
+  /// Khởi tạo tuần tự an toàn
+  Future<void> _startInitialization() async {
+    print('🚀 Starting initialization sequence...');
+    // Bước 1: Thu thập thông tin thiết bị (quan trọng nhất)
+    await _collectDeviceInfoSafe();
+
+    // Bước 2: Khởi tạo bộ đánh giá (dựa trên thông tin đã thu thập)
+    await _initializeEvaluator();
+  }
+
+  /// Thu thập thông tin thiết bị với error handling chi tiết
+  Future<void> _collectDeviceInfoSafe() async {
+    try {
+      print('   ├─ Collecting device info...');
+
+      // Lấy thông tin OS/Model trước (quan trọng để load profile)
+      final osInfo = await _getOsAndModel();
+      info['osmodel'] = osInfo;
+      print(
+        '   ├─ Identified: ${osInfo['brand']} - ${osInfo['model']} (${osInfo['platform']})',
+      );
+
+      // Lấy các thông tin khác song song
+      try {
+        final results = await Future.wait<Map<String, dynamic>>([
+          _getBatteryInfo(),
+          _getWifiInfo(),
+          _getRamInfo(),
+          _getRomInfo(),
+        ]);
+
+        info['battery'] = results[0];
+        info['wifi'] = results[1];
+        info['ram'] = results[2];
+        info['rom'] = results[3];
+      } catch (e) {
+        print('   ⚠️ Error collecting secondary info: $e');
+        // Vẫn tiếp tục dù lỗi info phụ
+      }
+    } catch (e, stack) {
+      print('   ❌ CRITICAL Error collecting device info: $e');
+      debugPrintStack(stackTrace: stack);
+    }
   }
 
   @override
@@ -109,7 +156,8 @@ class AutoDiagnosticsController extends GetxController {
   Future<void> _initializeEvaluator() async {
     try {
       print('🔧 Initializing Rule Evaluator...');
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Info already collected by _collectDeviceInfoSafe
+
       final osInfo = info['osmodel'] as Map<String, dynamic>? ?? {};
       final deviceBrand = osInfo['brand'] as String? ?? '';
       final deviceModel = osInfo['model'] as String? ?? '';
@@ -188,151 +236,207 @@ class AutoDiagnosticsController extends GetxController {
 
   List<DiagStep> _buildSteps() {
     return [
-      // Ưu tiên kiểm tra OS/Model trước tiên để biết nền tảng & hãng
+      // ========== PHASE 1: CRITICAL INFO (chạy song song) ==========
       DiagStep(
         code: 'osmodel',
         title: 'OS/Model',
         kind: DiagKind.auto,
+        phase: DiagPhase.critical,
+        timeout: const Duration(seconds: 5),
         run: _snapOsModel,
       ),
-
-      // Info/auto checks
       DiagStep(
         code: 'battery',
         title: 'Pin & Sạc',
         kind: DiagKind.auto,
+        phase: DiagPhase.critical,
+        timeout: const Duration(seconds: 3),
         run: _snapBattery,
       ),
-      DiagStep(
-        code: 'mobile',
-        title: 'Mạng di động (radio, dBm)',
-        kind: DiagKind.auto,
-        run: _snapMobile,
-      ),
-      DiagStep(
-        code: 'wifi',
-        title: 'Wi-Fi (SSID)',
-        kind: DiagKind.auto,
-        run: _snapWifi,
-      ),
-
-      // NEW: RAM/ROM
       DiagStep(
         code: 'ram',
         title: 'RAM (free/total)',
         kind: DiagKind.auto,
+        phase: DiagPhase.critical,
+        timeout: const Duration(seconds: 3),
         run: _snapRam,
       ),
       DiagStep(
         code: 'rom',
         title: 'ROM (free/total)',
         kind: DiagKind.auto,
+        phase: DiagPhase.critical,
+        timeout: const Duration(seconds: 3),
         run: _snapRom,
       ),
 
+      // ========== PHASE 2: CONNECTIVITY (chạy song song) ==========
+      DiagStep(
+        code: 'wifi',
+        title: 'Wi-Fi (SSID)',
+        kind: DiagKind.auto,
+        phase: DiagPhase.connectivity,
+        timeout: const Duration(seconds: 5),
+        run: _snapWifi,
+      ),
+      DiagStep(
+        code: 'mobile',
+        title: 'Mạng di động (radio, dBm)',
+        kind: DiagKind.auto,
+        phase: DiagPhase.connectivity,
+        timeout: const Duration(seconds: 5),
+        run: _snapMobile,
+      ),
       DiagStep(
         code: 'bt',
         title: 'Bluetooth (scan)',
         kind: DiagKind.auto,
+        phase: DiagPhase.connectivity,
+        timeout: const Duration(seconds: 5), // Giảm từ mặc định
         run: _checkBluetooth,
       ),
-      DiagStep(code: 'nfc', title: 'NFC', kind: DiagKind.auto, run: _snapNfc),
       DiagStep(
-        code: 'sim',
-        title: 'SIM (slot/trạng thái)',
+        code: 'nfc',
+        title: 'NFC',
         kind: DiagKind.auto,
-        run: _snapSim,
+        phase: DiagPhase.connectivity,
+        timeout: const Duration(seconds: 3),
+        run: _snapNfc,
       ),
+
+      // ========== PHASE 3: SENSORS (chạy song song với timeout) ==========
       DiagStep(
         code: 'sensors',
         title: 'Cảm biến (accel/gyro)',
         kind: DiagKind.auto,
+        phase: DiagPhase.sensors,
+        timeout: const Duration(seconds: 3),
         run: _snapSensors,
       ),
       DiagStep(
         code: 'gps',
         title: 'GPS (accuracy)',
         kind: DiagKind.auto,
+        phase: DiagPhase.sensors,
+        timeout: const Duration(seconds: 10), // GPS cần thời gian
         run: _snapGps,
       ),
+      DiagStep(
+        code: 'bio',
+        title: 'Sinh trắc (khả dụng)',
+        kind: DiagKind.auto,
+        phase: DiagPhase.sensors,
+        timeout: const Duration(seconds: 3),
+        run: _snapBiometrics,
+      ),
+
+      // ========== PHASE 4: HARDWARE AUTO (chạy song song) ==========
       DiagStep(
         code: 'charge',
         title: 'Nguồn sạc (USB/AC/Wireless)',
         kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 3),
         run: _snapCharging,
+      ),
+      DiagStep(
+        code: 'sim',
+        title: 'SIM (slot/trạng thái)',
+        kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 3),
+        run: _snapSim,
       ),
       DiagStep(
         code: 'wired',
         title: 'Tai nghe có dây',
         kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 2),
         run: _snapWiredHeadset,
       ),
       DiagStep(
         code: 'lock',
         title: 'Màn hình khoá',
         kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 2),
         run: _snapScreenLock,
       ),
       DiagStep(
         code: 'spen',
         title: 'S-Pen (Samsung)',
         kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 2),
         run: _snapSPen,
       ),
-      DiagStep(
-        code: 'bio',
-        title: 'Sinh trắc (khả dụng)',
-        kind: DiagKind.auto,
-        run: _snapBiometrics,
-      ),
-
-      // Interactive/manual
       DiagStep(
         code: 'vibrate',
         title: 'Rung',
         kind: DiagKind.auto,
+        phase: DiagPhase.hardware,
+        timeout: const Duration(seconds: 10), // User interaction
         run: _testVibration,
       ),
+
+      // ========== PHASE 5: SCREEN (tự động) ==========
+      DiagStep(
+        code: 'screen',
+        title: 'Màn hình (Tự động phát hiện lỗi)',
+        kind: DiagKind.auto,
+        phase: DiagPhase.screen,
+        timeout: const Duration(seconds: 30), // Screen test cần thời gian
+        run: _testScreenAuto,
+      ),
+
+      // ========== PHASE 6: MANUAL TESTS (tuần tự) ==========
       DiagStep(
         code: 'keys',
         title: 'Phím vật lý (xác nhận)',
         kind: DiagKind.manual,
-        interact: _openKeysTest, // replaced generic confirm
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 60),
+        interact: _openKeysTest,
       ),
       DiagStep(
         code: 'touch',
         title: 'Cảm ứng full màn',
         kind: DiagKind.manual,
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 60),
         interact: _openTouchGrid,
-      ),
-      DiagStep(
-        code: 'screen',
-        title: 'Màn hình (Tự động phát hiện lỗi)',
-        kind: DiagKind.auto,
-        run: _testScreenAuto,
       ),
       DiagStep(
         code: 'camera',
         title: 'Camera trước/sau',
         kind: DiagKind.manual,
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 120), // Camera test cần thời gian
         interact: _openCameraQuick,
       ),
       DiagStep(
         code: 'speaker',
         title: 'Loa ngoài (beep)',
         kind: DiagKind.manual,
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 60),
         interact: _openSpeakerTest,
       ),
       DiagStep(
         code: 'mic',
         title: 'Micro (amplitude)',
         kind: DiagKind.manual,
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 60),
         interact: _openMicTest,
       ),
       DiagStep(
         code: 'ear',
         title: 'Loa trong (proximity)',
         kind: DiagKind.manual,
+        phase: DiagPhase.manual,
+        timeout: const Duration(seconds: 60),
         interact: _openEarpieceTest,
       ),
     ];
@@ -374,167 +478,286 @@ class AutoDiagnosticsController extends GetxController {
     }
   }
 
-  // ==== header info preload (gọi song song) ====
-  Future<void> _collectInfoEarly() async {
+  // ================== RUN FLOW (OPTIMIZED) ==================
+
+  /// Thời gian bắt đầu test (để tính tổng thời gian)
+  DateTime? _startTime;
+
+  /// Current phase đang chạy (để hiển thị trên UI)
+  final currentPhase = DiagPhase.critical.obs;
+
+  /// Số step đã hoàn thành trong phase hiện tại
+  final phaseProgress = 0.obs;
+
+  /// Tổng số step trong phase hiện tại
+  final phaseTotal = 0.obs;
+
+  /// Chạy một step với timeout
+  Future<bool> _runStepWithTimeout(DiagStep step) async {
+    final stopwatch = Stopwatch()..start();
+
     try {
-      final results = await Future.wait<Map<String, dynamic>>([
-        _getBatteryInfo(),
-        _getOsAndModel(),
-        _getWifiInfo(),
-        _getRamInfo(), // NEW
-        _getRomInfo(), // NEW
-      ]);
-      info.addAll({
-        'battery': results[0],
-        'osmodel': results[1],
-        'wifi': results[2],
-        'ram': results[3], // NEW
-        'rom': results[4], // NEW
-      });
-    } catch (_) {
-      // bỏ qua nếu bất kỳ cái nào lỗi
+      bool result;
+
+      if (step.kind == DiagKind.auto && step.run != null) {
+        result = await step.run!().timeout(
+          step.timeout,
+          onTimeout: () {
+            step.note = 'Timeout sau ${step.timeout.inSeconds}s';
+            return false;
+          },
+        );
+      } else if (step.kind == DiagKind.manual && step.interact != null) {
+        // Manual tests không áp dụng timeout cứng
+        result = await step.interact!();
+      } else {
+        step.status = DiagStatus.skipped;
+        step.note = 'Không có hàm thực thi';
+        return false;
+      }
+
+      stopwatch.stop();
+      step.executionTime = stopwatch.elapsed;
+
+      return result;
+    } catch (e) {
+      stopwatch.stop();
+      step.executionTime = stopwatch.elapsed;
+      step.note = 'Lỗi: ${e.toString()}';
+      return false;
     }
   }
 
-  // ================== RUN FLOW ==================
+  /// Evaluate và cập nhật status cho step
+  void _evaluateStep(DiagStep step, bool runSuccess) {
+    if (_evaluator != null && info[step.code] != null) {
+      final payload =
+          info[step.code] is Map
+              ? (info[step.code] as Map).cast<String, dynamic>()
+              : {'value': info[step.code]};
+
+      final evalResult = _evaluator!.evaluate(step.code, payload);
+      final reason = _evaluator!.getReason(step.code, payload, evalResult);
+
+      switch (evalResult) {
+        case EvalResult.pass:
+          step.status = DiagStatus.passed;
+          step.note = reason;
+          passedCount.value++;
+          break;
+        case EvalResult.fail:
+          step.status = DiagStatus.failed;
+          step.note = reason;
+          failedCount.value++;
+          break;
+        case EvalResult.skip:
+          step.status = DiagStatus.skipped;
+          step.note = reason;
+          skippedCount.value++;
+          break;
+      }
+    } else {
+      // Fallback logic
+      if (runSuccess) {
+        step.status = DiagStatus.passed;
+        passedCount.value++;
+      } else if (step.note?.contains('Timeout') == true) {
+        step.status = DiagStatus.skipped;
+        skippedCount.value++;
+      } else {
+        step.status = DiagStatus.failed;
+        failedCount.value++;
+      }
+    }
+  }
+
+  /// Chạy một phase (nhóm các step song song)
+  Future<void> _runPhase(DiagPhase phase) async {
+    final phaseSteps = steps.where((s) => s.phase == phase).toList();
+    if (phaseSteps.isEmpty) return;
+
+    currentPhase.value = phase;
+    phaseProgress.value = 0;
+    phaseTotal.value = phaseSteps.length;
+
+    final phaseName = _getPhaseName(phase);
+    print('\n--- PHASE: $phaseName (${phaseSteps.length} tests) ---');
+
+    // Đánh dấu tất cả step trong phase là running
+    for (final step in phaseSteps) {
+      step.status = DiagStatus.running;
+    }
+    steps.refresh();
+
+    if (phase == DiagPhase.manual) {
+      // Manual tests chạy tuần tự
+      for (final step in phaseSteps) {
+        print('  [${step.code}] ${step.title}');
+        final result = await _runStepWithTimeout(step);
+        _evaluateStep(step, result);
+        phaseProgress.value++;
+        steps.refresh();
+
+        final statusIcon =
+            step.status == DiagStatus.passed
+                ? 'PASS'
+                : step.status == DiagStatus.failed
+                ? 'FAIL'
+                : 'SKIP';
+        print(
+          '     -> $statusIcon (${step.executionTime?.inMilliseconds ?? 0}ms)',
+        );
+      }
+    } else {
+      // Auto tests chạy song song
+      final futures = phaseSteps.map((step) async {
+        print('  [${step.code}] ${step.title}');
+        final result = await _runStepWithTimeout(step);
+        _evaluateStep(step, result);
+        phaseProgress.value++;
+        steps.refresh();
+
+        final statusIcon =
+            step.status == DiagStatus.passed
+                ? 'PASS'
+                : step.status == DiagStatus.failed
+                ? 'FAIL'
+                : 'SKIP';
+        print(
+          '     -> $statusIcon (${step.executionTime?.inMilliseconds ?? 0}ms)',
+        );
+
+        return result;
+      });
+
+      await Future.wait(futures);
+    }
+
+    // Đếm kết quả phase
+    final passed =
+        phaseSteps.where((s) => s.status == DiagStatus.passed).length;
+    final failed =
+        phaseSteps.where((s) => s.status == DiagStatus.failed).length;
+    final skipped =
+        phaseSteps.where((s) => s.status == DiagStatus.skipped).length;
+    print('--- $phaseName DONE: P:$passed F:$failed S:$skipped ---\n');
+  }
+
+  /// Lấy tên hiển thị cho phase
+  String _getPhaseName(DiagPhase phase) {
+    switch (phase) {
+      case DiagPhase.critical:
+        return 'CRITICAL INFO';
+      case DiagPhase.connectivity:
+        return 'CONNECTIVITY';
+      case DiagPhase.sensors:
+        return 'SENSORS';
+      case DiagPhase.hardware:
+        return 'HARDWARE';
+      case DiagPhase.screen:
+        return 'SCREEN';
+      case DiagPhase.manual:
+        return 'MANUAL TESTS';
+    }
+  }
+
+  /// Bắt đầu kiểm định với việc kiểm tra quyền trước
+  /// Đây là method nên được gọi từ UI thay vì start()
+  Future<void> startWithPermissionCheck() async {
+    if (isRunning.value) return;
+
+    // Yêu cầu quyền với dialog giải thích
+    final permissionsGranted =
+        await PermissionPrecheckService.requestPermissionsWithExplanation();
+
+    if (!permissionsGranted) {
+      // User từ chối quyền bắt buộc
+      print('[DIAG] Người dùng từ chối cấp quyền bắt buộc');
+      return;
+    }
+
+    // Tất cả quyền bắt buộc đã được cấp, bắt đầu test
+    await start();
+  }
+
+  /// Main start function - OPTIMIZED với parallel execution
+  /// Lưu ý: Nên gọi startWithPermissionCheck() thay vì start() trực tiếp
   Future<void> start() async {
     if (isRunning.value) return;
+
+    // Reset state
     isRunning.value = true;
     passedCount.value = 0;
     failedCount.value = 0;
     skippedCount.value = 0;
-    print('\n╔═══════════════════════════════════════════════���════════════╗');
-    print('║       BẮT ĐẦU QUÁ TRÌNH KIỂM ĐỊNH TỰ ĐỘNG                 ║');
-    print('╚═══════════════════════════════���═══════════════════════���════╝');
-    print('⏰ Thời gian: ${DateTime.now()}\n');
+    _startTime = DateTime.now();
+
+    // Reset all steps
+    for (final step in steps) {
+      step.reset();
+    }
+    steps.refresh();
+
+    print('\n========== BAT DAU KIEM DINH (PARALLEL) ==========');
+    print('Thoi gian: ${DateTime.now()}\n');
+
+    // Initialize evaluator nếu chưa có
     if (_evaluator == null) {
-      print('🔧 Khởi tạo Rule Evaluator...');
+      print('Khoi tao Rule Evaluator...');
       await _initializeEvaluator();
     }
+
     if (_evaluator != null) {
-      print('✅ Rule Evaluator đã sẵn sàng');
-      print('   ├─ Device Profile: ${_profile?.name ?? "default"}');
-      print('   ├─ Platform: $platform');
-      print('   └─ Brand: $brand\n');
-    } else {
-      print('⚠️  Rule Evaluator không khả dụng - sử dụng fallback logic\n');
+      print('Rule Evaluator: ${_profile?.name ?? "default"}');
+      print('Platform: $platform | Brand: $brand\n');
     }
-    print('🔄 Cập nhật môi trường...');
+
+    // Update environment
     await _updateEnvironment();
-    print(
-      '   ├─ Location Service: ${_environment.locationServiceOn ? "ON" : "OFF"}',
-    );
-    print('   ├─ Granted Perms: ${_environment.grantedPerms.length}');
-    print('   └─ Denied Perms: ${_environment.deniedPerms.length}\n');
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━\n');
-    for (final s in steps) {
-      s.status = DiagStatus.running;
-      steps.refresh();
-      print('🔍 Test: ${s.code} - ${s.title}');
-      print('   ├─ Type: ${s.kind == DiagKind.auto ? "Auto" : "Manual"}');
-      bool runSuccess = false;
-      try {
-        if (s.kind == DiagKind.auto && s.run != null) {
-          print('   ├─ Đang chạy test tự động...');
-          runSuccess = await s.run!();
-          print('   ├─ Kết quả thực thi: ${runSuccess ? "SUCCESS" : "FAILED"}');
-        } else if (s.kind == DiagKind.manual && s.interact != null) {
-          print('   ├─ Đang chạy test thủ công...');
-          runSuccess = await s.interact!();
-          print(
-            '   ├─ Kết quả tương tác: ${runSuccess ? "SUCCESS" : "FAILED"}',
-          );
-        } else {
-          print('   ├─ ⚠️  Không có hàm thực thi');
-          s.status = DiagStatus.skipped;
-          s.note = 'Không có hàm thực thi';
-          skippedCount.value++;
-          steps.refresh();
-          print('   └─ Status: SKIPPED\n');
-          continue;
-        }
-      } catch (e) {
-        print('   ├─ ❌ Lỗi: $e');
-        s.note = 'Lỗi: ${e.toString()}';
-        s.status = DiagStatus.failed;
-        failedCount.value++;
-        steps.refresh();
-        print('   └─ Status: FAILED\n');
-        continue;
-      }
-      if (_evaluator != null && info[s.code] != null) {
-        final payload =
-            info[s.code] is Map
-                ? (info[s.code] as Map).cast<String, dynamic>()
-                : {'value': info[s.code]};
-        print('   ├─ Dữ liệu thu thập: $payload');
-        final evalResult = _evaluator!.evaluate(s.code, payload);
-        final reason = _evaluator!.getReason(s.code, payload, evalResult);
-        print(
-          '   ├─ Rule Evaluation: ${evalResult.toString().split('.').last.toUpperCase()}',
-        );
-        print('   ├─ Lý do: $reason');
-        switch (evalResult) {
-          case EvalResult.pass:
-            s.status = DiagStatus.passed;
-            s.note = reason;
-            passedCount.value++;
-            print('   └─ ✅ Status: PASSED\n');
-            break;
-          case EvalResult.fail:
-            s.status = DiagStatus.failed;
-            s.note = reason;
-            failedCount.value++;
-            print('   └─ ❌ Status: FAILED\n');
-            break;
-          case EvalResult.skip:
-            s.status = DiagStatus.skipped;
-            s.note = reason;
-            skippedCount.value++;
-            print('   └─ ⊝ Status: SKIPPED\n');
-            break;
-        }
-      } else {
-        print('   ├─ Sử dụng fallback logic (không có evaluator hoặc data)');
-        if (runSuccess) {
-          s.status = DiagStatus.passed;
-          passedCount.value++;
-          print('   └─ ✅ Status: PASSED (fallback)\n');
-        } else {
-          s.status = DiagStatus.failed;
-          failedCount.value++;
-          print('   └─ ❌ Status: FAILED (fallback)\n');
-        }
-      }
-      steps.refresh();
-    }
+
+    // Chạy từng phase theo thứ tự
+    // Phase 1-4: Auto tests (song song trong mỗi phase)
+    await _runPhase(DiagPhase.critical);
+    await _runPhase(DiagPhase.connectivity);
+    await _runPhase(DiagPhase.sensors);
+    await _runPhase(DiagPhase.hardware);
+    await _runPhase(DiagPhase.screen);
+
+    // Phase 5: Manual tests (tuần tự)
+    await _runPhase(DiagPhase.manual);
+
+    // Kết thúc
     isRunning.value = false;
-    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    final totalDuration = DateTime.now().difference(_startTime!);
+
+    // Tính điểm
     final total = steps.length;
     final score = (passedCount.value * 100 / total).round();
     final grade =
         (score >= 90)
-            ? 'Loại 1'
+            ? 'Loai 1 (Xuat sac)'
             : (score >= 75)
-            ? 'Loại 2'
+            ? 'Loai 2 (Tot)'
             : (score >= 60)
-            ? 'Loại 3'
+            ? 'Loai 3 (Kha)'
             : (score >= 40)
-            ? 'Loại 4'
-            : 'Loại 5';
-    print('📊 KẾT QUẢ CUỐI CÙNG:');
-    print('   ├─ Tổng số test: $total');
-    print('   ├─ ✅ Passed: ${passedCount.value}');
-    print('   ├─ ❌ Failed: ${failedCount.value}');
-    print('   ├─ ⊝ Skipped: ${skippedCount.value}');
-    print('   ├─ 📈 Điểm số: $score/100');
-    print('   └─ 🏆 Xếp loại: $grade\n');
-    printTestResults();
+            ? 'Loai 4 (Trung binh)'
+            : 'Loai 5 (Can cai thien)';
 
-    // Navigate to result page or warning page
+    // In kết quả
+    print('\n========== KET QUA KIEM DINH ==========');
+    print('Tong so test:  $total');
+    print('Passed:        ${passedCount.value}');
+    print('Failed:        ${failedCount.value}');
+    print('Skipped:       ${skippedCount.value}');
+    print('Diem so:       $score/100');
+    print('Xep loai:      $grade');
+    print('Thoi gian:     ${totalDuration.inSeconds}s');
+    print('==========================================\n');
+
+    // Navigate to result page
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.context != null) {
-        // Nếu điểm < 70 và có test failed → hiển thị warning
         if (score < 70 && failedCount.value > 0) {
           final failedSteps =
               steps.where((s) => s.status == DiagStatus.failed).toList();
@@ -543,7 +766,6 @@ class AutoDiagnosticsController extends GetxController {
                 FailedTestsWarningPage(failedSteps: failedSteps, score: score),
           );
         } else {
-          // Điểm OK → hiển thị kết quả bình thường
           Get.to(() => const DiagnosticResultPage());
         }
       }
@@ -1039,41 +1261,51 @@ class AutoDiagnosticsController extends GetxController {
 
   Future<Map<String, dynamic>> _getOsAndModel() async {
     try {
-      final a = await _deviceInfo.androidInfo;
-      final vendor = a.manufacturer.toLowerCase();
-      final origin = _getOriginCountry(a.brand, a.manufacturer);
+      if (Platform.isAndroid) {
+        final a = await _deviceInfo.androidInfo;
+        final vendor = a.manufacturer.toLowerCase();
+        final origin = _getOriginCountry(a.brand, a.manufacturer);
 
-      // Get marketing name using mapper (e.g., "Galaxy S21" instead of "SM-G991N")
-      String marketingName = DeviceNameMapper.getMarketingName(
-        a.model,
-        a.brand,
-      );
+        // Get marketing name using mapper
+        String marketingName = DeviceNameMapper.getMarketingName(
+          a.model,
+          a.brand,
+        );
 
-      // Try to get marketing name from API (async, will update later)
-      _fetchMarketingNameFromAPI(a.model, a.brand);
+        // Try to get marketing name from API (async)
+        _fetchMarketingNameFromAPI(a.model, a.brand);
 
-      return {
-        'platform': 'android',
-        'sdk': a.version.sdkInt,
-        'release': a.version.release,
-        'model': a.model,
-        'marketingName': marketingName,
-        'brand': a.brand,
-        'manufacturer': a.manufacturer,
-        'vendor': vendor,
-        'origin': origin,
-        'isSamsung': vendor == 'samsung',
-        'isApple': false,
-      };
-    } catch (_) {
-      try {
+        return {
+          'platform': 'android',
+          'sdk': a.version.sdkInt,
+          'release': a.version.release,
+          'model': a.model,
+          'marketingName': marketingName,
+          'brand': a.brand, // Ensure this isn't empty on generic emulators
+          'manufacturer': a.manufacturer,
+          'vendor': vendor,
+          'origin': origin,
+          'isSamsung': vendor == 'samsung',
+          'isApple': false,
+        };
+      } else if (Platform.isIOS) {
         final i = await _deviceInfo.iosInfo;
+        // Map machine ID to marketing name (e.g. iPhone16,2 -> iPhone 15 Pro Max)
+        // We can reuse DeviceInfoHelper's mapping logic or call it directly if possible.
+        // But DeviceInfoHelper.getModel() calls iosInfo again. It's efficient enough.
+        final machine = i.utsname.machine;
+        // Simple mapping reusing DeviceInfoHelper logic is safer:
+        // Or duplicate logic here for speed? Use mapped name as marketing name.
+
+        // Get friendly name from helper
+        final friendlyName = await DeviceInfoHelper.getModel();
+
         return {
           'platform': 'ios',
           'systemVersion': i.systemVersion,
-          'model': i.utsname.machine,
+          'model': machine,
+          'marketingName': friendlyName, // Better than i.name
           'name': i.name,
-          'marketingName': i.name,
           'brand': 'Apple',
           'manufacturer': 'Apple',
           'vendor': 'apple',
@@ -1081,9 +1313,11 @@ class AutoDiagnosticsController extends GetxController {
           'isSamsung': false,
           'isApple': true,
         };
-      } catch (_) {
-        return {'platform': 'unknown', 'origin': 'Không xác định'};
       }
+      return {'platform': 'unknown', 'origin': 'Không xác định'};
+    } catch (e) {
+      print('Error getting OS info: $e');
+      return {'platform': 'error', 'error': e.toString()};
     }
   }
 
@@ -1093,7 +1327,9 @@ class AutoDiagnosticsController extends GetxController {
     int? dbm;
     String? radio;
     if (onMobile) {
-      dbm = await _invoke<int>('getSignalStrengthDbm');
+      // Use DeviceInfoHelper for cross-platform support
+      final sig = await DeviceInfoHelper.getSignalStrength();
+      dbm = sig['dbm'];
       radio = await _invoke<String>('getMobileRadioType');
     }
     return {'connected': onMobile, 'dbm': dbm, 'radio': radio};
@@ -1122,30 +1358,21 @@ class AutoDiagnosticsController extends GetxController {
     };
   }
 
-  // ===== NEW: RAM & ROM via MethodChannel =====
-  Map<String, dynamic> _normalizeBytesMap(Map? m) {
-    final free =
-        (m?['freeBytes'] is num) ? (m?['freeBytes'] as num).toInt() : null;
-    final total =
-        (m?['totalBytes'] is num) ? (m?['totalBytes'] as num).toInt() : null;
-    return {'freeBytes': free, 'totalBytes': total};
-  }
-
+  /// Lấy thông tin RAM (có iOS fallback)
   Future<Map<String, dynamic>> _getRamInfo() async {
     try {
-      final Map? raw = await _invoke<Map>('getRamInfo');
-      return _normalizeBytesMap(raw);
+      return await DeviceInfoHelper.getRamInfo();
     } catch (_) {
-      return const {'freeBytes': null, 'totalBytes': null};
+      return const {'freeBytes': null, 'totalBytes': null, 'source': 'error'};
     }
   }
 
+  /// Lấy thông tin ROM/Storage (có iOS fallback)
   Future<Map<String, dynamic>> _getRomInfo() async {
     try {
-      final Map? raw = await _invoke<Map>('getRomInfo');
-      return _normalizeBytesMap(raw);
+      return await DeviceInfoHelper.getRomInfo();
     } catch (_) {
-      return const {'freeBytes': null, 'totalBytes': null};
+      return const {'freeBytes': null, 'totalBytes': null, 'source': 'error'};
     }
   }
 
@@ -1179,9 +1406,7 @@ class AutoDiagnosticsController extends GetxController {
   }
 
   Future<Map<String, dynamic>> _getSimInfo() async {
-    final slots = await _invoke<int>('getSimSlotCount');
-    final states = await _invoke<List<dynamic>>('getSimStates');
-    return {'slotCount': slots, 'states': states};
+    return await DeviceInfoHelper.getSimInfo();
   }
 
   Future<Map<String, dynamic>> _getSensorsPing() async {

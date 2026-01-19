@@ -24,7 +24,8 @@ class ProfileManager {
       final data = jsonDecode(json) as Map<String, dynamic>;
 
       // Load profiles
-      final profilesData = data['requirements_by_profile'] as Map<String, dynamic>?;
+      final profilesData =
+          data['requirements_by_profile'] as Map<String, dynamic>?;
       if (profilesData != null) {
         profilesData.forEach((key, value) {
           final profileJson = value as Map<String, dynamic>;
@@ -46,13 +47,23 @@ class ProfileManager {
   DeviceProfile getProfile(String modelName, String brand) {
     // Try exact model match first
     final normalizedModel = _normalizeModelName(modelName);
+
+    // Fix: Avoid matching empty model name (which matches everything)
+    if (normalizedModel.isEmpty) {
+      return _profiles['default'] ?? const DeviceProfile(name: 'default');
+    }
+
     if (_profiles.containsKey(normalizedModel)) {
       return _profiles[normalizedModel]!;
     }
 
     // Try partial match
     for (var entry in _profiles.entries) {
-      if (normalizedModel.contains(entry.key) || entry.key.contains(normalizedModel)) {
+      // Don't match if key is default or empty
+      if (entry.key == 'default' || entry.key.isEmpty) continue;
+
+      if (normalizedModel.contains(entry.key) ||
+          entry.key.contains(normalizedModel)) {
         return entry.value;
       }
     }
@@ -110,4 +121,3 @@ class ProfileManager {
     return hasBrandQuirk(brand, 'rom_blocks_sim_api');
   }
 }
-

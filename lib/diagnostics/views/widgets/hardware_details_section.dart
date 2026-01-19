@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import '../../controllers/auto_diagnostics_controller.dart';
 
 /// Hardware Details Section - Displays camera and sensor information

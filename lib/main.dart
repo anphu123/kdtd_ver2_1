@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kdtd_ver2_1/core/routes/app_pages.dart';
-import 'core/theme/app_theme.dart';
-
+import 'package:kdtd_ver2_1/app/routes/app_pages.dart';
+import 'app/core/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());

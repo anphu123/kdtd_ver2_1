@@ -110,7 +110,6 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final scrollController = ScrollController();
     final stepKeys = <String, GlobalKey>{};
 
@@ -120,8 +119,19 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
     }
 
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.amber),
-      backgroundColor: const Color(0xFFF6F7FB), // nền sáng giống mock
+      appBar: AppBar(
+        title: const Text('Kiểm Định Máy'),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      backgroundColor: const Color(0xFFF6F7FB),
       floatingActionButton: Obx(() {
         final completed =
             controller.passedCount.value +
@@ -147,11 +157,10 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
           final progress = total == 0 ? 0.0 : completed / total;
           final isRunning = controller.isRunning.value;
 
-          final manualTests =
-              steps.where((s) => s.kind == DiagKind.manual).toList();
-
           // Auto-scroll đến bước đang chạy
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!scrollController.hasClients) return;
+
             final currentStep = steps.firstWhereOrNull(
               (s) => s.status == DiagStatus.running,
             );
@@ -163,7 +172,7 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
                   context,
                   duration: const Duration(milliseconds: 500),
                   curve: Curves.easeInOut,
-                  alignment: 0.2, // Scroll để item ở 20% từ trên xuống
+                  alignment: 0.3,
                 );
               }
             }
@@ -190,10 +199,14 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
 
               SliverToBoxAdapter(
                 child: AutoSuiteSection(
-                  onStartAuto: isRunning ? null : controller.start,
+                  onStartAuto:
+                      isRunning ? null : controller.startWithPermissionCheck,
                   isRunning: isRunning,
                 ),
               ),
+
+              // Progress indicator khi đang chạy
+              const SliverToBoxAdapter(child: ProgressIndicatorSection()),
 
               // Progress Navigation (nếu đã có test chạy)
               if (completed > 0 && !isRunning)
@@ -221,42 +234,16 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
                   ),
                 ),
 
-              // Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-                  child: Text(
-                    'Manual Tests',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-
-              // List
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                sliver: SliverList.separated(
-                  itemCount: manualTests.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final step = manualTests[index];
-                    return AnimatedTestItem(
-                      key: stepKeys[step.code],
-                      step: step,
-                      onTap: () => _handleTestTap(step),
-                    );
-                  },
-                ),
-              ),
+              // Grouped Tests List
+              ..._buildGroupedList(steps, stepKeys),
 
               // Nút dưới cùng
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: FilledButton(
-                    onPressed: isRunning ? null : controller.start,
+                    onPressed:
+                        isRunning ? null : controller.startWithPermissionCheck,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
@@ -265,10 +252,10 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
                     ),
                     child: Text(
                       isRunning
-                          ? 'Running Diagnostics...'
+                          ? 'Đang Kiểm Định...'
                           : completed == 0
-                          ? 'Start Diagnostics'
-                          : 'Restart Diagnostics',
+                          ? 'Bắt Đầu Kiểm Định'
+                          : 'Kiểm Định Lại',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -282,5 +269,82 @@ class AutoDiagnosticsView extends GetView<AutoDiagnosticsController> {
         }),
       ),
     );
+  }
+
+  /// Xây dựng danh sách test grouped theo phase
+  List<Widget> _buildGroupedList(
+    List<DiagStep> steps,
+    Map<String, GlobalKey> stepKeys,
+  ) {
+    final widgets = <Widget>[];
+
+    // Group steps by phase
+    final grouped = <DiagPhase, List<DiagStep>>{};
+    for (final phase in DiagPhase.values) {
+      grouped[phase] = steps.where((s) => s.phase == phase).toList();
+    }
+
+    for (final phase in DiagPhase.values) {
+      final phaseSteps = grouped[phase] ?? [];
+      if (phaseSteps.isEmpty) continue;
+
+      final passedCount =
+          phaseSteps.where((s) => s.status == DiagStatus.passed).length;
+      final totalCount = phaseSteps.length;
+      final isCompleted = passedCount == totalCount;
+
+      // Header Phase
+      widgets.add(
+        SliverToBoxAdapter(
+          child: PhaseHeader(
+            title: _getPhaseTitle(phase),
+            passedCount: passedCount,
+            totalCount: totalCount,
+            isCompleted: isCompleted,
+          ),
+        ),
+      );
+
+      // List items in phase
+      widgets.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList.separated(
+            itemCount: phaseSteps.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final step = phaseSteps[index];
+              return AnimatedTestItem(
+                key: stepKeys[step.code],
+                step: step,
+                onTap: () => _handleTestTap(step),
+              );
+            },
+          ),
+        ),
+      );
+
+      // Spacer
+      widgets.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+    }
+
+    return widgets;
+  }
+
+  String _getPhaseTitle(DiagPhase phase) {
+    switch (phase) {
+      case DiagPhase.critical:
+        return 'Thông Tin Quan Trọng';
+      case DiagPhase.connectivity:
+        return 'Kết Nối & Mạng';
+      case DiagPhase.sensors:
+        return 'Cảm Biến';
+      case DiagPhase.hardware:
+        return 'Phần Cứng';
+      case DiagPhase.screen:
+        return 'Màn Hình';
+      case DiagPhase.manual:
+        return 'Kiểm Tra Chức Năng';
+    }
   }
 }

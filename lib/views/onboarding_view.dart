@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../core/routes/app_routes.dart';
-import '../core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
+
 
 class OnboardingView extends StatefulWidget {
   const OnboardingView({super.key});

@@ -205,17 +205,22 @@ class RuleEvaluator {
         return 'Tín hiệu: $dbm dBm • Radio: $radio';
 
       case 'wifi':
+        final enabled = payload['enabled'] == true;
+        final connected = payload['connected'] == true;
         if (result == EvalResult.skip) {
-          if (!environment.locationServiceOn) {
-            return 'Vị trí chưa bật (cần cho SSID)';
+          if (!enabled) {
+            return 'WiFi đang tắt';
           }
-          return 'Không kết nối Wi-Fi';
+          if (!connected) {
+            return 'Không kết nối Wi-Fi';
+          }
+          return 'WiFi không hoạt động';
         }
         final ssid = payload['ssid'];
-        if (result == EvalResult.fail) {
-          return 'Không đọc được SSID';
+        if (ssid != null && ssid != '' && ssid != '<unknown ssid>') {
+          return 'Kết nối: $ssid';
         }
-        return 'Kết nối: $ssid';
+        return 'WiFi hoạt động tốt';
 
       case 'bt':
         if (result == EvalResult.skip) {
@@ -347,7 +352,8 @@ class RuleEvaluator {
     if (environment.isPermDenied('phone_state')) return EvalResult.skip;
 
     final dbm = p['dbm'];
-    if (dbm == null) return EvalResult.fail;
+    // iOS (và một số thiết bị Android) trả về null signal strength
+    if (dbm == null) return EvalResult.skip;
     if (dbm is! num) return EvalResult.fail;
 
     if (dbm < thresholds.mobile.dbmMin || dbm > thresholds.mobile.dbmMax) {
@@ -363,12 +369,21 @@ class RuleEvaluator {
   }
 
   EvalResult _evalWifi(Map<String, dynamic> p) {
+    final enabled = p['enabled'] == true;
     final connected = p['connected'] == true;
+
+    // WiFi tắt hoặc không kết nối → SKIP (không phải lỗi phần cứng)
+    if (!enabled) return EvalResult.skip;
     if (!connected) return EvalResult.skip;
-    if (!environment.locationServiceOn) return EvalResult.skip;
+
+    // Location service tắt → vẫn pass kết nối, chỉ không đọc được SSID
+    if (!environment.locationServiceOn) return EvalResult.pass;
 
     final ssid = p['ssid'];
-    if (ssid == null || ssid == '') return EvalResult.fail;
+    // Không đọc được SSID nhưng đã kết nối → vẫn pass (thiếu quyền location)
+    if (ssid == null || ssid == '' || ssid == '<unknown ssid>') {
+      return EvalResult.pass; // Changed from fail
+    }
     return EvalResult.pass;
   }
 
@@ -559,17 +574,56 @@ class RuleEvaluator {
     return EvalResult.pass;
   }
 
+  /// Đánh giá RAM
+  /// iOS: Có thể chỉ có estimated value → vẫn pass
   EvalResult _evalRam(Map<String, dynamic> p) {
+    final source = p['source'] as String?;
     final total = p['totalBytes'];
-    if (total == null || total == 0) return EvalResult.fail;
+    final totalGB = p['totalGB'];
+
+    // iOS estimated: vẫn pass vì có ước tính
+    if (source == 'ios_estimated' && totalGB != null) {
+      return EvalResult.pass;
+    }
+
+    // Android: cần có totalBytes
+    if (total == null || total == 0) {
+      // Nếu là iOS và không đọc được → skip thay vì fail
+      if (source?.startsWith('ios') == true) {
+        return EvalResult.skip;
+      }
+      return EvalResult.fail;
+    }
+
     return EvalResult.pass;
   }
 
+  /// Đánh giá ROM/Storage
+  /// iOS: Không cho phép đọc chính xác → skip
   EvalResult _evalRom(Map<String, dynamic> p) {
+    final source = p['source'] as String?;
     final total = p['totalBytes'];
     final free = p['freeBytes'];
-    if (total == null || total == 0) return EvalResult.fail;
-    if (free == null) return EvalResult.fail;
+
+    // iOS: Không cho phép đọc → skip (không phải lỗi phần cứng)
+    if (source == 'ios_unavailable') {
+      return EvalResult.skip;
+    }
+
+    // Android: cần có total
+    if (total == null || total == 0) {
+      return EvalResult.fail;
+    }
+
+    // Kiểm tra dung lượng trống nếu có
+    if (free != null && free is num) {
+      // Cảnh báo nếu còn ít hơn 1GB (không fail, chỉ log)
+      final freeGB = free / (1024 * 1024 * 1024);
+      if (freeGB < 1) {
+        // Vẫn pass nhưng note sẽ cảnh báo
+      }
+    }
+
     return EvalResult.pass;
   }
 

@@ -45,5 +45,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+    <!-- Quyền truy cập cho Diagnostics Module -->
+    <key>NSCameraUsageDescription</key>
+    <string>Ứng dụng cần sử dụng camera để kiểm tra chức năng chụp ảnh trước và sau.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Ứng dụng cần sử dụng microphone để kiểm tra chức năng thu âm.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Ứng dụng cần quyền vị trí để kiểm tra trạng thái GPS và lấy tên mạng WiFi.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Ứng dụng cần quyền Bluetooth để kiểm tra chức năng bật/tắt và quét thiết bị Bluetooth.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>Ứng dụng cần quyền truy cập thiết bị ngoại vi Bluetooth.</string>
 </dict>
 </plist>

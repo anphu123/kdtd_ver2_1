@@ -1,8 +1,7 @@
 import 'package:get/get.dart';
-import '../../diagnostics/views/auto_diagnostics_view.dart';
-
-import '../../views/onboarding_view.dart';
-import '../../diagnostics/bindings/auto_diagnostics_binding.dart';
+import 'package:kdtd_ver2_1/diagnostics/bindings/auto_diagnostics_binding.dart';
+import 'package:kdtd_ver2_1/diagnostics/views/auto_diagnostics_view.dart';
+import 'package:kdtd_ver2_1/views/onboarding_view.dart';
 
 import 'app_routes.dart';
 
@@ -25,7 +24,7 @@ class AppPages {
     // Diagnostics - Home Dashboard (using new view)
     GetPage(
       name: AppRoutes.diagnosticsHome,
-      page: () => const AutoDiagnosticsView(),
+      page: () => const AutoDiagnosticsView(), 
       binding: AutoDiagnosticsBinding(),
       transition: Transition.fadeIn,
     ),
