@@ -37,7 +37,7 @@
 
 
     <application
-        android:label="kdtd_ver2_1"
+        android:label="DiagPro"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
