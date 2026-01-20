@@ -90,8 +90,16 @@ class _KeysTestPageState extends State<KeysTestPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _dialogKeySub?.cancel();
-    _keySub?.cancel();
+    try {
+      _dialogKeySub?.cancel();
+    } catch (_) {
+      // Ignore "No active stream" errors
+    }
+    try {
+      _keySub?.cancel();
+    } catch (_) {
+      // Ignore cancellation errors
+    }
     _focusNode.dispose();
     super.dispose();
   }
@@ -157,11 +165,18 @@ class _KeysTestPageState extends State<KeysTestPage> {
   Future<bool> _askForKeyDialog(String title, int expectedKeyCode,
       {int seconds = 5}) async {
     bool completed = false;
+    bool isCleanedUp = false;
     Timer? dlgTimer;
 
     void cleanup() {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
       dlgTimer?.cancel();
-      _dialogKeySub?.cancel();
+      try {
+        _dialogKeySub?.cancel();
+      } catch (_) {
+        // Ignore "No active stream" errors
+      }
       _dialogKeySub = null;
     }
 
@@ -177,8 +192,12 @@ class _KeysTestPageState extends State<KeysTestPage> {
           if (action == 'down' && keyCode == expectedKeyCode) {
             completed = true;
             cleanup();
-            final nav = Navigator.of(context, rootNavigator: true);
-            if (nav.mounted) nav.pop(true);
+            try {
+              final nav = Navigator.of(context, rootNavigator: true);
+              if (nav.mounted) nav.pop(true);
+            } catch (_) {
+              // Context may be disposed
+            }
           }
         } catch (_) {}
       }, onError: (e) {});
@@ -211,13 +230,22 @@ class _KeysTestPageState extends State<KeysTestPage> {
         return StatefulBuilder(
           builder: (c, setSt) {
             localTimer ??= Timer.periodic(const Duration(seconds: 1), (t) {
-              if (!Navigator.of(c).mounted) return;
+              // Check cleanup flag first to prevent accessing disposed context
+              if (isCleanedUp) {
+                t.cancel();
+                return;
+              }
+
               setSt(() {
                 remaining -= 1;
                 if (remaining <= 0) {
                   t.cancel();
                   cleanup();
-                  Navigator.of(c, rootNavigator: true).pop(false);
+                  try {
+                    Navigator.of(c, rootNavigator: true).pop(false);
+                  } catch (_) {
+                    // Context may be disposed
+                  }
                 }
               });
             });
@@ -230,7 +258,11 @@ class _KeysTestPageState extends State<KeysTestPage> {
                   onPressed: () {
                     localTimer?.cancel();
                     cleanup();
-                    Navigator.of(c, rootNavigator: true).pop(false);
+                    try {
+                      Navigator.of(c, rootNavigator: true).pop(false);
+                    } catch (_) {
+                      // Context may be disposed
+                    }
                   },
                   child: const Text('Hủy'),
                 ),
