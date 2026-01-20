@@ -1,4 +1,4 @@
-package com.example.kdtd_ver2_1
+package com.egn.diagpro
 
 import android.app.ActivityManager
 import android.app.KeyguardManager
