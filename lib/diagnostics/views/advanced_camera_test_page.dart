@@ -453,31 +453,28 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                   children: [
                     // Progress indicators
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _StepIndicator(
                           number: 1,
                           isActive: _currentStep == 0,
                           isCompleted: _frontCameraTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 2,
                           isActive: _currentStep == 1,
                           isCompleted: _backCameraTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 3,
                           isActive: _currentStep == 2,
                           isCompleted: _captureTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 4,
                           isActive: _currentStep == 3,
                           isCompleted: _focusTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 5,
                           isActive: _currentStep == 4,

@@ -27,7 +27,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
   int _remainingSeconds = 0;
 
   // Native key event stream (Android Activity)
-  static const _keyEventChannel = EventChannel('com.fidobox/diagnostics_keyevents');
+  static const _keyEventChannel =
+      EventChannel('com.fidobox/diagnostics_keyevents');
   StreamSubscription<Map<dynamic, dynamic>>? _keySub;
   // Sub riêng cho dialog (one-shot)
   StreamSubscription<Map<dynamic, dynamic>>? _dialogKeySub;
@@ -45,7 +46,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
     // Lắng nghe sự kiện phím từ native (EventChannel)
     _keySub = _keyEventChannel
         .receiveBroadcastStream()
-        .map<Map<dynamic, dynamic>>((event) => (event as Map).cast<dynamic, dynamic>())
+        .map<Map<dynamic, dynamic>>(
+            (event) => (event as Map).cast<dynamic, dynamic>())
         .listen((m) {
       try {
         final keyCode = m['keyCode'] as int?;
@@ -112,7 +114,7 @@ class _KeysTestPageState extends State<KeysTestPage> {
   void _finishIfReady() {
     final passed = volUp && volDown;
     final result = {
-      'userConfirm': passed,            // pass khi 2 phím volume OK
+      'userConfirm': passed, // pass khi 2 phím volume OK
       'volumeUp': volUp,
       'volumeDown': volDown,
       'back': backPressed,
@@ -152,7 +154,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
 
   /// Hiện dialog yêu cầu bấm đúng `expectedKeyCode` trong `seconds`.
   /// Trả về true nếu bấm đúng hạn.
-  Future<bool> _askForKeyDialog(String title, int expectedKeyCode, {int seconds = 5}) async {
+  Future<bool> _askForKeyDialog(String title, int expectedKeyCode,
+      {int seconds = 5}) async {
     bool completed = false;
     Timer? dlgTimer;
 
@@ -165,7 +168,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
     try {
       _dialogKeySub = _keyEventChannel
           .receiveBroadcastStream()
-          .map<Map<dynamic, dynamic>>((event) => (event as Map).cast<dynamic, dynamic>())
+          .map<Map<dynamic, dynamic>>(
+              (event) => (event as Map).cast<dynamic, dynamic>())
           .listen((m) {
         try {
           final keyCode = m['keyCode'] as int?;
@@ -185,7 +189,11 @@ class _KeysTestPageState extends State<KeysTestPage> {
           title: const Text('Plugin chưa sẵn sàng'),
           content: const Text(
               'Native EventChannel chưa được đăng ký. Vui lòng khởi động lại ứng dụng (full restart).'),
-          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'))
+          ],
         ),
       );
       return false;
@@ -238,7 +246,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
 
   /// Chạy tự động: hỏi Volume Up rồi Volume Down
   Future<void> _runAutoVolumeSequence() async {
-    final upOk = await _askForKeyDialog('Nhấn 1 lần phím Tăng âm lượng', 24, seconds: 5);
+    final upOk =
+        await _askForKeyDialog('Nhấn 1 lần phím Tăng âm lượng', 24, seconds: 5);
     if (mounted) {
       setState(() {
         if (upOk) {
@@ -252,7 +261,8 @@ class _KeysTestPageState extends State<KeysTestPage> {
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    final downOk = await _askForKeyDialog('Nhấn 1 lần phím Giảm âm lượng', 25, seconds: 5);
+    final downOk =
+        await _askForKeyDialog('Nhấn 1 lần phím Giảm âm lượng', 25, seconds: 5);
     if (mounted) {
       setState(() {
         if (downOk) {
@@ -295,21 +305,25 @@ class _KeysTestPageState extends State<KeysTestPage> {
                 children: [
                   Text(
                     'Nhấn các phím vật lý để kiểm tra.\n\n'
-                        'Gợi ý: Một số thiết bị Android có thể không gửi sự kiện Volume vào app. '
-                        'Bạn có thể đánh dấu thủ công phím Nguồn.',
+                    'Gợi ý: Một số thiết bị Android có thể không gửi sự kiện Volume vào app. '
+                    'Bạn có thể đánh dấu thủ công phím Nguồn.',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      FilledButton(
-                        onPressed: _runAutoVolumeSequence,
-                        child: const Text('Chạy tự động (Volume + rồi -)'),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _runAutoVolumeSequence,
+                          child: const Text('Chạy tự động (Volume + rồi -)'),
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: () => _startVolumeCountdown(seconds: 5),
-                        child: const Text('Bắt đầu đếm ngược 5s'),
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => _startVolumeCountdown(seconds: 5),
+                          child: const Text('Bắt đầu đếm ngược 5s'),
+                        ),
                       ),
                     ],
                   ),
@@ -319,10 +333,10 @@ class _KeysTestPageState extends State<KeysTestPage> {
                       color: Colors.yellow[50],
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child: Text('Vui lòng nhấn Volume + và Volume - trong $_remainingSeconds giây'),
+                        child: Text(
+                            'Vui lòng nhấn Volume + và Volume - trong $_remainingSeconds giây'),
                       ),
                     ),
-
                   _KeyTile(
                     label: 'Volume +',
                     active: volUp,
@@ -343,20 +357,20 @@ class _KeysTestPageState extends State<KeysTestPage> {
                     icon: Icons.arrow_back_rounded,
                     action: () => setState(() => backPressed = true),
                   ),
-
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Checkbox(
                         value: powerConfirmed,
-                        onChanged: (v) => setState(() => powerConfirmed = v ?? false),
+                        onChanged: (v) =>
+                            setState(() => powerConfirmed = v ?? false),
                       ),
                       const Expanded(
-                        child: Text('Tôi đã kiểm tra phím Nguồn (không thể bắt sự kiện trực tiếp).'),
+                        child: Text(
+                            'Tôi đã kiểm tra phím Nguồn (không thể bắt sự kiện trực tiếp).'),
                       ),
                     ],
                   ),
-
                   const Spacer(),
                   FilledButton(
                     onPressed: (volUp && volDown) ? _finishIfReady : null,
@@ -390,10 +404,11 @@ class _KeyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle =
-    active ? 'Đã nhận' : (failed ? 'Không nhận (Thất bại)' : 'Chưa nhận');
+        active ? 'Đã nhận' : (failed ? 'Không nhận (Thất bại)' : 'Chưa nhận');
 
     final Color? bg = active ? Colors.grey.shade200 : null;
-    final Color? iconColor = active ? Theme.of(context).colorScheme.primary : null;
+    final Color? iconColor =
+        active ? Theme.of(context).colorScheme.primary : null;
 
     return Card(
       elevation: 0,
