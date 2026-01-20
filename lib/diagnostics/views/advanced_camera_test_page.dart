@@ -58,8 +58,42 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
   @override
   void dispose() {
     _gyroSub?.cancel();
-    _controller?.dispose();
+    _disposeCameraSync();
+    _cleanupCapturedImage();
     super.dispose();
+  }
+
+  void _disposeCameraSync() {
+    if (_controller != null) {
+      try {
+        // Always try to stop image stream, ignore errors
+        // Don't check isStreamingImages as it may be unreliable
+        try {
+          _controller!.stopImageStream();
+        } catch (_) {
+          // Image stream may not be active, ignore
+        }
+        _controller!.dispose();
+        _controller = null;
+      } catch (e) {
+        // Ignore disposal errors during cleanup
+        _controller = null;
+      }
+    }
+  }
+
+  void _cleanupCapturedImage() {
+    if (_capturedImagePath != null) {
+      try {
+        final file = File(_capturedImagePath!);
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+        _capturedImagePath = null;
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    }
   }
 
   void _categorizeCamera() {
@@ -75,14 +109,12 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
 
   void _verifyCameraConfiguration() {
     final totalCameras = widget.cameras.length;
-    final frontCount =
-        widget.cameras
-            .where((c) => c.lensDirection == CameraLensDirection.front)
-            .length;
-    final backCount =
-        widget.cameras
-            .where((c) => c.lensDirection == CameraLensDirection.back)
-            .length;
+    final frontCount = widget.cameras
+        .where((c) => c.lensDirection == CameraLensDirection.front)
+        .length;
+    final backCount = widget.cameras
+        .where((c) => c.lensDirection == CameraLensDirection.back)
+        .length;
 
     if (totalCameras == 1) {
       _cameraWarning = '⚠️ Chỉ có 1 camera';
@@ -129,8 +161,7 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
         if (_gyroHistory.length >= 30) {
           final avg =
               _gyroHistory.reduce((a, b) => a + b) / _gyroHistory.length;
-          final variance =
-              _gyroHistory
+          final variance = _gyroHistory
                   .map((v) => (v - avg) * (v - avg))
                   .reduce((a, b) => a + b) /
               _gyroHistory.length;
@@ -168,9 +199,10 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
   }
 
   Future<void> _openCamera(CameraDescription camera) async {
-    setState(() => _isInitializing = true);
+    if (mounted) setState(() => _isInitializing = true);
 
-    await _controller?.dispose();
+    // Properly dispose previous controller
+    _disposeCameraSync();
 
     _controller = CameraController(
       camera,
@@ -233,8 +265,13 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
     if (_controller == null || !_controller!.value.isInitialized) return;
 
     try {
+      // Clean up previous captured image before taking new one
+      _cleanupCapturedImage();
+
       final image = await _controller!.takePicture();
-      setState(() => _capturedImagePath = image.path);
+      if (mounted) {
+        setState(() => _capturedImagePath = image.path);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -383,17 +420,16 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
           // Camera Preview
           if (isReady)
             Positioned.fill(
-              child:
-                  _capturedImagePath != null && _currentStep == 2
-                      ? Image.file(File(_capturedImagePath!), fit: BoxFit.cover)
-                      : FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controller!.value.previewSize!.height,
-                          height: _controller!.value.previewSize!.width,
-                          child: CameraPreview(_controller!),
-                        ),
+              child: _capturedImagePath != null && _currentStep == 2
+                  ? Image.file(File(_capturedImagePath!), fit: BoxFit.cover)
+                  : FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _controller!.value.previewSize!.height,
+                        height: _controller!.value.previewSize!.width,
+                        child: CameraPreview(_controller!),
                       ),
+                    ),
             )
           else if (_isInitializing)
             const Center(child: CircularProgressIndicator(color: Colors.white))
@@ -422,31 +458,28 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                   children: [
                     // Progress indicators
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _StepIndicator(
                           number: 1,
                           isActive: _currentStep == 0,
                           isCompleted: _frontCameraTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 2,
                           isActive: _currentStep == 1,
                           isCompleted: _backCameraTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 3,
                           isActive: _currentStep == 2,
                           isCompleted: _captureTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 4,
                           isActive: _currentStep == 3,
                           isCompleted: _focusTested,
                         ),
-                        const SizedBox(width: 8),
                         _StepIndicator(
                           number: 5,
                           isActive: _currentStep == 4,
@@ -466,10 +499,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color:
-                              _hasStabilization
-                                  ? Colors.green.withValues(alpha: 0.3)
-                                  : Colors.blue.withValues(alpha: 0.3),
+                          color: _hasStabilization
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.blue.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color:
@@ -483,10 +515,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                               _hasStabilization
                                   ? Icons.check_circle
                                   : Icons.videocam,
-                              color:
-                                  _hasStabilization
-                                      ? Colors.green
-                                      : Colors.blue,
+                              color: _hasStabilization
+                                  ? Colors.green
+                                  : Colors.blue,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -496,10 +527,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                                     ? '✓ Phát hiện chống rung (OIS/EIS)'
                                     : 'Đang kiểm tra chống rung...',
                                 style: TextStyle(
-                                  color:
-                                      _hasStabilization
-                                          ? Colors.green
-                                          : Colors.blue,
+                                  color: _hasStabilization
+                                      ? Colors.green
+                                      : Colors.blue,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -516,10 +546,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color:
-                              _isOriginal
-                                  ? Colors.green.withValues(alpha: 0.3)
-                                  : Colors.orange.withValues(alpha: 0.3),
+                          color: _isOriginal
+                              ? Colors.green.withValues(alpha: 0.3)
+                              : Colors.orange.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: _isOriginal ? Colors.green : Colors.orange,
@@ -538,10 +567,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                               child: Text(
                                 _cameraWarning!,
                                 style: TextStyle(
-                                  color:
-                                      _isOriginal
-                                          ? Colors.green
-                                          : Colors.orange,
+                                  color: _isOriginal
+                                      ? Colors.green
+                                      : Colors.orange,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -599,10 +627,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
                 child: FilledButton(
                   onPressed: _nextStep,
                   style: FilledButton.styleFrom(
-                    backgroundColor:
-                        isReady
-                            ? Colors.green
-                            : Colors.green.withValues(alpha: 0.7),
+                    backgroundColor: isReady
+                        ? Colors.green
+                        : Colors.green.withValues(alpha: 0.7),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
