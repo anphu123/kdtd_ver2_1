@@ -347,14 +347,16 @@ class _KeysTestPageState extends State<KeysTestPage> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _runAutoVolumeSequence,
-                          child: const Text('Chạy tự động (Volume + rồi -)'),
+                          child: const Text('Tự động Vol+/-',
+                              textAlign: TextAlign.center),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextButton(
                           onPressed: () => _startVolumeCountdown(seconds: 5),
-                          child: const Text('Bắt đầu đếm ngược 5s'),
+                          child: const Text('Đếm ngược 5s',
+                              textAlign: TextAlign.center),
                         ),
                       ),
                     ],
