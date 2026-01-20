@@ -131,14 +131,13 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
                         width: 1,
                       ),
                     ),
-                    child:
-                        on
-                            ? const Icon(
-                              Icons.check_circle,
-                              color: Colors.white,
-                              size: 32,
-                            )
-                            : null,
+                    child: on
+                        ? const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 32,
+                          )
+                        : null,
                   );
                 },
               ),
@@ -200,9 +199,14 @@ class _TouchGridTestPageState extends State<TouchGridTestPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Chip(
-                          backgroundColor: Colors.red.shade400,
-                          label: Text(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade400,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
                             'Tự động kết thúc sau $_finalSecs s',
                             style: const TextStyle(
                               color: Colors.white,
