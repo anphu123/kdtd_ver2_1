@@ -58,19 +58,22 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
   @override
   void dispose() {
     _gyroSub?.cancel();
-    _disposeCamera();
+    _disposeCameraSync();
     _cleanupCapturedImage();
     super.dispose();
   }
 
-  Future<void> _disposeCamera() async {
+  void _disposeCameraSync() {
     if (_controller != null) {
       try {
-        // Stop image stream if active to prevent buffer overflow
-        if (_controller!.value.isStreamingImages) {
-          await _controller!.stopImageStream();
+        // Always try to stop image stream, ignore errors
+        // Don't check isStreamingImages as it may be unreliable
+        try {
+          _controller!.stopImageStream();
+        } catch (_) {
+          // Image stream may not be active, ignore
         }
-        await _controller!.dispose();
+        _controller!.dispose();
         _controller = null;
       } catch (e) {
         // Ignore disposal errors during cleanup
@@ -196,10 +199,10 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
   }
 
   Future<void> _openCamera(CameraDescription camera) async {
-    setState(() => _isInitializing = true);
+    if (mounted) setState(() => _isInitializing = true);
 
     // Properly dispose previous controller
-    await _disposeCamera();
+    _disposeCameraSync();
 
     _controller = CameraController(
       camera,
@@ -266,7 +269,9 @@ class _AdvancedCameraTestPageState extends State<AdvancedCameraTestPage> {
       _cleanupCapturedImage();
 
       final image = await _controller!.takePicture();
-      setState(() => _capturedImagePath = image.path);
+      if (mounted) {
+        setState(() => _capturedImagePath = image.path);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
