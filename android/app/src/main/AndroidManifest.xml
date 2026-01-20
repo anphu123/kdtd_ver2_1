@@ -37,7 +37,7 @@
 
 
     <application
-        android:label="DiagPro"
+        android:label="DiagPro - Device Inspector"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
