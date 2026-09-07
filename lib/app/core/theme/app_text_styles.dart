@@ -111,5 +111,49 @@ class AppTextStyles {
     fontWeight: FontWeight.w500,
     letterSpacing: 1.5,
   );
+
+  // Additional Diagnostic UI Styles
+  static const TextStyle badge = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle statValue = TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle statLabel = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+  );
+
+  static const TextStyle sectionHeader = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+  );
+
+  // Trade-In & Upgrade Specific Styles
+  static const TextStyle priceDisplay = TextStyle(
+    fontSize: 26,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
+  );
+
+  static const TextStyle priceSmall = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle voucherBadge = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.2,
+  );
+
+  static const TextStyle cardTitle = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  );
 }
 

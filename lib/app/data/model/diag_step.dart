@@ -8,6 +8,7 @@
 /// - DiagPhase: Nhóm các test để chạy song song
 /// - DiagStep: Một bước test cụ thể
 /// ============================================================
+library;
 
 /// Trạng thái của một bước kiểm định
 enum DiagStatus {

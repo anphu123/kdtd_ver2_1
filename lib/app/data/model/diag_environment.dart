@@ -9,6 +9,7 @@
 ///
 /// Được sử dụng bởi RuleEvaluator để đánh giá kết quả test.
 /// ============================================================
+library;
 
 class DiagEnvironment {
   /// Tên hãng sản xuất (samsung, xiaomi, oppo, apple...)

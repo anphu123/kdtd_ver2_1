@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'device_profile.dart';
+import 'package:kdtd_ver2_1/gen/assets.gen.dart';
+import '../model/device_profile.dart';
 
 /// Profile Manager - Loads and manages device profiles
 class ProfileManager {
   static ProfileManager? _instance;
-  Map<String, DeviceProfile> _profiles = {};
+  final Map<String, DeviceProfile> _profiles = {};
   Map<String, dynamic> _brandQuirks = {};
 
   ProfileManager._();
@@ -20,7 +22,7 @@ class ProfileManager {
 
   Future<void> _loadProfiles() async {
     try {
-      final json = await rootBundle.loadString('assets/diag_thresholds.json');
+      final json = await rootBundle.loadString(Assets.diagThresholds);
       final data = jsonDecode(json) as Map<String, dynamic>;
 
       // Load profiles
@@ -37,7 +39,7 @@ class ProfileManager {
       // Load brand quirks
       _brandQuirks = data['brand_quirks'] as Map<String, dynamic>? ?? {};
     } catch (e) {
-      print('Error loading profiles: $e');
+      debugPrint('Error loading profiles: $e');
       // Use default profile
       _profiles['default'] = const DeviceProfile(name: 'default');
     }

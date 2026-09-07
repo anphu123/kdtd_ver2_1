@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Service để lấy thông tin điện thoại từ API
@@ -29,7 +30,7 @@ class PhoneInfoService {
         return data['marketingName'] as String?;
       }
     } catch (e) {
-      print('Error getting marketing name from API: $e');
+      debugPrint('Error getting marketing name from API: $e');
     }
 
     // Option 2: Fallback - Dùng local mapping
@@ -97,7 +98,7 @@ class PhoneInfoService {
         return data['imageUrl'] as String?;
       }
     } catch (e) {
-      print('Error getting phone image from API: $e');
+      debugPrint('Error getting phone image from API: $e');
     }
 
     // Option 2: Fallback - Dùng GSMArena hoặc CDN
@@ -126,7 +127,7 @@ class PhoneInfoService {
         return PhoneInfo.fromJson(data);
       }
     } catch (e) {
-      print('Error getting phone info from API: $e');
+      debugPrint('Error getting phone info from API: $e');
     }
 
     return null;
@@ -149,7 +150,7 @@ class PhoneInfoService {
         return data.map((item) => PhoneSearchResult.fromJson(item)).toList();
       }
     } catch (e) {
-      print('Error searching phone: $e');
+      debugPrint('Error searching phone: $e');
     }
 
     return [];

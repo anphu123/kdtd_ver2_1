@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Service để ước tính giá thu mua điện thoại
@@ -37,7 +38,7 @@ class PriceEstimationService {
         return PriceEstimate.fromJson(data);
       }
     } catch (e) {
-      print('Error estimating price from API: $e');
+      debugPrint('Error estimating price from API: $e');
     }
 
     // Fallback: Tính giá local

@@ -15,10 +15,13 @@
 /// }
 /// ```
 /// ============================================================
+library;
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Thông tin về một quyền cần xin
@@ -185,7 +188,7 @@ class PermissionPrecheckService {
       AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.security, color: Colors.blue),
+            Icon(Icons.security, color: AppColors.info),
             SizedBox(width: 8),
             Text('Cấp Quyền Để Kiểm Định'),
           ],
@@ -195,9 +198,9 @@ class PermissionPrecheckService {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Ứng dụng cần các quyền sau để kiểm định chính xác:',
-                style: TextStyle(fontSize: 14),
+                style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 16),
               ...permissions.map(
@@ -206,7 +209,7 @@ class PermissionPrecheckService {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(info.icon, size: 24, color: Colors.grey[700]),
+                      Icon(info.icon, size: 24, color: AppColors.neutralGrey700),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -216,9 +219,8 @@ class PermissionPrecheckService {
                               children: [
                                 Text(
                                   info.name,
-                                  style: const TextStyle(
+                                  style: AppTextStyles.bodyMedium.copyWith(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14,
                                   ),
                                 ),
                                 if (info.required) ...[
@@ -229,14 +231,14 @@ class PermissionPrecheckService {
                                       vertical: 1,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.red[100],
+                                      color: AppColors.failLightest,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'Bắt buộc',
-                                      style: TextStyle(
+                                      style: AppTextStyles.bodySmall.copyWith(
                                         fontSize: 10,
-                                        color: Colors.red,
+                                        color: AppColors.fail,
                                       ),
                                     ),
                                   ),
@@ -246,9 +248,8 @@ class PermissionPrecheckService {
                             const SizedBox(height: 2),
                             Text(
                               info.description,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.neutralGreyDark,
                               ),
                             ),
                           ],
@@ -286,7 +287,7 @@ class PermissionPrecheckService {
       AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.error, color: Colors.red),
+            Icon(Icons.error, color: AppColors.fail),
             SizedBox(width: 8),
             Text('Không Thể Tiếp Tục'),
           ],
@@ -297,17 +298,17 @@ class PermissionPrecheckService {
           children: [
             Text(
               'Quyền "${info.name}" là bắt buộc để kiểm định.',
-              style: const TextStyle(fontSize: 14),
+              style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
               'Mục đích: ${info.description}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutralGreyDark),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Vui lòng vào Cài đặt > Ứng dụng > Quyền để cấp quyền.',
-              style: TextStyle(fontSize: 12),
+              style: AppTextStyles.bodySmall,
             ),
           ],
         ),
@@ -343,12 +344,12 @@ class PermissionPrecheckService {
                   return ListTile(
                     leading: Icon(
                       info.icon,
-                      color: isGranted ? Colors.green : Colors.red,
+                      color: isGranted ? AppColors.pass : AppColors.fail,
                     ),
                     title: Text(info.name),
                     trailing: Icon(
                       isGranted ? Icons.check_circle : Icons.cancel,
-                      color: isGranted ? Colors.green : Colors.red,
+                      color: isGranted ? AppColors.pass : AppColors.fail,
                     ),
                   );
                 }).toList(),

@@ -31,16 +31,13 @@ dependencies:
   proximity_sensor :
   path_provider:
   http:
-  excel: ^4.0.3
-  file_picker: ^8.0.0+1
-  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-
-
+  build_runner: ^2.4.13
+  flutter_gen_runner: ^5.8.0
 
 
 
@@ -58,6 +55,11 @@ flutter:
   assets:
     - assets/diag_rules.json
     - assets/diag_thresholds.json
+
+# Cấu hình FlutterGen — sinh mã tham chiếu asset kiểu an toàn (type-safe)
+# vào lib/gen/, thay vì gõ tay chuỗi đường dẫn "assets/...".
+flutter_gen:
+  output: lib/gen/
 
 
 

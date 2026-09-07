@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
+import 'widgets/page_indicator.dart';
 
 
-class OnboardingView extends StatefulWidget {
-  const OnboardingView({super.key});
+class OnboardingPage extends StatefulWidget {
+  const OnboardingPage({super.key});
 
   @override
-  State<OnboardingView> createState() => _OnboardingViewState();
+  State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingViewState extends State<OnboardingView>
+class _OnboardingPageState extends State<OnboardingPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation;
@@ -21,27 +23,27 @@ class _OnboardingViewState extends State<OnboardingView>
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
+  final List<OnboardingSlide> _pages = [
+    OnboardingSlide(
       title: "Check Your Phone's\nHealth",
       description:
           "Automatically test your screen, battery,\nsensors, and all other major hardware\ncomponents.",
       icon: Icons.smartphone_rounded,
-      color: Colors.blue,
+      color: AppColors.blue,
     ),
-    OnboardingPage(
+    OnboardingSlide(
       title: "Comprehensive\nDiagnostics",
       description:
           "Run complete hardware tests including\ncamera, speakers, microphone, and\nmore in seconds.",
       icon: Icons.verified_user_rounded,
-      color: Colors.green,
+      color: AppColors.green,
     ),
-    OnboardingPage(
+    OnboardingSlide(
       title: "Instant Results\n& Reports",
       description:
           "Get detailed results instantly with\nactionable insights for your device\nperformance.",
       icon: Icons.analytics_rounded,
-      color: Colors.purple,
+      color: AppColors.purple,
     ),
   ];
 
@@ -119,9 +121,9 @@ class _OnboardingViewState extends State<OnboardingView>
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.white,
                 ),
-                child: const Text(
+                child: Text(
                   'Skip',
-                  style: TextStyle(fontSize: 16),
+                  style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white),
                 ),
               ),
             ),
@@ -155,7 +157,7 @@ class _OnboardingViewState extends State<OnboardingView>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
                         _pages.length,
-                        (index) => _PageIndicator(
+                        (index) => PageIndicator(
                           isActive: index == _currentPage,
                           color: _pages[_currentPage].color,
                         ),
@@ -171,7 +173,7 @@ class _OnboardingViewState extends State<OnboardingView>
                         onPressed: _nextPage,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _pages[_currentPage].color,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -181,7 +183,7 @@ class _OnboardingViewState extends State<OnboardingView>
                           _currentPage == _pages.length - 1
                               ? 'Get Started'
                               : 'Next',
-                          style: const TextStyle(
+                          style: AppTextStyles.titleMedium.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -198,7 +200,7 @@ class _OnboardingViewState extends State<OnboardingView>
     );
   }
 
-  Widget _buildPage(OnboardingPage page, Size size, ThemeData theme) {
+  Widget _buildPage(OnboardingSlide page, Size size, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -217,7 +219,7 @@ class _OnboardingViewState extends State<OnboardingView>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: page.color.withOpacity(0.3 * _glowAnimation.value),
+                      color: page.color.withValues(alpha: 0.3 * _glowAnimation.value),
                       blurRadius: 60 * _glowAnimation.value,
                       spreadRadius: 20 * _glowAnimation.value,
                     ),
@@ -228,9 +230,9 @@ class _OnboardingViewState extends State<OnboardingView>
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: page.color.withOpacity(0.15),
+                      color: page.color.withValues(alpha: 0.15),
                       border: Border.all(
-                        color: page.color.withOpacity(0.3),
+                        color: page.color.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -255,10 +257,9 @@ class _OnboardingViewState extends State<OnboardingView>
             child: Text(
               page.title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 32,
+              style: AppTextStyles.headlineLarge.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.white,
                 height: 1.2,
               ),
             ),
@@ -272,9 +273,8 @@ class _OnboardingViewState extends State<OnboardingView>
             child: Text(
               page.description,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.white70,
                 height: 1.5,
               ),
             ),
@@ -287,40 +287,16 @@ class _OnboardingViewState extends State<OnboardingView>
   }
 }
 
-class OnboardingPage {
+class OnboardingSlide {
   final String title;
   final String description;
   final IconData icon;
   final Color color;
 
-  OnboardingPage({
+  OnboardingSlide({
     required this.title,
     required this.description,
     required this.icon,
     required this.color,
   });
-}
-
-class _PageIndicator extends StatelessWidget {
-  const _PageIndicator({
-    required this.isActive,
-    required this.color,
-  });
-
-  final bool isActive;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? 32 : 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: isActive ? color : Colors.white.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
 }

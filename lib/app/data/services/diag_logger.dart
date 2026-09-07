@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// DiagLogger - Centralized logging for diagnostics
 /// Giảm log spam, chỉ hiển thị khi debug mode bật
 class DiagLogger {
@@ -19,50 +21,50 @@ class DiagLogger {
   /// Log thông thường (chỉ khi debug mode)
   static void log(String message) {
     if (_debugMode) {
-      print('[DIAG] $message');
+      debugPrint('[DIAG] $message');
     }
   }
 
   /// Log info cho một bước test
   static void info(String code, String message) {
     if (_debugMode) {
-      print('[DIAG][$code] ℹ️ $message');
+      debugPrint('[DIAG][$code] ℹ️ $message');
     }
   }
 
   /// Log success - luôn hiển thị
   static void success(String code, String message) {
-    print('[DIAG][$code] ✅ $message');
+    debugPrint('[DIAG][$code] ✅ $message');
   }
 
   /// Log error - luôn hiển thị
   static void error(String code, String message) {
-    print('[DIAG][$code] ❌ $message');
+    debugPrint('[DIAG][$code] ❌ $message');
   }
 
   /// Log skip (chỉ khi debug)
   static void skip(String code, String reason) {
     if (_debugMode) {
-      print('[DIAG][$code] ⊝ SKIP: $reason');
+      debugPrint('[DIAG][$code] ⊝ SKIP: $reason');
     }
   }
 
   /// Log warning - luôn hiển thị
   static void warning(String code, String message) {
-    print('[DIAG][$code] ⚠️ $message');
+    debugPrint('[DIAG][$code] ⚠️ $message');
   }
 
   /// Log verbose (chỉ khi verbose mode)
   static void verbose(String message) {
     if (_verboseMode) {
-      print('[DIAG][VERBOSE] $message');
+      debugPrint('[DIAG][VERBOSE] $message');
     }
   }
 
   /// Log phase header
   static void phaseStart(String phaseName, int stepCount) {
     if (_debugMode) {
-      print('\n━━━ PHASE: $phaseName ($stepCount tests) ━━━');
+      debugPrint('\n━━━ PHASE: $phaseName ($stepCount tests) ━━━');
     }
   }
 
@@ -74,14 +76,14 @@ class DiagLogger {
     int skipped,
   ) {
     if (_debugMode) {
-      print('━━━ $phaseName DONE: ✅$passed ❌$failed ⊝$skipped ━━━\n');
+      debugPrint('━━━ $phaseName DONE: ✅$passed ❌$failed ⊝$skipped ━━━\n');
     }
   }
 
   /// Log timing
   static void timing(String operation, Duration duration) {
     if (_debugMode) {
-      print('[DIAG][TIME] $operation: ${duration.inMilliseconds}ms');
+      debugPrint('[DIAG][TIME] $operation: ${duration.inMilliseconds}ms');
     }
   }
 
@@ -95,16 +97,16 @@ class DiagLogger {
     required String grade,
     required Duration totalDuration,
   }) {
-    print('\n╔════════════════════════════════════════════════════════════╗');
-    print('║               KẾT QUẢ KIỂM ĐỊNH                            ║');
-    print('╠════════════════════════════════════════════════════════════╣');
-    print('║  Tổng số test:  $total'.padRight(60) + '║');
-    print('║  ✅ Passed:     $passed'.padRight(60) + '║');
-    print('║  ❌ Failed:     $failed'.padRight(60) + '║');
-    print('║  ⊝ Skipped:    $skipped'.padRight(60) + '║');
-    print('║  📈 Điểm số:    $score/100'.padRight(60) + '║');
-    print('║  🏆 Xếp loại:   $grade'.padRight(60) + '║');
-    print('║  ⏱️ Thời gian:   ${totalDuration.inSeconds}s'.padRight(60) + '║');
-    print('╚════════════════════════════════════════════════════════════╝\n');
+    debugPrint('\n╔════════════════════════════════════════════════════════════╗');
+    debugPrint('║               KẾT QUẢ KIỂM ĐỊNH                            ║');
+    debugPrint('╠════════════════════════════════════════════════════════════╣');
+    debugPrint('${'║  Tổng số test:  $total'.padRight(60)}║');
+    debugPrint('${'║  ✅ Passed:     $passed'.padRight(60)}║');
+    debugPrint('${'║  ❌ Failed:     $failed'.padRight(60)}║');
+    debugPrint('${'║  ⊝ Skipped:    $skipped'.padRight(60)}║');
+    debugPrint('${'║  📈 Điểm số:    $score/100'.padRight(60)}║');
+    debugPrint('${'║  🏆 Xếp loại:   $grade'.padRight(60)}║');
+    debugPrint('${'║  ⏱️ Thời gian:   ${totalDuration.inSeconds}s'.padRight(60)}║');
+    debugPrint('╚════════════════════════════════════════════════════════════╝\n');
   }
 }

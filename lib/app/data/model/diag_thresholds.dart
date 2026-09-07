@@ -12,6 +12,7 @@
 ///
 /// Dữ liệu được load từ assets/diag_thresholds.json
 /// ============================================================
+library;
 
 /// Ngưỡng tổng hợp cho tất cả loại test
 class DiagThresholds {

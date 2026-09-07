@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
-import 'package:kdtd_ver2_1/diagnostics/bindings/auto_diagnostics_binding.dart';
-import 'package:kdtd_ver2_1/diagnostics/views/auto_diagnostics_view.dart';
-import 'package:kdtd_ver2_1/views/onboarding_view.dart';
+import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_page.dart';
+import 'package:kdtd_ver2_1/app/modules/onboarding/onboarding_page.dart';
 
 import 'app_routes.dart';
 
@@ -17,35 +17,18 @@ class AppPages {
     // Onboarding
     GetPage(
       name: AppRoutes.onboarding,
-      page: () => const OnboardingView(),
+      page: () => const OnboardingPage(),
       transition: Transition.fadeIn,
     ),
 
-    // Diagnostics - Home Dashboard (using new view)
+    // Diagnostics - Home Dashboard
     GetPage(
       name: AppRoutes.diagnosticsHome,
-      page: () => const AutoDiagnosticsView(), 
-      binding: AutoDiagnosticsBinding(),
+      page: () => const DiagnosticsHomePage(),
+      binding: DiagnosticsHomeBinding(),
       transition: Transition.fadeIn,
     ),
-
-    // Diagnostics - Auto (Redesigned)
-    // GetPage(
-    //   name: AppRoutes.diagnosticsAuto,
-    //   page: () => const AutoDiagnosticsView(),
-    //   binding: AutoDiagnosticsBinding(),
-    //   transition: Transition.fadeIn,
-    // ),
-
-    // Diagnostics - Auto New (Modern UI)
-    // GetPage(
-    //   name: AppRoutes.diagnosticsAutoOld,
-    //   page: () => const AutoDiagnosticsNewView(),
-    //   binding: AutoDiagnosticsBinding(),
-    //   transition: Transition.fadeIn,
-    // ),
 
     // Add more routes here
   ];
 }
-

@@ -10,6 +10,7 @@
 /// - ROM info (với estimation cho iOS)
 /// - Model mapping cho iOS devices
 /// ============================================================
+library;
 
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -349,10 +350,10 @@ class DeviceInfoHelper {
 
     // Fallback: Extract từ machine
     if (machine.startsWith('iPhone')) {
-      return 'iPhone (${machine})';
+      return 'iPhone ($machine)';
     }
     if (machine.startsWith('iPad')) {
-      return 'iPad (${machine})';
+      return 'iPad ($machine)';
     }
 
     return machine;

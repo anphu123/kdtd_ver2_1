@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'device_profile.dart';
-import 'diag_thresholds.dart';
-import 'diag_environment.dart';
+import 'package:kdtd_ver2_1/gen/assets.gen.dart';
+import 'diag_logger.dart';
+import '../model/device_profile.dart';
+import '../model/diag_thresholds.dart';
+import '../model/diag_environment.dart';
 
 /// Result of evaluation
 enum EvalResult { pass, fail, skip }
@@ -27,14 +29,12 @@ class RuleEvaluator {
     required DiagEnvironment environment,
   }) async {
     // Load thresholds
-    final thresholdsJson = await rootBundle.loadString(
-      'assets/diag_thresholds.json',
-    );
+    final thresholdsJson = await rootBundle.loadString(Assets.diagThresholds);
     final thresholdsData = json.decode(thresholdsJson);
     final thresholds = DiagThresholds.fromJson(thresholdsData);
 
     // Load rules
-    final rulesJson = await rootBundle.loadString('assets/diag_rules.json');
+    final rulesJson = await rootBundle.loadString(Assets.diagRules);
     final rules = json.decode(rulesJson) as Map<String, dynamic>;
 
     final evaluator = RuleEvaluator(
@@ -49,8 +49,8 @@ class RuleEvaluator {
 
   /// Evaluate a diagnostic step
   EvalResult evaluate(String code, Map<String, dynamic> payload) {
-    print('      [RuleEval] Evaluating: $code');
-    print('      [RuleEval] Payload: $payload');
+    DiagLogger.verbose('[RuleEval] Evaluating: $code');
+    DiagLogger.verbose('[RuleEval] Payload: $payload');
 
     EvalResult result;
     switch (code) {
@@ -130,8 +130,9 @@ class RuleEvaluator {
         result = EvalResult.skip; // Unknown test
     }
 
-    print(
-      '      [RuleEval] Result: ${result.toString().split('.').last.toUpperCase()}',
+    DiagLogger.info(
+      code,
+      '[RuleEval] Result: ${result.toString().split('.').last.toUpperCase()}',
     );
     return result;
   }
@@ -145,16 +146,18 @@ class RuleEvaluator {
         r.contains('EDGE') ||
         r.contains('GSM') ||
         r.contains('CDMA') ||
-        r.contains('1X'))
+        r.contains('1X')) {
       return 2;
+    }
     // 3G technologies
     if (r.contains('UMTS') ||
         r.contains('HSPA') ||
         r.contains('HSDPA') ||
         r.contains('HSUPA') ||
         r.contains('HSPAP') ||
-        r.contains('EVDO'))
+        r.contains('EVDO')) {
       return 3;
+    }
     // 4G technologies
     if (r.contains('LTE') || r.contains('WIMAX')) return 4;
     // 5G
@@ -389,8 +392,9 @@ class RuleEvaluator {
 
   EvalResult _evalBluetooth(Map<String, dynamic> p) {
     if (environment.isPermDenied('bluetoothScan')) return EvalResult.skip;
-    if (environment.isMiui && !environment.locationServiceOn)
+    if (environment.isMiui && !environment.locationServiceOn) {
       return EvalResult.skip;
+    }
 
     final enabled = p['enabled'] == true;
     if (!enabled) return EvalResult.skip;
@@ -425,8 +429,9 @@ class RuleEvaluator {
     final gyro = p['gyroscope'] == true;
 
     // Check if device should have these sensors
-    if (!accel && !environment.hasSensor('accelerometer'))
+    if (!accel && !environment.hasSensor('accelerometer')) {
       return EvalResult.skip;
+    }
     if (!gyro && !environment.hasSensor('gyroscope')) return EvalResult.skip;
 
     if (!accel || !gyro) return EvalResult.fail;
@@ -460,7 +465,7 @@ class RuleEvaluator {
     final required = profile.sPen;
     if (!required) return EvalResult.skip;
 
-    final detected = p == true || p['detected'] == true;
+    final detected = p['detected'] == true;
     return detected ? EvalResult.pass : EvalResult.fail;
   }
 
@@ -514,7 +519,7 @@ class RuleEvaluator {
 
       if (hasInnerScreenDefect) {
         // Màn hình trong có lỗi → FAIL (Loại 5)
-        print('      ⚠️ CRITICAL: Màn hình trong có lỗi → Loại 5');
+        DiagLogger.warning('screen', 'CRITICAL: Màn hình trong có lỗi → Loại 5');
         return EvalResult.fail;
       }
 

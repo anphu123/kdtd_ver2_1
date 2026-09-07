@@ -9,6 +9,7 @@
 ///
 /// Dữ liệu được load từ assets/device_profiles.json
 /// ============================================================
+library;
 
 class DeviceProfile {
   /// Tên profile (thường là tên model hoặc dòng máy)
