@@ -14,6 +14,8 @@ abstract class AppRoutes {
   static const String diagnosticsAuto = '/diagnostics/auto';
   static const String diagnosticsAutoOld = '/diagnostics/autoOld';
   static const String diagnosticsDetail = '/diagnostics/detail';
+  static const String deviceConfirmation = '/diagnostics/device-confirmation';
+  static const String preTestGuide = '/diagnostics/pre-test-guide';
 
   // Test Routes
   static const String testCamera = '/test/camera';

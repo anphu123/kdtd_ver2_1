@@ -33,47 +33,10 @@ class PhoneInfoService {
       debugPrint('Error getting marketing name from API: $e');
     }
 
-    // Option 2: Fallback - Dùng local mapping
-    return _getLocalMarketingName(modelName, brand);
-  }
-
-  /// Local mapping cho các model phổ biến
-  static String _getLocalMarketingName(String modelName, String brand) {
-    final model = modelName.toUpperCase();
-    final brandLower = brand.toLowerCase();
-
-    // Samsung
-    if (brandLower.contains('samsung')) {
-      if (model.contains('SM-S921')) return 'Samsung Galaxy S24';
-      if (model.contains('SM-S911')) return 'Samsung Galaxy S23';
-      if (model.contains('SM-S901')) return 'Samsung Galaxy S22';
-      if (model.contains('SM-G991')) return 'Samsung Galaxy S21 5G';
-      if (model.contains('SM-G981')) return 'Samsung Galaxy S20 5G';
-      if (model.contains('SM-A546')) return 'Samsung Galaxy A54 5G';
-      if (model.contains('SM-A346')) return 'Samsung Galaxy A34 5G';
-      if (model.contains('SM-F936')) return 'Samsung Galaxy Z Fold4';
-      if (model.contains('SM-F721')) return 'Samsung Galaxy Z Flip4';
+    // Option 2: Fallback - Tên chuẩn từ brand & model
+    if (brand.isNotEmpty && !modelName.toLowerCase().contains(brand.toLowerCase())) {
+      return '$brand $modelName';
     }
-
-    // iPhone
-    if (brandLower.contains('apple') || model.contains('IPHONE')) {
-      if (model.contains('IPHONE16')) return 'iPhone 16';
-      if (model.contains('IPHONE15')) return 'iPhone 15';
-      if (model.contains('IPHONE14')) return 'iPhone 14';
-      if (model.contains('IPHONE13')) return 'iPhone 13';
-      if (model.contains('IPHONE12')) return 'iPhone 12';
-      if (model.contains('PRO MAX')) return '$model Pro Max';
-      if (model.contains('PRO')) return '$model Pro';
-    }
-
-    // Xiaomi
-    if (brandLower.contains('xiaomi')) {
-      if (model.contains('2312')) return 'Xiaomi 14';
-      if (model.contains('2211')) return 'Xiaomi 13';
-      if (model.contains('2201')) return 'Xiaomi 12';
-    }
-
-    // Fallback: return model name
     return modelName;
   }
 

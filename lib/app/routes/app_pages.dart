@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/modules/device_specs_confirmation/device_specs_confirmation_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_page.dart';
 import 'package:kdtd_ver2_1/app/modules/onboarding/onboarding_page.dart';
+import 'package:kdtd_ver2_1/app/modules/pre_test_guide/pre_test_guide_page.dart';
 
 import 'app_routes.dart';
 
@@ -29,6 +31,16 @@ class AppPages {
       transition: Transition.fadeIn,
     ),
 
-    // Add more routes here
+    // Intermediate Screens
+    GetPage(
+      name: AppRoutes.deviceConfirmation,
+      page: () => const DeviceSpecsConfirmationPage(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: AppRoutes.preTestGuide,
+      page: () => const PreTestPreparationGuidePage(),
+      transition: Transition.rightToLeft,
+    ),
   ];
 }

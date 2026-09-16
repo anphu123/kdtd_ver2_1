@@ -6,7 +6,6 @@ export 'animated_test_item.dart';
 export 'status_info.dart';
 export 'capabilities_section.dart';
 export 'hardware_details_section.dart';
-export 'phone_3d_widget.dart';
 export 'purchase_action_buttons.dart';
 export 'progress_indicator_section.dart';
 export 'phase_header.dart';

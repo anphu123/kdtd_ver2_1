@@ -8,8 +8,62 @@ import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
 import 'widgets/widgets.dart';
 
-class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
+/// Trang Dashboard Kiểm Định Thu Cũ Đổi Mới.
+/// Đã được tối ưu hóa hiệu năng:
+/// - Chuyển sang StatefulWidget để quản lý ScrollController và GlobalKey bền vững.
+/// - Thu hẹp phạm vi Obx xuống các widget lá, loại bỏ tình trạng rebuild toàn bộ cây Sliver.
+/// - Auto-scroll theo luồng phản ứng (Worker) thay vì PostFrameCallback trên mỗi lần build.
+class DiagnosticsHomePage extends StatefulWidget {
   const DiagnosticsHomePage({super.key});
+
+  @override
+  State<DiagnosticsHomePage> createState() => _DiagnosticsHomePageState();
+}
+
+class _DiagnosticsHomePageState extends State<DiagnosticsHomePage> {
+  late final DiagnosticsHomeController controller;
+  late final ScrollController _scrollController;
+  final Map<String, GlobalKey> _stepKeys = {};
+  Worker? _scrollWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<DiagnosticsHomeController>();
+    _scrollController = ScrollController();
+
+    for (final step in controller.steps) {
+      _stepKeys[step.code] = GlobalKey();
+    }
+
+    // Lắng nghe thay đổi của step đang chạy để tự động cuộn (chỉ kích hoạt khi đổi step)
+    String? lastRunningCode;
+    _scrollWorker = ever<List<DiagStep>>(controller.steps, (steps) {
+      final runningStep = steps.firstWhereOrNull((s) => s.status == DiagStatus.running);
+      if (runningStep != null && runningStep.code != lastRunningCode) {
+        lastRunningCode = runningStep.code;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scrollController.hasClients) return;
+          final stepContext = _stepKeys[runningStep.code]?.currentContext;
+          if (stepContext != null) {
+            Scrollable.ensureVisible(
+              stepContext,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              alignment: 0.3,
+            );
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollWorker?.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   /// Handle tap on a test item to restart or view details
   Future<void> _handleTestTap(DiagStep step) async {
@@ -78,52 +132,51 @@ class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
   }
 
   /// Xây dựng danh sách test grouped theo phase
-  List<Widget> _buildGroupedList(List<DiagStep> steps, Map<String, GlobalKey> stepKeys) {
+  List<Widget> _buildGroupedList() {
     final widgets = <Widget>[];
 
-    final grouped = <DiagPhase, List<DiagStep>>{};
     for (final phase in DiagPhase.values) {
-      grouped[phase] = steps.where((s) => s.phase == phase).toList();
-    }
-
-    for (final phase in DiagPhase.values) {
-      final phaseSteps = grouped[phase] ?? [];
+      final phaseSteps = controller.steps.where((s) => s.phase == phase).toList();
       if (phaseSteps.isEmpty) continue;
-
-      final passedCount = phaseSteps.where((s) => s.status == DiagStatus.passed).length;
-      final totalCount = phaseSteps.length;
-      final isCompleted = passedCount == totalCount;
 
       widgets.add(
         SliverToBoxAdapter(
-          child: PhaseHeader(
-            title: _getPhaseTitle(phase),
-            passedCount: passedCount,
-            totalCount: totalCount,
-            isCompleted: isCompleted,
-          ),
+          child: Obx(() {
+            final currentSteps = controller.steps.where((s) => s.phase == phase).toList();
+            final passedCount = currentSteps.where((s) => s.status == DiagStatus.passed).length;
+            final totalCount = currentSteps.length;
+            final isCompleted = passedCount == totalCount && totalCount > 0;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PhaseHeader(
+                  title: _getPhaseTitle(phase),
+                  passedCount: passedCount,
+                  totalCount: totalCount,
+                  isCompleted: isCompleted,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < currentSteps.length; i++) ...[
+                        AnimatedTestItem(
+                          key: _stepKeys[currentSteps[i].code],
+                          step: currentSteps[i],
+                          onTap: () => _handleTestTap(currentSteps[i]),
+                        ),
+                        if (i < currentSteps.length - 1) const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+            );
+          }),
         ),
       );
-
-      widgets.add(
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          sliver: SliverList.separated(
-            itemCount: phaseSteps.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final step = phaseSteps[index];
-              return AnimatedTestItem(
-                key: stepKeys[step.code],
-                step: step,
-                onTap: () => _handleTestTap(step),
-              );
-            },
-          ),
-        ),
-      );
-
-      widgets.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
     }
 
     return widgets;
@@ -131,13 +184,6 @@ class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final scrollController = ScrollController();
-    final stepKeys = <String, GlobalKey>{};
-
-    for (final step in controller.steps) {
-      stepKeys[step.code] = GlobalKey();
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -187,35 +233,18 @@ class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
       ),
       backgroundColor: AppColors.tradeInSurfaceBg,
       body: SafeArea(
-        child: Obx(() {
-          final steps = controller.steps;
-          final total = steps.length;
-          final completed = controller.completed;
-          final progress = total == 0 ? 0.0 : completed / total;
-          final isRunning = controller.isRunning.value;
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // 1. Device Info Card (Reactive)
+            SliverToBoxAdapter(
+              child: Obx(() {
+                final steps = controller.steps;
+                final total = steps.length;
+                final completed = controller.completed;
+                final progress = total == 0 ? 0.0 : completed / total;
 
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!scrollController.hasClients) return;
-
-            final currentStep = steps.firstWhereOrNull((s) => s.status == DiagStatus.running);
-            if (currentStep != null && stepKeys.containsKey(currentStep.code)) {
-              final stepContext = stepKeys[currentStep.code]?.currentContext;
-              if (stepContext != null) {
-                Scrollable.ensureVisible(
-                  stepContext,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut,
-                  alignment: 0.3,
-                );
-              }
-            }
-          });
-
-          return CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: DeviceInfoSection(
+                return DeviceInfoSection(
                   modelName: controller.modelName,
                   brand: controller.brand,
                   manufacturer: controller.manufacturer,
@@ -227,66 +256,84 @@ class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
                   romInfo: controller.info['rom'] as Map<String, dynamic>?,
                   origin: controller.origin,
                   marketingName: controller.marketingName,
-                ),
-              ),
+                );
+              }),
+            ),
 
-              SliverToBoxAdapter(
-                child: AutoSuiteSection(
-                  onStartAuto: isRunning ? null : controller.startWithPermissionCheck,
-                  isRunning: isRunning,
-                ),
-              ),
+            // 2. Auto Suite 1-Click CTA (Reactive isRunning)
+            SliverToBoxAdapter(
+              child: Obx(() => AutoSuiteSection(
+                onStartAuto: controller.isRunning.value ? null : controller.startWithPermissionCheck,
+                isRunning: controller.isRunning.value,
+              )),
+            ),
 
-              const SliverToBoxAdapter(child: ProgressIndicatorSection()),
+            // 3. Progress indicator (có Obx nội bộ)
+            const SliverToBoxAdapter(child: ProgressIndicatorSection()),
 
-              if (completed > 0 && !isRunning)
-                SliverToBoxAdapter(
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.tradeInEmerald.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.tradeInEmerald.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_rounded, color: AppColors.tradeInEmerald),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Đã có kết quả định giá máy!',
-                                style: AppTextStyles.titleSmall.copyWith(
-                                  color: AppColors.tradeInNavy,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Khám phá ngay số tiền bù để lên đời máy mới.',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.neutralGreyDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Get.to(() => const DiagnosticResultPage()),
-                          child: const Text('Xem ngay'),
-                        ),
-                      ],
-                    ),
+            // 4. Quick Result Notification Banner (Reactive completed & !isRunning)
+            SliverToBoxAdapter(
+              child: Obx(() {
+                final completed = controller.completed;
+                final isRunning = controller.isRunning.value;
+
+                if (completed == 0 || isRunning) {
+                  return const SizedBox.shrink();
+                }
+
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.tradeInEmerald.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.tradeInEmerald.withValues(alpha: 0.3)),
                   ),
-                ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: AppColors.tradeInEmerald),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Đã có kết quả định giá máy!',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: AppColors.tradeInNavy,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Khám phá ngay số tiền bù để lên đời máy mới.',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.neutralGreyDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.to(() => const DiagnosticResultPage()),
+                        child: const Text('Xem ngay'),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
 
-              ..._buildGroupedList(steps, stepKeys),
+            // 5. Test Suite Grouped Slivers
+            ..._buildGroupedList(),
 
-              SliverToBoxAdapter(
-                child: Padding(
+            // 6. Bottom Sticky / Final Action Bar (Reactive)
+            SliverToBoxAdapter(
+              child: Obx(() {
+                final completed = controller.completed;
+                final isRunning = controller.isRunning.value;
+
+                return Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
@@ -337,11 +384,11 @@ class DiagnosticsHomePage extends GetView<DiagnosticsHomeController> {
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          );
-        }),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }

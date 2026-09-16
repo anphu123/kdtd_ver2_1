@@ -210,20 +210,20 @@ class RuleEvaluator {
       case 'wifi':
         final enabled = payload['enabled'] == true;
         final connected = payload['connected'] == true;
-        if (result == EvalResult.skip) {
+        if (result == EvalResult.fail || result == EvalResult.skip) {
           if (!enabled) {
-            return 'WiFi đang tắt';
+            return 'Không thể kích hoạt ăng-ten Wi-Fi';
           }
-          if (!connected) {
-            return 'Không kết nối Wi-Fi';
-          }
-          return 'WiFi không hoạt động';
+          return 'Wi-Fi không phản hồi';
         }
         final ssid = payload['ssid'];
-        if (ssid != null && ssid != '' && ssid != '<unknown ssid>') {
-          return 'Kết nối: $ssid';
+        if (connected && ssid != null && ssid != '' && ssid != '<unknown ssid>') {
+          return 'Đã kết nối: $ssid';
         }
-        return 'WiFi hoạt động tốt';
+        if (enabled) {
+          return 'Ăng-ten Wi-Fi hoạt động tốt';
+        }
+        return 'Wi-Fi đạt chuẩn';
 
       case 'bt':
         if (result == EvalResult.skip) {
@@ -375,18 +375,10 @@ class RuleEvaluator {
     final enabled = p['enabled'] == true;
     final connected = p['connected'] == true;
 
-    // WiFi tắt hoặc không kết nối → SKIP (không phải lỗi phần cứng)
-    if (!enabled) return EvalResult.skip;
-    if (!connected) return EvalResult.skip;
+    // Nếu không bật được ăng-ten Wi-Fi → Không đạt
+    if (!enabled && !connected) return EvalResult.fail;
 
-    // Location service tắt → vẫn pass kết nối, chỉ không đọc được SSID
-    if (!environment.locationServiceOn) return EvalResult.pass;
-
-    final ssid = p['ssid'];
-    // Không đọc được SSID nhưng đã kết nối → vẫn pass (thiếu quyền location)
-    if (ssid == null || ssid == '' || ssid == '<unknown ssid>') {
-      return EvalResult.pass; // Changed from fail
-    }
+    // Ăng-ten Wi-Fi hoạt động tốt → ĐẠT CHUẨN
     return EvalResult.pass;
   }
 

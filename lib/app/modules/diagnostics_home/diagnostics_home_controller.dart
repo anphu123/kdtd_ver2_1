@@ -18,6 +18,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:vibration/vibration.dart';
 
 import 'package:kdtd_ver2_1/app/data/model/device_profile.dart';
+import 'package:kdtd_ver2_1/app/data/model/device_cosmetic_survey.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_environment.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'package:kdtd_ver2_1/app/data/services/profile_manager.dart';
@@ -25,8 +26,9 @@ import 'package:kdtd_ver2_1/app/data/services/rule_evaluator.dart';
 import 'package:kdtd_ver2_1/app/data/services/permission_precheck_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/phone_info_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/device_info_helper.dart';
-import 'package:kdtd_ver2_1/app/data/services/device_name_mapper.dart';
 import 'package:kdtd_ver2_1/app/data/services/diag_logger.dart';
+import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
+import 'package:kdtd_ver2_1/app/modules/device_specs_confirmation/device_specs_confirmation_page.dart';
 import 'package:kdtd_ver2_1/app/modules/camera_test/camera_test_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/camera_test/camera_test_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
@@ -86,6 +88,7 @@ class DiagnosticsHomeController extends GetxController {
   final failedCount = 0.obs;
   final skippedCount = 0.obs;
   final info = <String, dynamic>{}.obs;
+  final cosmeticSurvey = DeviceCosmeticSurvey().obs;
 
   /// Phase (nhóm test) hiện đang chạy song song.
   final currentPhase = Rx<DiagPhase>(DiagPhase.critical);
@@ -447,7 +450,8 @@ class DiagnosticsHomeController extends GetxController {
 
   // ==================== RUN FLOW ====================
 
-  /// Xin quyền (có giải thích) rồi mới bắt đầu kiểm định.
+  /// Xin quyền (có giải thích) rồi quét thông tin cơ bản (Phase 1: OS, RAM, ROM, Pin),
+  /// sau đó mở màn hình xác nhận cấu hình & khảo sát ngoại quan trước khi test chức năng.
   Future<void> startWithPermissionCheck() async {
     if (isRunning.value) return;
 
@@ -457,10 +461,11 @@ class DiagnosticsHomeController extends GetxController {
       return;
     }
 
-    await start();
+    await startCriticalScanAndConfirm();
   }
 
-  Future<void> start() async {
+  /// Chạy Phase 1 (Critical: OS, RAM, ROM, Pin) và mở màn hình Xác Nhận Cấu Hình
+  Future<void> startCriticalScanAndConfirm() async {
     if (isRunning.value) return;
 
     passedCount.value = 0;
@@ -478,7 +483,23 @@ class DiagnosticsHomeController extends GetxController {
     }
     await _updateEnvironment();
 
+    // Chạy Phase 1: Critical (OS, RAM, ROM, Pin)
     await _runPhase(DiagPhase.critical);
+    isRunning.value = false;
+
+    // Chuyển sang màn hình trung gian 1: Xác nhận thông số cấu hình RAM/ROM & ngoại quan
+    Get.to(() => const DeviceSpecsConfirmationPage());
+  }
+
+  /// Tiếp tục chạy các bài test chức năng sau khi khách hàng đã xem cấu hình và hướng dẫn
+  Future<void> startFunctionalDiagnostics() async {
+    if (isRunning.value) return;
+
+    // Trở về trang Dashboard chính nếu đang ở các trang trung gian
+    Get.until((route) => route.isFirst || Get.currentRoute == AppRoutes.diagnosticsHome);
+
+    isRunning.value = true;
+
     await _runPhase(DiagPhase.connectivity);
     await _runPhase(DiagPhase.sensors);
     await _runPhase(DiagPhase.hardware);
@@ -486,7 +507,7 @@ class DiagnosticsHomeController extends GetxController {
     await _runPhase(DiagPhase.manual);
 
     isRunning.value = false;
-    final totalDuration = DateTime.now().difference(_startTime!);
+    final totalDuration = DateTime.now().difference(_startTime ?? DateTime.now());
 
     DiagLogger.summary(
       total: total,
@@ -499,6 +520,11 @@ class DiagnosticsHomeController extends GetxController {
     );
 
     _navigateToResult();
+  }
+
+  /// Phương thức chạy toàn bộ test
+  Future<void> start() async {
+    await startCriticalScanAndConfirm();
   }
 
   void _navigateToResult() {
@@ -586,25 +612,37 @@ class DiagnosticsHomeController extends GetxController {
     phaseProgress.value = 0;
     phaseTotal.value = phaseSteps.length;
 
-    for (final step in phaseSteps) {
-      step.status = DiagStatus.running;
-    }
-    steps.refresh();
     DiagLogger.phaseStart(_phaseName(phase), phaseSteps.length);
 
-    Future<void> runOne(DiagStep step) async {
+    // Chạy TUẦN TỰ từng bài test để khách hàng theo dõi được tiến trình kỹ lưỡng
+    for (final step in phaseSteps) {
+      // 1. Đặt trạng thái đang chạy cho riêng step hiện tại
+      step.status = DiagStatus.running;
+      step.note = _getRunningNote(step.code);
+      steps.refresh();
+
+      final stopwatch = Stopwatch()..start();
+
+      // 2. Thực thi kiểm tra với timeout
       final result = await _runStepWithTimeout(step);
+      stopwatch.stop();
+
+      // 3. Đệm thời gian (pacing nhịp quét 800ms nếu native trả về quá nhanh)
+      final elapsedMs = stopwatch.elapsedMilliseconds;
+      const minPacingMs = 800; // Tạo nhịp chậm rãi, đáng tin cậy
+      if (elapsedMs < minPacingMs && step.kind == DiagKind.auto) {
+        await Future.delayed(Duration(milliseconds: minPacingMs - elapsedMs));
+      }
+
+      // 4. Đánh giá kết quả
       _evaluateStep(step, result);
       phaseProgress.value++;
       steps.refresh();
-    }
 
-    if (phase == DiagPhase.manual) {
-      for (final step in phaseSteps) {
-        await runOne(step);
+      // 5. Nghỉ 250ms giữa 2 bài test để khách hàng kịp quan sát tích xanh
+      if (step.kind == DiagKind.auto) {
+        await Future.delayed(const Duration(milliseconds: 250));
       }
-    } else {
-      await Future.wait(phaseSteps.map(runOne));
     }
 
     DiagLogger.phaseComplete(
@@ -613,6 +651,45 @@ class DiagnosticsHomeController extends GetxController {
       phaseSteps.where((s) => s.status == DiagStatus.failed).length,
       phaseSteps.where((s) => s.status == DiagStatus.skipped).length,
     );
+  }
+
+  String _getRunningNote(String code) {
+    switch (code) {
+      case 'osmodel':
+        return 'Đang đọc thông số hệ điều hành & xuất xứ...';
+      case 'battery':
+        return 'Đang đo điện áp, tế bào pin & trạng thái sạc...';
+      case 'ram':
+        return 'Đang phân tích dung lượng & tốc độ RAM...';
+      case 'rom':
+        return 'Đang kiểm tra phân vùng bộ nhớ trong (Storage)...';
+      case 'wifi':
+        return 'Đang kiểm tra ăng-ten thu phát Wi-Fi...';
+      case 'mobile':
+        return 'Đang đo cường độ tín hiệu sóng di động...';
+      case 'bt':
+        return 'Đang quét dải tần Bluetooth LE...';
+      case 'nfc':
+        return 'Đang kiểm tra chip trường gần NFC...';
+      case 'sim':
+        return 'Đang nhận diện khay thẻ SIM...';
+      case 'sensors':
+        return 'Đang hiệu chuẩn con quay hồi chuyển & gia tốc...';
+      case 'gps':
+        return 'Đang định vị độ chính xác tọa độ GPS...';
+      case 'charge':
+        return 'Đang kiểm tra mạch sạc và tiếp điểm nguồn...';
+      case 'wired':
+        return 'Đang kiểm tra cổng cắm tai nghe có dây...';
+      case 'lock':
+        return 'Đang kiểm tra bảo mật màn hình...';
+      case 'spen':
+        return 'Đang kiểm tra hỗ trợ bút cảm ứng...';
+      case 'bio':
+        return 'Đang kiểm tra cảm biến sinh trắc học...';
+      default:
+        return 'Đang thẩm định phần cứng...';
+    }
   }
 
   String _phaseName(DiagPhase phase) {
@@ -847,7 +924,9 @@ class DiagnosticsHomeController extends GetxController {
         final a = await _deviceInfo.androidInfo;
         final vendor = a.manufacturer.toLowerCase();
         final origin = _getOriginCountry(a.brand, a.manufacturer);
-        final marketingName = DeviceNameMapper.getMarketingName(a.model, a.brand);
+        final marketingName = a.brand.isNotEmpty && !a.model.toLowerCase().contains(a.brand.toLowerCase())
+            ? '${a.brand.toUpperCase()} ${a.model}'
+            : a.model;
 
         // Cập nhật marketing name từ API (bất đồng bộ, không chặn luồng chính)
         _fetchMarketingNameFromAPI(a.model, a.brand);

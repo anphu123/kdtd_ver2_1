@@ -6,10 +6,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
+import android.provider.Settings
 import android.telephony.PhoneStateListener
 import android.telephony.SignalStrength
 import android.telephony.TelephonyManager
@@ -158,6 +160,59 @@ class MainActivity : FlutterActivity() {
                     // Thông tin RAM/ROM
                     "getRamInfo" -> result.success(getRamInfo())
                     "getRomInfo" -> result.success(getRomInfo())
+
+                    // Wi-Fi Status & Control
+                    "isWifiEnabled" -> {
+                        try {
+                            val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                            result.success(wm.isWifiEnabled)
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
+
+                    "enableWifi" -> {
+                        try {
+                            val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                            if (!wm.isWifiEnabled) {
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                                    @Suppress("DEPRECATION")
+                                    wm.isWifiEnabled = true
+                                    result.success(true)
+                                } else {
+                                    val panelIntent = Intent(Settings.Panel.ACTION_WIFI).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    try {
+                                        startActivity(panelIntent)
+                                        result.success(true)
+                                    } catch (_: Exception) {
+                                        val fallbackIntent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        startActivity(fallbackIntent)
+                                        result.success(true)
+                                    }
+                                }
+                            } else {
+                                result.success(true)
+                            }
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
+
+                    "openWifiSettings" -> {
+                        try {
+                            val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (_: Exception) {
+                            result.success(false)
+                        }
+                    }
 
                     else -> result.notImplemented()
                 }
