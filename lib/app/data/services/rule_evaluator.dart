@@ -11,11 +11,11 @@ import '../model/diag_environment.dart';
 
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
-/// Result of evaluation
+/// Kết quả đánh giá kiểm định
 enum EvalResult { pass, fail, skip }
 
-/// Rule Evaluator - Automatically evaluates diagnostic test results
-/// Based on rules from assets/diag_rules.json and thresholds
+/// Bộ đánh giá quy tắc (Rule Evaluator) - Tự động đánh giá kết quả các bài kiểm định
+/// Dựa trên bộ quy tắc từ assets/diag_rules.json và các ngưỡng tiêu chuẩn
 class RuleEvaluator {
   final DiagThresholds thresholds;
   final DeviceProfile profile;
@@ -28,17 +28,17 @@ class RuleEvaluator {
     required this.environment,
   });
 
-  /// Load rules from JSON asset
+  /// Tải bộ quy tắc từ tệp JSON trong assets
   static Future<RuleEvaluator> create({
     required DeviceProfile profile,
     required DiagEnvironment environment,
   }) async {
-    // Load thresholds
+    // Tải các ngưỡng kiểm định
     final thresholdsJson = await rootBundle.loadString(Assets.diagThresholds);
     final thresholdsData = json.decode(thresholdsJson);
     final thresholds = DiagThresholds.fromJson(thresholdsData);
 
-    // Load rules
+    // Tải các quy tắc
     final rulesJson = await rootBundle.loadString(Assets.diagRules);
     final rules = json.decode(rulesJson) as Map<String, dynamic>;
 
@@ -52,7 +52,7 @@ class RuleEvaluator {
     return evaluator;
   }
 
-  /// Evaluate a diagnostic step
+  /// Đánh giá một bước kiểm định
   EvalResult evaluate(String code, Map<String, dynamic> payload) {
     DiagLogger.verbose('[RuleEval] Evaluating: $code');
     DiagLogger.verbose('[RuleEval] Payload: $payload');
@@ -153,19 +153,19 @@ class RuleEvaluator {
     return result;
   }
 
-  /// Helper: classify radio generation
+  /// Tiện ích: phân loại thế hệ mạng viễn thông
   int _radioGeneration(String? radio) {
     if (radio == null || radio.isEmpty) return 0; // unknown
     final r = radio.toUpperCase();
-    // 2G technologies
+    // Công nghệ mạng 2G
     if (RuleEvaluatorConstants.radio2GKeywords.any((k) => r.contains(k))) {
       return 2;
     }
-    // 3G technologies
+    // Công nghệ mạng 3G
     if (RuleEvaluatorConstants.radio3GKeywords.any((k) => r.contains(k))) {
       return 3;
     }
-    // 4G technologies
+    // Công nghệ mạng 4G
     if (RuleEvaluatorConstants.radio4GKeywords.any((k) => r.contains(k))) {
       return 4;
     }
@@ -176,7 +176,7 @@ class RuleEvaluator {
     return 0; // unknown
   }
 
-  /// Get human-readable reason for the result
+  /// Lấy lý do kết quả dưới dạng văn bản hiển thị cho người dùng
   String getReason(
     String code,
     Map<String, dynamic> payload,
@@ -353,7 +353,7 @@ class RuleEvaluator {
     }
   }
 
-  // ==================== Individual Evaluators ====================
+  // ==================== Các hàm đánh giá từng bài test ====================
 
   EvalResult _evalOsModel(Map<String, dynamic> p) {
     final platform = p['platform'];
@@ -364,7 +364,7 @@ class RuleEvaluator {
         model == '') {
       return EvalResult.fail;
     }
-    // Auto fail purchase support if Android <5 (API <21)
+    // Tự động đánh rớt nếu Android < 5 (API < 21) không hỗ trợ thu mua
     if (platform == 'android') {
       final sdk = p['sdk'];
       if (sdk is int && sdk < DiagnosticsConstants.minAndroidSdk) {
@@ -388,7 +388,7 @@ class RuleEvaluator {
     final state = p['state'];
     if (state == null) return EvalResult.fail;
 
-    // iOS might not have source
+    // iOS có thể không có nguồn thông tin sạc
     if (environment.platform == 'ios' && p['source'] == null) {
       return EvalResult.skip;
     }
@@ -408,7 +408,7 @@ class RuleEvaluator {
     if (dbm < thresholds.mobile.dbmMin || dbm > thresholds.mobile.dbmMax) {
       return EvalResult.fail;
     }
-    // Generation check: Fail if radio tech below 3G
+    // Kiểm tra thế hệ mạng: Đánh rớt nếu công nghệ sóng dưới 3G
     final radio = p['radio'];
     final gen = _radioGeneration(radio is String ? radio : null);
     if (gen != 0 && gen < RuleEvaluatorConstants.minAcceptableRadioGeneration) {
@@ -452,13 +452,13 @@ class RuleEvaluator {
 
   EvalResult _evalSim(Map<String, dynamic> p) {
     if (environment.isPermDenied('phone_state')) return EvalResult.skip;
-    // ROM blocks API check could be added here
+    // Có thể bổ sung kiểm tra nếu bản ROM chặn API tại đây
 
     final slotCount = p['slotCount'] ?? 0;
     final states = p['states'];
 
     if (slotCount >= 1 && states != null) return EvalResult.pass;
-    // Could check if device should have SIM based on profile
+    // Có thể kiểm tra xem thiết bị có nên có SIM dựa trên hồ sơ cấu hình
     return EvalResult.skip;
   }
 
@@ -466,7 +466,7 @@ class RuleEvaluator {
     final accel = p['accelerometer'] == true;
     final gyro = p['gyroscope'] == true;
 
-    // Check if device should have these sensors
+    // Kiểm tra xem thiết bị có hỗ trợ các cảm biến này không
     if (!accel && !environment.hasSensor('accelerometer')) {
       return EvalResult.skip;
     }
@@ -508,7 +508,7 @@ class RuleEvaluator {
   }
 
   EvalResult _evalBio(Map<String, dynamic> p) {
-    // Check if user has set up PIN first
+    // Kiểm tra xem người dùng đã thiết lập mã PIN trước chưa
     final canCheck = p['canCheck'] == true;
     if (!canCheck) return EvalResult.skip;
 
@@ -575,14 +575,14 @@ class RuleEvaluator {
       }
     }
 
-    // Fallback: Manual confirmation (backward compatible)
+    // Dự phòng: Xác nhận thủ công (tương thích ngược)
     final confirm = p['userConfirm'] == true;
     final hasIssue = p['hasIssue'] == true;
 
     if (hasIssue) return EvalResult.fail;
     if (confirm) return EvalResult.pass;
 
-    // Default: pass if no explicit issue reported
+    // Mặc định: Đạt nếu không ghi nhận lỗi rõ ràng
     return EvalResult.pass;
   }
 
@@ -674,8 +674,8 @@ class RuleEvaluator {
   }
 
   EvalResult _evalWired(Map<String, dynamic> p) {
-    // Most modern phones don't have headphone jack
-    // This is informational only, always pass
+    // Hầu hết các điện thoại hiện đại không còn cổng cắm tai nghe 3.5mm
+    // Bước này chỉ mang tính tham khảo thông tin, luôn cho Đạt
     return EvalResult.pass;
   }
 

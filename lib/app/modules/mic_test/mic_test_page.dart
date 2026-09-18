@@ -143,7 +143,7 @@ class _MicTestViewState extends State<_MicTestView>
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Status indicator
+                    // Chỉ báo trạng thái
                     Container(
                       padding: EdgeInsets.all(16.r),
                       decoration: BoxDecoration(
@@ -175,7 +175,7 @@ class _MicTestViewState extends State<_MicTestView>
 
                     SizedBox(height: 48.h),
 
-                    // Animated mic icon
+                    // Biểu tượng micro kèm hiệu ứng phóng to/thu nhỏ theo biên độ
                     AnimatedBuilder(
                       animation: _pulseController,
                       builder: (context, child) {
@@ -210,7 +210,7 @@ class _MicTestViewState extends State<_MicTestView>
 
                     SizedBox(height: 48.h),
 
-                    // Instruction based on phase
+                    // Câu hướng dẫn theo từng giai đoạn test
                     Text(
                       phase.instructionText,
                       style: AppTextStyles.titleMedium.copyWith(
@@ -220,7 +220,7 @@ class _MicTestViewState extends State<_MicTestView>
                       textAlign: TextAlign.center,
                     ),
 
-                    // Countdown display during recording
+                    // Hiển thị số giây đếm ngược trong lúc ghi âm
                     if (phase == MicTestPhase.recording) ...[
                       SizedBox(height: 16.h),
                       Text(
@@ -235,7 +235,7 @@ class _MicTestViewState extends State<_MicTestView>
 
                     SizedBox(height: 32.h),
 
-                    // Waveform visualizer
+                    // Bộ vẽ trực quan dạng sóng âm (Waveform)
                     Container(
                       height: 100.h,
                       padding: EdgeInsets.all(16.r),
@@ -257,7 +257,7 @@ class _MicTestViewState extends State<_MicTestView>
 
                     SizedBox(height: 24.h),
 
-                    // Stats
+                    // Các thông số đo lường
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [

@@ -18,14 +18,14 @@ class WavToneGenerator {
     void w16(int o, int v) => data.setUint16(o, v, Endian.little);
     void w32(int o, int v) => data.setUint32(o, v, Endian.little);
 
-    // WAV header
+    // Tiêu đề định dạng WAV (WAV Header)
     data.buffer.asUint8List().setRange(0, 4, 'RIFF'.codeUnits);
     w32(4, 36 + total * 2);
     data.buffer.asUint8List().setRange(8, 12, 'WAVE'.codeUnits);
     data.buffer.asUint8List().setRange(12, 16, 'fmt '.codeUnits);
     w32(16, 16);
-    w16(20, 1); // PCM
-    w16(22, 1); // Mono
+    w16(20, 1); // Định dạng PCM
+    w16(22, 1); // Kênh đơn (Mono)
     w32(24, sampleRate);
     w32(28, sampleRate * 2);
     w16(32, 2);

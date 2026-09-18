@@ -14,12 +14,12 @@ import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 /// Logic quét phần cứng native đã được chuyển sang [DeviceHardwareService],
 /// và logic thực thi bài test chức năng đã được chuyển sang [TestRunnerController].
 class DiagnosticsHomeController extends GetxController {
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final info = <String, dynamic>{}.obs;
   final isRunning = false.obs;
   final cosmeticSurvey = DeviceCosmeticSurvey().obs;
 
-  // ==================== DEVICE INFO (derived) ====================
+  // ==================== THÔNG TIN THIẾT BỊ (DỮ LIỆU TỔNG HỢP) ====================
   Map<String, dynamic>? get _osModel =>
       info['osmodel'] as Map<String, dynamic>?;
 
@@ -143,7 +143,7 @@ class DiagnosticsHomeController extends GetxController {
     return '$closest GB';
   }
 
-  // ==================== WORKFLOW ACTIONS ====================
+  // ==================== QUY TRÌNH HÀNH ĐỘNG KIỂM ĐỊNH ====================
 
   /// Luôn chuyển sang màn hình cấp quyền kiểm định riêng biệt trước khi bắt đầu
   Future<void> startWithPermissionCheck() async {
@@ -179,7 +179,7 @@ class DiagnosticsHomeController extends GetxController {
     }
   }
 
-  // ==================== COMPATIBILITY DELEGATES ====================
+  // ==================== ỦY THÁC TƯƠNG THÍCH ====================
   TestRunnerController? get _runner =>
       Get.isRegistered<TestRunnerController>()
           ? Get.find<TestRunnerController>()
@@ -204,7 +204,7 @@ class DiagnosticsHomeController extends GetxController {
     }
   }
 
-  // ==================== PHONE INFO API ====================
+  // ==================== API THÔNG TIN THIẾT BỊ ====================
   Future<String?> getPhoneImageUrl() async {
     try {
       return await PhoneInfoService.getPhoneImageUrl(modelName, brand);

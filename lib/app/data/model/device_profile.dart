@@ -36,7 +36,7 @@ class DeviceProfile {
   /// - Tier 1: Flagship mới nhất (iPhone 15 Pro, S24 Ultra)
   /// - Tier 2: Flagship cũ 1-2 năm
   /// - Tier 3: Mid-range (mặc định)
-  /// - Tier 4: Entry-level
+  /// - Tier 4: Dòng phổ thông cơ bản (Entry-level)
   /// - Tier 5: Máy cũ/giá thấp
   final int tier;
 
@@ -79,7 +79,7 @@ class DeviceProfile {
     };
   }
 
-  // ==================== HELPER METHODS ====================
+  // ==================== PHƯƠNG THỨC TIỆN ÍCH ====================
 
   /// Kiểm tra thiết bị có yêu cầu tính năng cụ thể không
   bool requiresFeature(String feature) {

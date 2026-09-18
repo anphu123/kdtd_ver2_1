@@ -102,7 +102,7 @@ class _TouchGridBodyState extends State<_TouchGridBody> {
                 ),
               ),
 
-              // Progress indicator
+              // Chỉ báo tiến trình kiểm tra
               Positioned(
                 top: 16.h,
                 left: 16.w,

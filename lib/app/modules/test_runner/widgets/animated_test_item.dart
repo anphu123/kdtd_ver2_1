@@ -88,7 +88,7 @@ class _AnimatedTestItemState extends State<AnimatedTestItem>
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      // Icon
+                      // Biểu tượng
                       Container(
                         width: 40,
                         height: 40,
@@ -103,7 +103,7 @@ class _AnimatedTestItemState extends State<AnimatedTestItem>
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Title
+                      // Tiêu đề bài kiểm tra
                       Expanded(
                         child: Text(
                           widget.step.title,
@@ -112,7 +112,7 @@ class _AnimatedTestItemState extends State<AnimatedTestItem>
                           ),
                         ),
                       ),
-                      // Status badge
+                      // Huy hiệu trạng thái
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -154,7 +154,7 @@ class _AnimatedTestItemState extends State<AnimatedTestItem>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Arrow
+                      // Mũi tên điều hướng
                       Icon(Icons.chevron_right, color: AppColors.neutralGreyDark),
                     ],
                   ),

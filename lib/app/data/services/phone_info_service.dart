@@ -64,13 +64,13 @@ class PhoneInfoService {
       debugPrint('Error getting phone image from API: $e');
     }
 
-    // Option 2: Fallback - Dùng GSMArena hoặc CDN
+    // Cách 2: Phương án dự phòng - Dùng GSMArena hoặc CDN
     return _getGSMArenaImageUrl(modelName, brand);
   }
 
   /// Lấy hình ảnh từ GSMArena
   static String _getGSMArenaImageUrl(String modelName, String brand) {
-    // GSMArena image pattern
+    // Định dạng đường dẫn hình ảnh trên GSMArena
     final searchQuery = Uri.encodeComponent('$brand $modelName');
     return 'https://fdn2.gsmarena.com/vv/bigpic/$searchQuery.jpg';
   }

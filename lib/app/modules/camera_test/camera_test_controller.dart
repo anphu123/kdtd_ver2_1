@@ -26,7 +26,7 @@ class CameraTestController extends GetxController {
 
   final List<CameraDescription> cameras;
 
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final controller = Rx<CameraController?>(null);
   final currentCameraIndex = 0.obs;
   final isInitializing = false.obs;
@@ -73,7 +73,7 @@ class CameraTestController extends GetxController {
     super.onClose();
   }
 
-  // ==================== SETUP ====================
+  // ==================== KHỞI TẠO & THIẾT LẬP ====================
   void _verifyCameraConfiguration() {
     final total = cameras.length;
     if (total == 0) {
@@ -112,7 +112,7 @@ class CameraTestController extends GetxController {
     });
   }
 
-  // ==================== CAMERA LIFECYCLE ====================
+  // ==================== VÒNG ĐỜI CAMERA ====================
   Future<void> _openCamera(CameraDescription camera) async {
     isInitializing.value = true;
     capturedImagePath.value = null;
@@ -157,7 +157,7 @@ class CameraTestController extends GetxController {
     await switchCamera(nextIdx);
   }
 
-  // ==================== TESTS: CHỤP ẢNH, FOCUS, FLASH ====================
+  // ==================== CÁC BÀI TEST: CHỤP ẢNH, LẤY NÉT, FLASH ====================
   Future<void> captureTest() async {
     final cam = controller.value;
     if (cam == null || !cam.value.isInitialized) return;
@@ -246,7 +246,7 @@ class CameraTestController extends GetxController {
     }
   }
 
-  // ==================== WORKFLOW ====================
+  // ==================== QUY TRÌNH ĐIỀU PHỐI (WORKFLOW) ====================
   void confirmCurrentCamera() {
     testedCameras.add(currentCameraIndex.value);
     debugPrint('[CameraTest] Xác nhận Camera #${currentCameraIndex.value} hoạt động tốt.');
@@ -278,7 +278,7 @@ class CameraTestController extends GetxController {
     Get.back(result: passed);
   }
 
-  // ==================== CLEANUP ====================
+  // ==================== DỌN DẸP TÀI NGUYÊN ====================
   Future<void> _disposeCameraSync() async {
     final cam = controller.value;
     if (cam == null) return;

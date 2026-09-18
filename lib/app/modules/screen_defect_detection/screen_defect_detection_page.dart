@@ -44,10 +44,10 @@ class _ScreenDefectDetectionViewState
         backgroundColor: pattern.color,
         body: Stack(
           children: [
-            // Full screen color
+            // Màu nền toàn màn hình
             Positioned.fill(child: Container(color: pattern.color)),
 
-            // Top info bar (semi-transparent)
+            // Thanh thông tin phía trên (màu tối bán trong suốt)
             Positioned(
               top: 0,
               left: 0,
@@ -63,7 +63,7 @@ class _ScreenDefectDetectionViewState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Progress
+                      // Tiến trình kiểm tra
                       Row(
                         children: [
                           Expanded(
@@ -86,7 +86,7 @@ class _ScreenDefectDetectionViewState
                         ],
                       ),
                       SizedBox(height: 12.h),
-                      // Pattern name
+                      // Tên màu hiển thị
                       Text(
                         pattern.name,
                         style: AppTextStyles.titleLarge.copyWith(
@@ -102,7 +102,7 @@ class _ScreenDefectDetectionViewState
                         ),
                       ),
                       SizedBox(height: 12.h),
-                      // Instructions
+                      // Hướng dẫn quan sát
                       Container(
                         padding: EdgeInsets.all(12.r),
                         decoration: BoxDecoration(
@@ -137,7 +137,7 @@ class _ScreenDefectDetectionViewState
               ),
             ),
 
-            // Bottom action buttons
+            // Các nút hành động phía dưới
             Positioned(
               bottom: 0,
               left: 0,
@@ -147,7 +147,7 @@ class _ScreenDefectDetectionViewState
                   margin: EdgeInsets.all(16.r),
                   child: Row(
                     children: [
-                      // Report defect button
+                      // Nút báo lỗi màn hình
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: controller.reportDefect,
@@ -170,7 +170,7 @@ class _ScreenDefectDetectionViewState
                         ),
                       ),
                       SizedBox(width: 12.w),
-                      // Skip button
+                      // Nút bỏ qua bước
                       ElevatedButton(
                         onPressed: controller.skipToNext,
                         style: ElevatedButton.styleFrom(
@@ -197,7 +197,7 @@ class _ScreenDefectDetectionViewState
               ),
             ),
 
-            // Defect indicator
+            // Chỉ báo trạng thái phát hiện lỗi
             if (controller.userConfirmedDefect.value)
               Positioned(
                 top: 100.h,

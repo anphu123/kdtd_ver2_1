@@ -50,11 +50,11 @@ class PreTestPreparationGuidePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 2. Protocol Header Card
+                  // 2. Thẻ tiêu đề quy chuẩn kiểm định
                   _buildProtocolHeader(),
                   SizedBox(height: 16.h),
 
-                  // 3. Section Header
+                  // 3. Tiêu đề phân đoạn
                   _buildSectionHeader(
                     title: '5 BƯỚC CHUẨN BỊ THIẾT BỊ',
                     subtitle: 'Thực hiện nhanh để bài test đạt độ chính xác tối đa',
@@ -62,17 +62,17 @@ class PreTestPreparationGuidePage extends StatelessWidget {
                   ),
                   SizedBox(height: 8.h),
 
-                  // 4. Inset Grouped Preparation Steps
+                  // 4. Nhóm thẻ lồng các bước chuẩn bị
                   _buildGuideInsetGroup(),
                   SizedBox(height: 16.h),
 
-                  // 5. Security Note Card
+                  // 5. Thẻ ghi chú bảo mật & quyền riêng tư
                   _buildSecurityNote(),
                 ],
               ),
             ),
           ),
-          // 6. Sticky Bottom Action Dock
+          // 6. Thanh điều hướng hành động cố định bên dưới
           _buildBottomActionDock(),
         ],
       ),

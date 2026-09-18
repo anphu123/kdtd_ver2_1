@@ -236,7 +236,7 @@ class PermissionCheckController extends GetxController
     }
   }
 
-  // ==================== GETTERS ====================
+  // ==================== CÁC PHƯƠNG THỨC GETTER ====================
 
   /// Đã cấp đủ các quyền bắt buộc chưa (Camera & Mic)
   bool get allRequiredGranted =>
@@ -255,7 +255,7 @@ class PermissionCheckController extends GetxController
   double get progressRatio =>
       totalCount > 0 ? (grantedCount / totalCount).clamp(0.0, 1.0) : 0.0;
 
-  // ==================== LOGGING & DIALOGS ====================
+  // ==================== GHI NHẬT KÝ & HỘP THOẠI ====================
 
   void _logStatusResponse(String eventName) {
     final response = {

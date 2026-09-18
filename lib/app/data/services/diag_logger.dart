@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// DiagLogger - Centralized logging for diagnostics
+/// DiagLogger - Bộ ghi nhật ký tập trung cho luồng kiểm định
 /// Giảm log spam, chỉ hiển thị khi debug mode bật
 class DiagLogger {
   static bool _debugMode = kDebugMode;
@@ -61,14 +61,14 @@ class DiagLogger {
     }
   }
 
-  /// Log phase header
+  /// Ghi nhật ký bắt đầu giai đoạn kiểm định (phase header)
   static void phaseStart(String phaseName, int stepCount) {
     if (_debugMode) {
       debugPrint('\n━━━ PHASE: $phaseName ($stepCount tests) ━━━');
     }
   }
 
-  /// Log phase complete
+  /// Ghi nhật ký hoàn thành giai đoạn kiểm định
   static void phaseComplete(
     String phaseName,
     int passed,
@@ -80,7 +80,7 @@ class DiagLogger {
     }
   }
 
-  /// Log timing
+  /// Ghi nhật ký thời gian thực thi (timing)
   static void timing(String operation, Duration duration) {
     if (_debugMode) {
       debugPrint('[DIAG][TIME] $operation: ${duration.inMilliseconds}ms');

@@ -75,7 +75,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Status indicator
+                // Chỉ báo trạng thái
                 Container(
                   padding: EdgeInsets.all(16.r),
                   decoration: BoxDecoration(
@@ -115,7 +115,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
 
                 SizedBox(height: 48.h),
 
-                // Animated phone icon
+                // Biểu tượng điện thoại kèm hiệu ứng hoạt họa
                 AnimatedBuilder(
                   animation: _pulseController,
                   builder: (context, child) {
@@ -177,7 +177,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
 
                 SizedBox(height: 48.h),
 
-                // Instructions
+                // Hướng dẫn thao tác kiểm tra
                 Container(
                   padding: EdgeInsets.all(20.r),
                   decoration: BoxDecoration(
@@ -229,7 +229,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
 
                 SizedBox(height: 32.h),
 
-                // Stats
+                // Số liệu thống kê
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [

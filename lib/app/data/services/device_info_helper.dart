@@ -6,9 +6,9 @@
 /// với fallback cho iOS khi MethodChannel Android không hoạt động.
 ///
 /// Bao gồm:
-/// - RAM info (với estimation cho iOS)
-/// - ROM info (với estimation cho iOS)
-/// - Model mapping cho iOS devices
+/// - Thông tin RAM (kèm ước tính cho iOS)
+/// - Thông tin ROM (kèm ước tính cho iOS)
+/// - Ánh xạ model máy cho thiết bị iOS
 /// ============================================================
 library;
 
@@ -22,7 +22,7 @@ const _channel = MethodChannel('com.fidobox/diagnostics');
 class DeviceInfoHelper {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
-  // ==================== RAM INFO ====================
+  // ==================== THÔNG TIN BỘ NHỚ RAM ====================
 
   /// Lấy thông tin RAM
   /// - Android: Sử dụng MethodChannel
@@ -87,7 +87,7 @@ class DeviceInfoHelper {
   /// Ước tính RAM dựa trên model iOS
   /// Dữ liệu từ Apple specs
   static int _estimateIosRam(String machine) {
-    // iPhone
+    // Dòng iPhone
     if (machine.startsWith('iPhone')) {
       final parts = machine.replaceAll('iPhone', '').split(',');
       final major = int.tryParse(parts[0]) ?? 0;
@@ -106,11 +106,11 @@ class DeviceInfoHelper {
       if (major >= 10) return 3;
       // iPhone 7/8: iPhone9,x -> 2GB
       if (major >= 9) return 2;
-      // Older -> 1-2GB
+      // Đời cũ hơn -> 1-2GB
       return 2;
     }
 
-    // iPad
+    // Dòng iPad
     if (machine.startsWith('iPad')) {
       final parts = machine.replaceAll('iPad', '').split(',');
       final major = int.tryParse(parts[0]) ?? 0;
@@ -121,15 +121,15 @@ class DeviceInfoHelper {
       if (major >= 13) return 8;
       // iPad: iPad12,x -> 4GB
       if (major >= 12) return 4;
-      // Older
+      // Các đời cũ hơn
       return 4;
     }
 
-    // Default
+    // Mặc định
     return 4;
   }
 
-  // ==================== ROM INFO ====================
+  // ==================== THÔNG TIN BỘ NHỚ TRONG ROM ====================
 
   /// Lấy thông tin ROM (Storage)
   /// - Android: Sử dụng MethodChannel
@@ -192,10 +192,10 @@ class DeviceInfoHelper {
     }
   }
 
-  // ==================== SIGNAL STRENGTH ====================
+  // ==================== CƯỜNG ĐỘ TÍN HIỆU ====================
 
   /// Lấy cường độ tín hiệu di động
-  /// - Android: MethodChannel
+  /// - Android: Sử dụng MethodChannel
   /// - iOS: Không khả dụng (Apple không cho phép)
   static Future<Map<String, dynamic>> getSignalStrength() async {
     if (Platform.isAndroid) {
@@ -227,10 +227,10 @@ class DeviceInfoHelper {
     };
   }
 
-  // ==================== SIM INFO ====================
+  // ==================== THÔNG TIN SIM ====================
 
-  /// Lấy thông tin SIM (Slot count & States)
-  /// - Android: MethodChannel
+  /// Lấy thông tin SIM (Số khe cắm & Trạng thái)
+  /// - Android: Sử dụng MethodChannel
   /// - iOS: Không public API, trả về default 1 slot
   static Future<Map<String, dynamic>> getSimInfo() async {
     if (Platform.isAndroid) {
@@ -272,7 +272,7 @@ class DeviceInfoHelper {
     };
   }
 
-  // ==================== BRAND DETECTION ====================
+  // ==================== NHẬN DIỆN THƯƠNG HIỆU & DÒNG MÁY ====================
 
   /// Lấy brand của thiết bị
   static Future<String> getBrand() async {
@@ -309,7 +309,7 @@ class DeviceInfoHelper {
 
   /// Map iOS machine identifier sang tên marketing
   static String _mapIosModelName(String machine) {
-    // iPhone
+    // Bảng ánh xạ mã máy iPhone
     final iphoneMap = {
       'iPhone16,2': 'iPhone 15 Pro Max',
       'iPhone16,1': 'iPhone 15 Pro',
@@ -359,7 +359,7 @@ class DeviceInfoHelper {
     return machine;
   }
 
-  // ==================== PLATFORM CHECK ====================
+  // ==================== KIỂM TRA NỀN TẢNG (HỆ ĐIỀU HÀNH) ====================
 
   /// Kiểm tra platform
   static bool get isIOS => Platform.isIOS;

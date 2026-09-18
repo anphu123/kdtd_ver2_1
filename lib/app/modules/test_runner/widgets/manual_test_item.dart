@@ -5,7 +5,7 @@ import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'status_info.dart';
 
-/// Manual Test Item Widget
+/// Widget mục kiểm tra thủ công
 class ManualTestItem extends StatelessWidget {
   const ManualTestItem({super.key, required this.step, required this.onTap});
 
@@ -33,7 +33,7 @@ class ManualTestItem extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Icon
+                // Biểu tượng
                 Container(
                   width: 40,
                   height: 40,
@@ -48,7 +48,7 @@ class ManualTestItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Title
+                // Tiêu đề bài kiểm tra
                 Expanded(
                   child: Text(
                     step.title,
@@ -57,7 +57,7 @@ class ManualTestItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Status badge
+                // Huy hiệu trạng thái
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -99,7 +99,7 @@ class ManualTestItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Arrow
+                // Mũi tên điều hướng
                 Icon(Icons.chevron_right, color: AppColors.gray8F8F8F),
               ],
             ),

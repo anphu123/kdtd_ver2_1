@@ -97,7 +97,7 @@ class _ScreenBurnInTestViewState extends State<_ScreenBurnInTestView> {
 
                     SizedBox(height: 12.h),
 
-                    // Navigation buttons
+                    // Các nút điều hướng chuyển màu
                     Row(
                       children: [
                         Expanded(
@@ -187,7 +187,7 @@ class _ScreenBurnInTestViewState extends State<_ScreenBurnInTestView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Warning text
+                    // Khung văn bản cảnh báo
                     Container(
                       padding: EdgeInsets.all(12.r),
                       decoration: BoxDecoration(
@@ -241,7 +241,7 @@ class _ScreenBurnInTestViewState extends State<_ScreenBurnInTestView> {
 
                     SizedBox(height: 8.h),
 
-                    // Back button
+                    // Nút quay lại
                     TextButton(
                       onPressed: () => controller.finish(null),
                       style: TextButton.styleFrom(

@@ -40,7 +40,7 @@ class AutoSuiteSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Tiêu đề phần (Header)
           Row(
             children: [
               Container(
@@ -83,7 +83,7 @@ class AutoSuiteSection extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          // Big 1-Touch Button
+          // Nút bấm lớn một chạm (1-Touch Button)
           Container(
             width: double.infinity,
             height: 48.h,
@@ -133,7 +133,7 @@ class AutoSuiteSection extends StatelessWidget {
 
           SizedBox(height: 12.h),
 
-          // Privacy note
+          // Ghi chú về quyền riêng tư và an toàn dữ liệu
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

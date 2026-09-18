@@ -58,7 +58,7 @@ class DiagEnvironment {
     );
   }
 
-  // ==================== BRAND HELPERS ====================
+  // ==================== TIỆN ÍCH THEO THƯƠNG HIỆU ====================
 
   /// Kiểm tra có phải Xiaomi/MIUI không (cần xử lý đặc biệt cho Bluetooth)
   bool get isMiui =>
@@ -82,7 +82,7 @@ class DiagEnvironment {
       brand.toLowerCase().contains('huawei') ||
       brand.toLowerCase().contains('honor');
 
-  // ==================== PERMISSION HELPERS ====================
+  // ==================== TIỆN ÍCH KIỂM TRA QUYỀN ====================
 
   /// Kiểm tra quyền có bị từ chối không
   bool isPermDenied(String perm) => deniedPerms.contains(perm);

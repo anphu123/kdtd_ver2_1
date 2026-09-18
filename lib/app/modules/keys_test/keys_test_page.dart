@@ -131,7 +131,7 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
           try {
             if (rootNav.mounted) rootNav.pop(result);
           } catch (_) {
-            // Context may be disposed
+            // Context có thể đã bị huỷ (disposed)
           }
         });
 
@@ -164,7 +164,7 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
                     try {
                       Navigator.of(c, rootNavigator: true).pop(false);
                     } catch (_) {
-                      // Context may be disposed
+                      // Context có thể đã bị huỷ (disposed)
                     }
                   },
                   child: Text(LocaleKeys.keys_test_cancel.trans()),

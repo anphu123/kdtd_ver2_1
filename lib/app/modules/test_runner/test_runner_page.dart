@@ -88,7 +88,7 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
     }
   }
 
-  /// Handle tap on a test item to restart or view details
+  /// Xử lý sự kiện nhấn vào một bài test để chạy lại hoặc xem chi tiết
   Future<void> _handleTestTap(DiagStep step) async {
     if (controller.isRunning.value) return;
     if (step.status == DiagStatus.pending) return;
@@ -260,7 +260,7 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
             );
           }),
 
-          // 2. Scrollable Test Runner Content
+          // 2. Nội dung danh sách bài test có thể cuộn
           Expanded(
             child: CustomScrollView(
               controller: _scrollController,
@@ -268,7 +268,7 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
                 // Progress indicator (có Obx nội bộ)
                 const SliverToBoxAdapter(child: ProgressIndicatorSection()),
 
-                // Quick Result Notification Banner (Reactive completed & !isRunning)
+                // Banner thông báo có kết quả nhanh (Phản ứng theo completed & !isRunning)
                 SliverToBoxAdapter(
                   child: Obx(() {
                     final completed = controller.completed;
@@ -336,16 +336,16 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
                   }),
                 ),
 
-                // Test Suite Grouped Slivers
+                // Danh sách Sliver các bài test theo nhóm
                 ..._buildGroupedList(),
 
-                // Bottom spacing
+                // Khoảng đệm phía dưới
                 SliverToBoxAdapter(child: SizedBox(height: 20.h)),
               ],
             ),
           ),
 
-          // 3. Sticky Bottom Action Dock
+          // 3. Thanh điều hướng hành động cố định bên dưới
           _buildBottomActionDock(),
         ],
       ),

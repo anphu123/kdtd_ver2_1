@@ -129,7 +129,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Certificate Hero Card
+                // 1. Thẻ chứng nhận thẩm định (Hero Card)
                 _buildCertificateCard(
                   score,
                   baseTradeInValue,
@@ -139,22 +139,22 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
                 SizedBox(height: 18.h),
 
-                // 2. Interactive Upgrade Showroom
+                // 2. Không gian trưng bày máy nâng cấp tương tác
                 _buildUpgradeShowroom(baseTradeInValue, topUpAmount),
 
                 SizedBox(height: 18.h),
 
-                // 3. Trade-in Process 3 steps
+                // 3. Quy trình 3 bước Thu cũ đổi mới
                 _buildTradeInStepsCard(),
 
                 SizedBox(height: 18.h),
 
-                // 4. Diagnostic Checklist Summary
+                // 4. Bảng tổng hợp chi tiết kiểm định
                 _buildDiagnosticBreakdown(total, passed, failed),
 
                 SizedBox(height: 18.h),
 
-                // Secondary actions
+                // Các hành động phụ trợ
                 Row(
                   children: [
                     Expanded(
@@ -231,7 +231,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
             ),
           ),
 
-          // Sticky Bottom Checkout Bar
+          // Thanh thanh toán/xác nhận cố định bên dưới
           Positioned(
             left: 0,
             right: 0,
@@ -270,7 +270,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Header Badge
+            // Huy hiệu tiêu đề trên cùng
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -314,7 +314,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
             SizedBox(height: 14.h),
 
-            // Device Name
+            // Tên thiết bị
             Text(
               displayName,
               style: AppTextStyles.headlineSmall.copyWith(
@@ -334,7 +334,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
             SizedBox(height: 18.h),
 
-            // Price Highlights Box
+            // Hộp nổi bật giá trị định giá
             Container(
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(
@@ -458,7 +458,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     );
   }
 
-  /// Card 2: Interactive Upgrade Showroom
+  /// Thẻ 2: Không gian trưng bày máy nâng cấp tương tác
   Widget _buildUpgradeShowroom(int baseTradeInValue, int topUpAmount) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +502,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
         SizedBox(height: 14.h),
 
-        // Horizontal Phone Carousel
+        // Băng chuyền hiển thị điện thoại dạng ngang
         SizedBox(
           height: 175.h,
           child: ListView.separated(
@@ -539,7 +539,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Tag + Select icon
+                      // Nhãn tag + Biểu tượng lựa chọn
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -575,7 +575,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                         ],
                       ),
 
-                      // Device Icon
+                      // Biểu tượng thiết bị
                       Center(
                         child: Icon(
                           option.icon,
@@ -633,7 +633,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
         SizedBox(height: 16.h),
 
-        // Real-Time Upgrade Math Card
+        // Thẻ tính toán chi phí bù trừ nâng cấp thời gian thực
         PviInsetGroupCard(
           headerTitle: LocaleKeys.diagnostic_result_upgrade_math_title.trans(
             namedArgs: {'name': selectedOption.name},
@@ -955,7 +955,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     );
   }
 
-  /// Sticky Bottom Bar
+  /// Thanh cố định bên dưới (Sticky Bottom Bar)
   Widget _buildStickyBottomBar(int topUpAmount) {
     return Container(
       decoration: const BoxDecoration(

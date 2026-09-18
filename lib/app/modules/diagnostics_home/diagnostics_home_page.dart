@@ -36,7 +36,7 @@ class DiagnosticsHomePage extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: SizedBox(height: 8.h)),
 
-          // 1. Device Info Hero Card (Clean Light Minimalist)
+          // 1. Thẻ thông tin thiết bị (Thiết kế phẳng, tinh gọn)
           SliverToBoxAdapter(
             child: Obx(() {
               final steps = controller.steps;
@@ -63,14 +63,14 @@ class DiagnosticsHomePage extends StatelessWidget {
 
           SliverToBoxAdapter(child: SizedBox(height: 6.h)),
 
-          // 2. Diagnostic Checks Category Grid
+          // 2. Lưới các nhóm danh mục kiểm định
           const SliverToBoxAdapter(
             child: DiagnosticCategoriesSection(),
           ),
 
           SliverToBoxAdapter(child: SizedBox(height: 8.h)),
 
-          // 3. Action Section (Start Diagnostics CTA Button)
+          // 3. Khối hành động chính (Nút CTA Bắt đầu kiểm định)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
@@ -118,7 +118,7 @@ class DiagnosticsHomePage extends StatelessWidget {
 
           SliverToBoxAdapter(child: SizedBox(height: 10.h)),
 
-          // 4. PVI Assurance Trust & Quality Note Card
+          // 4. Thẻ cam kết chất lượng & bảo lãnh chuẩn PVI
           SliverToBoxAdapter(
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
@@ -174,7 +174,7 @@ class DiagnosticsHomePage extends StatelessWidget {
             ),
           ),
 
-          // Bottom spacing
+          // Khoảng đệm phía dưới
           SliverToBoxAdapter(
             child: SizedBox(height: 24.h),
           ),

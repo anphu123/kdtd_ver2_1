@@ -2,7 +2,7 @@
 class AudioTestConstants {
   AudioTestConstants._();
 
-  // ==================== MIC TEST ====================
+  // ==================== KIỂM TRA MICROPHONE ====================
   /// Số giây thu âm trước khi tự động phát lại.
   static const int micRecordingSeconds = 5;
 
@@ -27,7 +27,7 @@ class AudioTestConstants {
   /// Số kênh âm thanh khi ghi âm test micro.
   static const int recordingChannels = 1;
 
-  // ==================== EARPIECE TEST ====================
+  // ==================== KIỂM TRA LOA TRONG ====================
   /// Âm lượng phát qua loa trong.
   static const double earpieceVolume = 0.5;
 
@@ -43,7 +43,7 @@ class AudioTestConstants {
   /// Thời gian giữ trạng thái "gần" liên tục trước khi tự động pass.
   static const Duration earpieceAutoPassDelay = Duration(seconds: 3);
 
-  // ==================== SPEAKER TEST ====================
+  // ==================== KIỂM TRA LOA NGOÀI ====================
   /// Độ dài 1 chu kỳ tiếng beep phát lặp qua loa ngoài (giây).
   static const int speakerToneSeconds = 1;
 

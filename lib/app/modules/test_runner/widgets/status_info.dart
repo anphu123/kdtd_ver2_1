@@ -150,7 +150,7 @@ IconData getTestIcon(String code) {
     case 'touch':
       return Icons.touch_app;
 
-    // === TEST THỦ CÔNG ===
+    // === KIỂM TRA THỦ CÔNG ===
     case 'camera':
       return Icons.camera_alt;
     case 'speaker':

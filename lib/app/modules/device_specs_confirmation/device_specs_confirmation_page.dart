@@ -132,15 +132,15 @@ class _DeviceSpecsConfirmationPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 2. Hero Device Specs Inset Card
+                  // 2. Thẻ thông số phần cứng thiết bị
                   _buildDeviceSpecsCard(displayName, brand),
                   SizedBox(height: 14.h),
 
-                  // 3. Pre-valuation & Trade-In Teaser
+                  // 3. Thông tin ước tính giá & gợi ý Thu cũ đổi mới
                   _buildValuationTeaser(),
                   SizedBox(height: 18.h),
 
-                  // 4. Quick Cosmetic Survey Section
+                  // 4. Phần khảo sát nhanh ngoại quan máy
                   _buildSectionHeader(
                     title: 'KHẢO SÁT NGOẠI QUAN MÁY',
                     subtitle: 'Đánh giá sơ bộ ngoại hình hỗ trợ định giá chuẩn xác',
@@ -148,7 +148,7 @@ class _DeviceSpecsConfirmationPageState
                   ),
                   SizedBox(height: 10.h),
 
-                  // Question A: Body & Frame
+                  // Câu hỏi A: Thân máy & Khung viền
                   _buildSurveyGroup(
                     title: LocaleKeys.device_specs_confirmation_question_body_title.trans(),
                     icon: Icons.phone_android_rounded,
@@ -163,7 +163,7 @@ class _DeviceSpecsConfirmationPageState
                   ),
                   SizedBox(height: 14.h),
 
-                  // Question B: Screen Glass
+                  // Câu hỏi B: Mặt kính màn hình
                   _buildSurveyGroup(
                     title: LocaleKeys.device_specs_confirmation_question_screen_title.trans(),
                     icon: Icons.screenshot_rounded,
@@ -178,7 +178,7 @@ class _DeviceSpecsConfirmationPageState
                   ),
                   SizedBox(height: 14.h),
 
-                  // Question C: Account Status
+                  // Câu hỏi C: Trạng thái tài khoản người dùng
                   _buildSurveyGroup(
                     title: LocaleKeys.device_specs_confirmation_question_account_title.trans(),
                     icon: Icons.account_circle_outlined,
@@ -311,7 +311,7 @@ class _DeviceSpecsConfirmationPageState
           Divider(height: 1, color: AppColors.border),
           SizedBox(height: 14.h),
 
-          // 2x2 Specs Grid
+          // Lưới thông số 2x2
           Row(
             children: [
               Expanded(
@@ -610,7 +610,7 @@ class _DeviceSpecsConfirmationPageState
     );
   }
 
-  /// Sticky Bottom Action Dock
+  /// Thanh điều hướng hành động cố định bên dưới
   Widget _buildBottomActionDock() {
     return Container(
       padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),

@@ -54,15 +54,15 @@ class FailedTestsWarningPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Header Certificate / Grading Card
+                  // 1. Thẻ tiêu đề chứng nhận / Xếp hạng thẩm định
                   _buildGradingCard(grade),
                   SizedBox(height: 14.h),
 
-                  // 2. Subsidy Voucher Callout
+                  // 2. Thẻ gợi ý phiếu trợ giá thu cũ đổi mới
                   _buildSubsidyVoucher(grade),
                   SizedBox(height: 16.h),
 
-                  // 3. Section Header
+                  // 3. Tiêu đề phân đoạn
                   _buildSectionHeader(
                     title: 'CHI TIẾT LINH KIỆN CẦN LƯU Ý',
                     subtitle: '${failedSteps.length} linh kiện phản hồi chưa đạt chuẩn',
@@ -70,17 +70,17 @@ class FailedTestsWarningPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8.h),
 
-                  // 4. Failed Tests Inset Group
+                  // 4. Nhóm thẻ lồng chi tiết các bài kiểm tra không đạt
                   _buildFailedTestsInsetGroup(),
                   SizedBox(height: 16.h),
 
-                  // 5. Trade-in benefits reassurance
+                  // 5. Cam kết quyền lợi thu cũ đổi mới
                   _buildReassuranceCard(),
                 ],
               ),
             ),
           ),
-          // 6. Sticky Bottom Action Dock
+          // 6. Thanh điều hướng hành động cố định bên dưới
           _buildBottomActionDock(),
         ],
       ),

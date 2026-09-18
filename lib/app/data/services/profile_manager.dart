@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:kdtd_ver2_1/gen/assets.gen.dart';
 import '../model/device_profile.dart';
 
-/// Profile Manager - Loads and manages device profiles
+/// Quản lý hồ sơ thiết bị (Profile Manager) - Tải và quản lý cấu hình theo model máy
 class ProfileManager {
   static ProfileManager? _instance;
   final Map<String, DeviceProfile> _profiles = {};
@@ -25,7 +25,7 @@ class ProfileManager {
       final json = await rootBundle.loadString(Assets.diagThresholds);
       final data = jsonDecode(json) as Map<String, dynamic>;
 
-      // Load profiles
+      // Tải danh sách hồ sơ thiết bị
       final profilesData =
           data['requirements_by_profile'] as Map<String, dynamic>?;
       if (profilesData != null) {
@@ -36,21 +36,21 @@ class ProfileManager {
         });
       }
 
-      // Load brand quirks
+      // Tải các đặc tính riêng theo thương hiệu (brand quirks)
       _brandQuirks = data['brand_quirks'] as Map<String, dynamic>? ?? {};
     } catch (e) {
       debugPrint('Error loading profiles: $e');
-      // Use default profile
+      // Dùng hồ sơ mặc định
       _profiles['default'] = const DeviceProfile(name: 'default');
     }
   }
 
-  /// Get profile for a specific device model
+  /// Lấy hồ sơ (profile) cho một model máy cụ thể
   DeviceProfile getProfile(String modelName, String brand) {
-    // Try exact model match first
+    // Thử khớp chính xác tên model trước
     final normalizedModel = _normalizeModelName(modelName);
 
-    // Fix: Avoid matching empty model name (which matches everything)
+    // Khắc phục: Tránh khớp tên model rỗng (sẽ khớp với tất cả)
     if (normalizedModel.isEmpty) {
       return _profiles['default'] ?? const DeviceProfile(name: 'default');
     }
@@ -59,9 +59,9 @@ class ProfileManager {
       return _profiles[normalizedModel]!;
     }
 
-    // Try partial match
+    // Thử khớp một phần tên (partial match)
     for (var entry in _profiles.entries) {
-      // Don't match if key is default or empty
+      // Không khớp nếu key là default hoặc rỗng
       if (entry.key == 'default' || entry.key.isEmpty) continue;
 
       if (normalizedModel.contains(entry.key) ||
@@ -70,30 +70,30 @@ class ProfileManager {
       }
     }
 
-    // Try brand-specific default
+    // Thử lấy cấu hình mặc định theo thương hiệu
     final brandKey = '${brand.toLowerCase()}_default';
     if (_profiles.containsKey(brandKey)) {
       return _profiles[brandKey]!;
     }
 
-    // Return default profile
+    // Trả về hồ sơ mặc định
     return _profiles['default'] ?? const DeviceProfile(name: 'default');
   }
 
-  /// Get brand quirks/special behaviors
+  /// Lấy các đặc tính riêng/hành vi đặc thù của thương hiệu
   Map<String, dynamic> getBrandQuirks(String brand) {
     final normalizedBrand = brand.toLowerCase();
     return (_brandQuirks[normalizedBrand] as Map<String, dynamic>?) ?? {};
   }
 
-  /// Check if brand has specific quirk
+  /// Kiểm tra thương hiệu có đặc tính cụ thể không
   bool hasBrandQuirk(String brand, String quirk) {
     final quirks = getBrandQuirks(brand);
     return quirks[quirk] == true;
   }
 
   String _normalizeModelName(String model) {
-    // Remove common prefixes and normalize
+    // Loại bỏ các tiền tố phổ biến và chuẩn hoá chuỗi
     return model
         .toLowerCase()
         .replaceAll('sm-', '')
@@ -103,22 +103,22 @@ class ProfileManager {
         .replaceAll('-', '_');
   }
 
-  /// Get all available profiles
+  /// Lấy danh sách tất cả các hồ sơ hiện có
   List<DeviceProfile> getAllProfiles() {
     return _profiles.values.toList();
   }
 
-  /// Check if model/brand combination requires location for WiFi
+  /// Kiểm tra thương hiệu có yêu cầu quyền vị trí để quét WiFi không
   bool requiresLocationForWifi(String brand) {
     return hasBrandQuirk(brand, 'wifi_requires_location');
   }
 
-  /// Check if model/brand combination requires location for Bluetooth
+  /// Kiểm tra thương hiệu có yêu cầu quyền vị trí để quét Bluetooth không
   bool requiresLocationForBluetooth(String brand) {
     return hasBrandQuirk(brand, 'bt_requires_location');
   }
 
-  /// Check if ROM blocks SIM API
+  /// Kiểm tra bản ROM có chặn API đọc SIM không
   bool romBlocksSimApi(String brand) {
     return hasBrandQuirk(brand, 'rom_blocks_sim_api');
   }

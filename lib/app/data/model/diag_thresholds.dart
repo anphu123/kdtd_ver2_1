@@ -63,7 +63,7 @@ class DiagThresholds {
   }
 }
 
-// ==================== MOBILE THRESHOLDS ====================
+// ==================== NGƯỠNG MẠNG DI ĐỘNG ====================
 
 /// Ngưỡng cho test mạng di động
 class MobileThresholds {
@@ -86,7 +86,7 @@ class MobileThresholds {
   bool isAcceptable(int dbm) => dbm >= dbmMin && dbm <= dbmMax;
 }
 
-// ==================== GPS THRESHOLDS ====================
+// ==================== NGƯỠNG ĐỊNH VỊ GPS ====================
 
 /// Ngưỡng cho test GPS
 class GpsThresholds {
@@ -110,7 +110,7 @@ class GpsThresholds {
   bool isAccurate(double meters) => meters <= accuracyMPass;
 }
 
-// ==================== TOUCH THRESHOLDS ====================
+// ==================== NGƯỠNG CẢM ỨNG MÀN HÌNH ====================
 
 /// Ngưỡng cho test cảm ứng màn hình
 class TouchThresholds {
@@ -129,7 +129,7 @@ class TouchThresholds {
   bool isPassing(double ratio) => ratio >= passRatioMin;
 }
 
-// ==================== AUDIO THRESHOLDS ====================
+// ==================== NGƯỠNG ÂM THANH ====================
 
 /// Ngưỡng cho test âm thanh
 class AudioThresholds {
@@ -147,7 +147,7 @@ class AudioThresholds {
   bool isMicWorking(double rms) => rms >= micRmsMin;
 }
 
-// ==================== RUNNER THRESHOLDS ====================
+// ==================== NGƯỠNG ĐIỀU PHỐI (RUNNER) ====================
 
 /// Ngưỡng timeout cho runner thực thi test
 class RunnerThresholds {

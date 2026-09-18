@@ -32,7 +32,7 @@ class MicTestController extends GetxController {
   String? _recordingPath;
   Timer? _countdownTimer;
 
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final phase = MicTestPhase.recording.obs;
   final amplitude = 0.0.obs;
   final maxAmplitude = 0.0.obs;
@@ -61,7 +61,7 @@ class MicTestController extends GetxController {
     super.onClose();
   }
 
-  // ==================== LIFECYCLE (app pause/resume) ====================
+  // ==================== VÒNG ĐỜI (TẠM DỪNG / TIẾP TỤC ỨNG DỤNG) ====================
 
   /// Ứng dụng bị đưa xuống nền — dừng thu âm để tránh giữ tài nguyên.
   Future<void> onAppPaused() async {
@@ -74,7 +74,7 @@ class MicTestController extends GetxController {
     start();
   }
 
-  // ==================== SETUP ====================
+  // ==================== KHỞI TẠO & BẮT ĐẦU TEST ====================
 
   /// Khởi động (hoặc khởi động lại) toàn bộ bài test micro.
   Future<void> start() async {
@@ -104,12 +104,12 @@ class MicTestController extends GetxController {
         await _rec.stop();
       }
 
-      // Create temp file path for recording
+      // Tạo đường dẫn tệp tạm thời cho bản ghi âm
       final tempDir = await getTemporaryDirectory();
       _recordingPath =
           '${tempDir.path}/mic_test_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-      // Start recording for amplitude monitoring
+      // Bắt đầu ghi âm và theo dõi biên độ âm thanh
       await _rec.start(
         RecordConfig(
           encoder: AudioEncoder.aacLc,
@@ -211,7 +211,7 @@ class MicTestController extends GetxController {
       amplitude.value.clamp(0, AudioTestConstants.amplitudeLevelMax) /
       AudioTestConstants.amplitudeLevelMax;
 
-  // ==================== CLEANUP ====================
+  // ==================== DỌN DẸP TÀI NGUYÊN ====================
 
   Future<void> _disposeRecording() async {
     try {
@@ -222,7 +222,7 @@ class MicTestController extends GetxController {
       }
       await _rec.dispose();
 
-      // Delete temp recording file
+      // Xoá tệp ghi âm tạm
       if (_recordingPath != null) {
         try {
           final file = File(_recordingPath!);

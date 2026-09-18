@@ -103,7 +103,7 @@ class PviModernistStepper extends StatelessWidget {
         textColor = AppColors.pviRed;
       }
     } else {
-      // Pending
+      // Đang chờ (chưa thực hiện)
       bgColor = AppColors.white;
       borderColor = AppColors.border;
       circleColor = AppColors.border;

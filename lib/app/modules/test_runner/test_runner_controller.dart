@@ -38,7 +38,7 @@ import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 /// TestRunnerController - Điều phối quá trình thực thi các bài kiểm tra chức năng
 class TestRunnerController extends GetxController {
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final steps = <DiagStep>[].obs;
   final isRunning = false.obs;
   final passedCount = 0.obs;
@@ -62,7 +62,7 @@ class TestRunnerController extends GetxController {
     return LocaleKeys.diagnostics_home_grade_needs_improvement.trans();
   }
 
-  // ==================== GROUPED VIEW ====================
+  // ==================== CHẾ ĐỘ XEM THEO NHÓM ====================
   List<DiagStep> stepsForPhase(DiagPhase phase) =>
       steps.where((s) => s.phase == phase).toList();
 
@@ -189,10 +189,10 @@ class TestRunnerController extends GetxController {
     );
   }
 
-  // ==================== STEP DEFINITIONS (Flow 3) ====================
+  // ==================== ĐỊNH NGHĨA CÁC BƯỚC TEST (LUỒNG 3) ====================
   List<DiagStep> _buildFunctionalSteps() {
     return [
-      // ========== 1..4 AUTO CHECKS ==========
+      // ========== 1..4 CÁC BÀI KIỂM TRA TỰ ĐỘNG ==========
       DiagStep(
         code: 'wifi',
         title: LocaleKeys.diagnostics_home_step_wifi_title.trans(),
@@ -230,7 +230,7 @@ class TestRunnerController extends GetxController {
         run: _testVibration,
       ),
 
-      // ========== 5..13 MANUAL CHECKS ==========
+      // ========== 5..13 CÁC BÀI KIỂM TRA THỦ CÔNG ==========
       DiagStep(
         code: 'biometrics',
         title: LocaleKeys.diagnostics_home_step_bio_title.trans(),
@@ -315,7 +315,7 @@ class TestRunnerController extends GetxController {
     ];
   }
 
-  // ==================== AUTO SNAPSHOT RUNNERS (Flow 3) ====================
+  // ==================== BỘ CHẠY BÀI TEST TỰ ĐỘNG (LUỒNG 3) ====================
   Future<bool> _snapWifi() async {
     info['wifi'] = await DeviceHardwareService.getWifiInfo();
     final wifiInfo = info['wifi'] as Map<String, dynamic>;
@@ -341,7 +341,7 @@ class TestRunnerController extends GetxController {
     return ok;
   }
 
-  // ==================== INTERACTIVE TESTS (Flow 3) ====================
+  // ==================== BỘ CHẠY BÀI TEST TƯƠNG TÁC (LUỒNG 3) ====================
   Future<bool> _testVibration() async {
     try {
       final hasVibrator = (await Vibration.hasVibrator()) == true;
@@ -584,7 +584,7 @@ class TestRunnerController extends GetxController {
     return result;
   }
 
-  // ==================== EXECUTION FLOW ====================
+  // ==================== QUY TRÌNH THỰC THI ====================
   Future<void> startFunctionalDiagnostics() async {
     if (isRunning.value) return;
 

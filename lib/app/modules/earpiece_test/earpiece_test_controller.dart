@@ -21,7 +21,7 @@ class EarpieceTestController extends GetxController {
   StreamSubscription<int>? _proximitySub;
   Timer? _autoPassTimer;
 
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final isNear = false.obs;
   final hasDetectedNear = false.obs;
   final isPlaying = false.obs;
@@ -44,11 +44,11 @@ class EarpieceTestController extends GetxController {
 
   Future<void> _start() async {
     try {
-      // Setup audio player
+      // Thiết lập trình phát âm thanh (Audio Player)
       await _player.setVolume(AudioTestConstants.earpieceVolume);
       await _player.setReleaseMode(ReleaseMode.loop);
 
-      // Play sine wave through earpiece
+      // Phát sóng sine qua loa trong
       await _player.play(
         BytesSource(
           WavToneGenerator.sineWave(
@@ -61,7 +61,7 @@ class EarpieceTestController extends GetxController {
 
       isPlaying.value = true;
 
-      // Listen to proximity sensor
+      // Lắng nghe sự kiện cảm biến tiệm cận
       _proximitySub = ProximitySensor.events.listen((distance) {
         final near = distance > 0;
 

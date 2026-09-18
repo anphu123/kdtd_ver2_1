@@ -3,9 +3,9 @@
 /// ============================================================
 ///
 /// Widget hiển thị:
-/// - Phase hiện tại đang chạy
-/// - Progress bar cho phase
-/// - Estimated time remaining
+/// - Giai đoạn hiện tại đang chạy
+/// - Thanh tiến trình (progress bar) cho từng giai đoạn
+/// - Thời gian ước tính còn lại
 /// ============================================================
 library;
 
@@ -53,7 +53,7 @@ class ProgressIndicatorSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Phase header
+            // Tiêu đề giai đoạn kiểm định
             Row(
               children: [
                 Container(
@@ -103,7 +103,7 @@ class ProgressIndicatorSection extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
 
-            // Phase progress
+            // Tiến độ giai đoạn hiện tại
             Row(
               children: [
                 Expanded(
@@ -139,7 +139,7 @@ class ProgressIndicatorSection extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 16.w),
-                // Estimated time
+                // Thời gian ước tính còn lại
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
@@ -180,7 +180,7 @@ class ProgressIndicatorSection extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
 
-            // Overall progress bar
+            // Thanh tiến trình tổng thể
             ClipRRect(
               borderRadius: BorderRadius.circular(4.r),
               child: LinearProgressIndicator(
@@ -207,7 +207,7 @@ class ProgressIndicatorSection extends StatelessWidget {
       final remainingSteps = steps.where((s) => !s.isCompleted).toList();
       int totalSeconds = 0;
       for (final step in remainingSteps) {
-        // Auto tests: ~2s, Manual tests: ~30s
+        // Bài test tự động: ~2 giây, Bài test thủ công: ~30 giây
         if (step.kind == DiagKind.auto) {
           totalSeconds += 2;
         } else {

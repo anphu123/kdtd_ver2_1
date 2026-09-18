@@ -10,16 +10,16 @@ import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_page.dart';
 
 import 'app_routes.dart';
 
-/// App Pages - Route configuration with proper structure
+/// App Pages - Cấu hình định tuyến (routes) của ứng dụng
 class AppPages {
   AppPages._();
 
-  /// Initial route
+  /// Tuyến đường khởi tạo ban đầu
   static const String initial = AppRoutes.diagnosticsHome;
 
-  /// All application routes
+  /// Danh sách tất cả các trang/tuyến đường trong ứng dụng
   static final List<GetPage> routes = [
-    // Diagnostics - Home Dashboard
+    // Màn hình tổng quan kiểm định (Home Dashboard)
     GetPage(
       name: AppRoutes.diagnosticsHome,
       page: () => const DiagnosticsHomePage(),
@@ -27,7 +27,7 @@ class AppPages {
       transition: Transition.fadeIn,
     ),
 
-    // Permission Check Screen
+    // Màn hình kiểm tra & cấp quyền thiết bị
     GetPage(
       name: AppRoutes.permissionCheck,
       page: () => const PermissionCheckPage(),
@@ -35,7 +35,7 @@ class AppPages {
       transition: Transition.rightToLeft,
     ),
 
-    // Intermediate Screens
+    // Các màn hình trung gian (Xác nhận cấu hình, Hướng dẫn chuẩn bị, v.v.)
     GetPage(
       name: AppRoutes.deviceConfirmation,
       page: () => const DeviceSpecsConfirmationPage(),

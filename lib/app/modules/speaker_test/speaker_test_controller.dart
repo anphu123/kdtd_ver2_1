@@ -13,7 +13,7 @@ import 'package:kdtd_ver2_1/app/data/services/wav_tone_generator.dart';
 class SpeakerTestController extends GetxController {
   final AudioPlayer _player = AudioPlayer();
 
-  // ==================== REACTIVE STATE ====================
+  // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final playing = false.obs;
 
   @override

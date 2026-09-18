@@ -304,7 +304,7 @@ class DeviceHardwareService {
   /// Khóa màn hình (PIN / Mật khẩu)
   static Future<bool?> isScreenLocked() => _invoke<bool>('isScreenLocked');
 
-  /// S-Pen (Samsung)
+  /// Bút cảm ứng S-Pen (dành riêng cho dòng Samsung Note/Ultra)
   static Future<bool> isSPenSupported() async =>
       (await _invoke<bool>('isSPenSupported')) == true;
 }

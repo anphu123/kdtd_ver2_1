@@ -20,7 +20,7 @@ class AppTheme {
         brightness: Brightness.light,
       ),
 
-      // App Bar Theme (Flat Navy)
+      // Giao diện AppBar (Xanh Navy phẳng)
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -29,7 +29,7 @@ class AppTheme {
         foregroundColor: AppColors.textOnDark,
       ),
 
-      // Card Theme (Pure White, Flat, Solid Border)
+      // Giao diện Thẻ Card (Trắng thuần, phẳng, viền màu đặc)
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.surface,
@@ -39,7 +39,7 @@ class AppTheme {
         ),
       ),
 
-      // Input Decoration Theme
+      // Giao diện ô nhập liệu (Input Decoration)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
@@ -57,7 +57,7 @@ class AppTheme {
         ),
       ),
 
-      // Elevated Button Theme (Solid Flat PVI Red)
+      // Giao diện nút bấm nổi bật (Đỏ PVI phẳng)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
@@ -70,7 +70,7 @@ class AppTheme {
         ),
       ),
 
-      // Floating Action Button Theme (Zero elevation)
+      // Giao diện nút hành động nổi (FAB không độ nổi/shadow)
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 0,
         focusElevation: 0,
@@ -83,7 +83,7 @@ class AppTheme {
         ),
       ),
 
-      // Divider Theme
+      // Giao diện đường phân cách
       dividerTheme: const DividerThemeData(
         thickness: 1,
         space: 1,
@@ -92,7 +92,7 @@ class AppTheme {
     );
   }
 
-  /// Dark Theme (Flat Dark Palette)
+  /// Giao diện tối Dark Theme (Bảng màu tối phẳng)
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -105,7 +105,7 @@ class AppTheme {
         brightness: Brightness.dark,
       ),
 
-      // App Bar Theme
+      // Giao diện AppBar tối
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -114,7 +114,7 @@ class AppTheme {
         foregroundColor: AppColors.textOnDark,
       ),
 
-      // Card Theme
+      // Giao diện Thẻ Card tối
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.pviNavy,
@@ -124,7 +124,7 @@ class AppTheme {
         ),
       ),
 
-      // Input Decoration Theme
+      // Giao diện ô nhập liệu tối
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.pviNavy,
@@ -134,7 +134,7 @@ class AppTheme {
         ),
       ),
 
-      // Elevated Button Theme
+      // Giao diện nút bấm nổi bật tối
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
@@ -147,7 +147,7 @@ class AppTheme {
         ),
       ),
 
-      // Floating Action Button Theme
+      // Giao diện nút hành động nổi tối
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 0,
         backgroundColor: AppColors.pviRed,
@@ -157,7 +157,7 @@ class AppTheme {
         ),
       ),
 
-      // Divider Theme
+      // Giao diện đường phân cách tối
       dividerTheme: const DividerThemeData(
         thickness: 1,
         space: 1,

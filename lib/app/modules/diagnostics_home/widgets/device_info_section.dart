@@ -70,11 +70,6 @@ class DeviceInfoSection extends StatelessWidget {
                 ? modelName
                 : LocaleKeys.diagnostics_home_default_device_name.trans());
 
-    // final displayBrand =
-    //     brand.isNotEmpty && brand != '-'
-    //         ? brand
-    //         : (manufacturer.isNotEmpty ? manufacturer : platform);
-
     final displayModel =
         modelName.isNotEmpty && modelName != '-' ? modelName : 'Chưa rõ mã';
     final displayPlatform =
@@ -95,79 +90,10 @@ class DeviceInfoSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Top Bar: Brand Pill + Trade-In Eligible Status Pill
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     // Brand Tag
-            //     Container(
-            //       padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.5.h),
-            //       decoration: BoxDecoration(
-            //         color: AppColors.tradeInSurfaceBg,
-            //         borderRadius: BorderRadius.circular(6.r),
-            //         border: Border.all(
-            //           color: AppColors.tradeInBorder,
-            //           width: 0.8,
-            //         ),
-            //       ),
-            //       child: Row(
-            //         mainAxisSize: MainAxisSize.min,
-            //         children: [
-            //           Icon(
-            //             Icons.verified_rounded,
-            //             size: 13.sp,
-            //             color: AppColors.tradeInBlue,
-            //           ),
-            //           SizedBox(width: 4.w),
-            //           Text(
-            //             displayBrand.toUpperCase(),
-            //             style: AppTextStyles.badge.copyWith(
-            //               color: AppColors.tradeInSlate,
-            //               letterSpacing: 0.5,
-            //             ),
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-
-            //     // Trade-in Status Badge
-            //     Container(
-            //       padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.5.h),
-            //       decoration: BoxDecoration(
-            //         color: AppColors.tradeInEmeraldLight,
-            //         borderRadius: BorderRadius.circular(6.r),
-            //         border: Border.all(
-            //           color: AppColors.tradeInEmeraldBorder,
-            //           width: 0.8,
-            //         ),
-            //       ),
-            //       child: Row(
-            //         mainAxisSize: MainAxisSize.min,
-            //         children: [
-            //           Icon(
-            //             Icons.check_circle_rounded,
-            //             size: 13.sp,
-            //             color: AppColors.tradeInEmerald,
-            //           ),
-            //           SizedBox(width: 4.w),
-            //           Text(
-            //             LocaleKeys.diagnostics_home_trade_in_eligible_badge.trans(),
-            //             style: AppTextStyles.badge.copyWith(
-            //               color: AppColors.tradeInEmerald,
-            //             ),
-            //           ),
-            //         ],
-            //       ),
-            //     ),
-            //   ],
-            // ),
-
-           // SizedBox(height: 14.h),
-
-            // 2. Main Device Hero Row (Icon + Marketing Name + Model Meta)
+            // 2. Khối nhận diện thiết bị chính (Biểu tượng + Tên thương mại + Mã Model)
             Row(
               children: [
-                // Device Icon Container (Clean Minimalist Light)
+                // Hộp chứa biểu tượng thiết bị
                 Container(
                   width: 50.w,
                   height: 50.h,
@@ -187,7 +113,7 @@ class DeviceInfoSection extends StatelessWidget {
                 ),
                 SizedBox(width: 12.w),
 
-                // Device Name & Meta Info
+                // Tên máy & Thông tin meta
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +144,7 @@ class DeviceInfoSection extends StatelessWidget {
 
             SizedBox(height: 14.h),
 
-            // 3. Hardware Specs: RAM & Bộ nhớ trong (Clean Light Tiles)
+            // 3. Thông số phần cứng: RAM & Bộ nhớ trong (Thẻ giao diện sáng sạch)
             Row(
               children: [
                 Expanded(
@@ -245,7 +171,7 @@ class DeviceInfoSection extends StatelessWidget {
 
             SizedBox(height: 12.h),
 
-            // 4. Subtle Trust Guarantee Strip
+            // 4. Dải thông tin cam kết thẩm định
             Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
               decoration: BoxDecoration(

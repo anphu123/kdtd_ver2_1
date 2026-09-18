@@ -61,7 +61,7 @@ class CameraTestPage extends GetView<CameraTestController> {
         ),
         body: Stack(
           children: [
-            // ==================== LIVE CAMERA PREVIEW ====================
+            // ==================== KHUNG HÌNH XEM TRỰC TIẾP TỪ CAMERA ====================
             if (isReady && controller.controller.value != null)
               Positioned.fill(
                 child: GestureDetector(
@@ -115,7 +115,7 @@ class CameraTestPage extends GetView<CameraTestController> {
                 ),
               ),
 
-            // ==================== TOP CAMERA SELECTOR TABS ====================
+            // ==================== CÁC TAB CHỌN CAMERA PHÍA TRÊN ====================
             Positioned(
               top: 12.h,
               left: 12.w,
@@ -191,7 +191,7 @@ class CameraTestPage extends GetView<CameraTestController> {
 
                     SizedBox(height: 8.h),
 
-                    // Instruction badge
+                    // Huy hiệu hướng dẫn thao tác
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 12.w,
@@ -228,7 +228,7 @@ class CameraTestPage extends GetView<CameraTestController> {
               ),
             ),
 
-            // ==================== CAPTURED PHOTO THUMBNAIL ====================
+            // ==================== HÌNH THU NHỎ ẢNH VỪA CHỤP ====================
             if (controller.capturedImagePath.value != null)
               Positioned(
                 bottom: 120.h,
@@ -262,7 +262,7 @@ class CameraTestPage extends GetView<CameraTestController> {
                 ),
               ),
 
-            // ==================== FLOATING CONTROLS ====================
+            // ==================== CÁC NÚT ĐIỀU KHIỂN NỔI ====================
             if (isReady)
               Positioned(
                 bottom: 110.h,
@@ -324,7 +324,7 @@ class CameraTestPage extends GetView<CameraTestController> {
               ),
           ],
         ),
-        // ==================== BOTTOM NAVIGATION BAR ====================
+        // ==================== THANH ĐIỀU HƯỚNG BÊN DƯỚI ====================
         bottomNavigationBar: SafeArea(
           child: Container(
             color: AppColors.black87,

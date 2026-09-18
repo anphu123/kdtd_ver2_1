@@ -138,16 +138,16 @@ class ScreenDefectDetectionController extends GetxController {
 
   /// Tự động phân tích màn hình (giả lập - trong thực tế cần camera/sensor)
   void _autoAnalyzeScreen() {
-    // TODO: Implement real screen analysis using:
-    // - Camera to capture screen
-    // - Image processing to detect defects
-    // - ML model to classify defects
+    // CẦN LÀM (TODO): Hiện thực phân tích màn hình thực tế sử dụng:
+    // - Camera phụ để chụp lại màn hình
+    // - Xử lý ảnh (Image processing) để phát hiện điểm chết / đốm sáng
+    // - Mô hình học máy (ML model) để phân loại lỗi màn hình
 
     // Hiện tại: Giả lập phát hiện ngẫu nhiên (demo purpose)
     // Trong production, bỏ phần này và dùng camera thật
 
-    // Uncomment để test auto-detection:
-    // if (math.Random().nextDouble() < 0.1) { // 10% chance
+    // Bỏ chú thích để kiểm thử tính năng tự động phát hiện lỗi:
+    // if (math.Random().nextDouble() < 0.1) { // Xác suất 10%
     //   reportDefect();
     // }
   }

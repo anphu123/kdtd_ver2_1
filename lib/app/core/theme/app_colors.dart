@@ -43,13 +43,13 @@ class AppColors {
   // 2. SEMANTIC FUNCTIONAL TOKENS (Trạng thái chức năng)
   // ===========================================================================
 
-  /// Primary action & Header
+  /// Tác vụ chính & Tiêu đề thanh điều hướng
   static const Color primary = pviNavy;
   static const Color primaryDark = pviNavyDark;
   static const Color primaryLight = pviNavyLight;
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  /// Secondary action & Call-To-Action (CTA)
+  /// Tác vụ phụ & Nút kêu gọi hành động (CTA)
   static const Color secondary = pviRed;
   static const Color secondaryDark = pviRedDark;
   static const Color secondaryLight = pviRedLight;
@@ -83,7 +83,7 @@ class AppColors {
   static const Color infoBorder = pviBlueBorder;
   static const Color onInfo = Color(0xFFFFFFFF);
 
-  /// Solid dark status surfaces (for dark mode testing screens)
+  /// Bề mặt trạng thái màu tối (dành cho các màn hình kiểm thử chế độ tối)
   static const Color successDarkSurface = Color(0xFF0A3E2F);
   static const Color infoDarkSurface = Color(0xFF0F2D4E);
   static const Color warningDarkSurface = Color(0xFF3F2B07);
@@ -140,7 +140,7 @@ class AppColors {
   static const Color black = Color(0xFF000000);
   static const Color transparent = Color(0x00000000);
 
-  // Solid neutral greys (Zero alpha hex)
+  // Các sắc thái xám trung tính (Màu thuần, không alpha)
   static const Color neutralGrey50 = Color(0xFFFAFAFA);
   static const Color neutralGrey100 = Color(0xFFF5F5F5);
   static const Color neutralGreyLight = Color(0xFFEEEEEE);
@@ -153,7 +153,7 @@ class AppColors {
   static const Color neutralGrey800 = Color(0xFF424242);
   static const Color neutralGrey900 = Color(0xFF212121);
 
-  // Solid grey equivalents for legacy translucent whites & blacks
+  // Các màu xám thuần tương đương để thay thế màu trắng & đen trong suốt cũ
   static const Color white70 = Color(0xFFE2E8F0);
   static const Color white60 = Color(0xFFCBD5E1);
   static const Color white54 = Color(0xFFB8C9DC);
@@ -171,7 +171,7 @@ class AppColors {
   static const Color black26 = Color(0xFFE2E8F0);
   static const Color black12 = Color(0xFFF1F5F9);
 
-  // Standard Material color equivalents
+  // Các màu chuẩn tương đương Material design
   static const Color amber = Color(0xFFFFC107);
   static const Color amberLight = Color(0xFFFFE082);
   static const Color amberDark = Color(0xFFFFA000);
@@ -234,7 +234,7 @@ class AppColors {
   // 7. BACKWARD COMPATIBILITY ALIASES (Tương thích mã nguồn hiện hữu)
   // ===========================================================================
 
-  // Trade-in semantics mapped to PVI theme tokens
+  // Ý nghĩa màu Trade-in ánh xạ sang hệ màu PVI
   static const Color tradeInBlue = pviRed; // PVI Star Red CTA
   static const Color tradeInBlueLight = pviRedLight;
   static const Color tradeInNavy = pviNavy; // PVI Corporate Navy
@@ -250,7 +250,7 @@ class AppColors {
   static const Color tradeInSurfaceBg = background;
   static const Color tradeInBorder = border;
 
-  // Legacy design system tokens
+  // Các token màu của hệ thống thiết kế cũ
   static const Color neutral01 = Color(0xFF171717);
   static const Color neutral02 = Color(0xFF404040);
   static const Color neutral03 = Color(0xFF737373);
@@ -334,7 +334,7 @@ class AppColors {
   static const Color red600 = Color(0xFFB10710);
   static const Color slate5B7C99 = Color(0xFF5B7C99);
 
-  // Legacy Linear Gradient (retained for backward compatibility)
+  // Dải chuyển màu cũ (giữ lại để tương thích ngược)
   static const LinearGradient secondaryGra01 = LinearGradient(
     colors: [Color(0xFFFBB379), Color(0xFFFE675C)],
     begin: Alignment.topLeft,

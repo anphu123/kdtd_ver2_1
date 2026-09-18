@@ -159,7 +159,7 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
                 ),
               ),
 
-              // Progress bar
+              // Thanh tiến trình
               Positioned(
                 top: 80.h,
                 left: 16.w,

@@ -246,7 +246,7 @@ class PermissionCheckPage extends GetView<PermissionCheckController> {
     );
   }
 
-  /// 3. Section Header
+  /// 3. Tiêu đề phân đoạn
   Widget _buildSectionHeader({
     required String title,
     required String subtitle,
@@ -313,7 +313,7 @@ class PermissionCheckPage extends GetView<PermissionCheckController> {
     );
   }
 
-  /// Row trong Inset Group Card
+  /// Dòng hàng mục trong thẻ nhóm lồng
   Widget _buildPermissionRow(PermissionCheckItem item) {
     return Obx(() {
       final status = item.status.value;
@@ -536,7 +536,7 @@ class PermissionCheckPage extends GetView<PermissionCheckController> {
     );
   }
 
-  /// 6. Sticky Bottom Action Dock
+  /// 6. Thanh điều hướng hành động cố định bên dưới
   Widget _buildBottomActionBar() {
     final allGranted = controller.allGranted;
     final allReq = controller.allRequiredGranted;

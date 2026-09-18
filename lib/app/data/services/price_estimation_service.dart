@@ -115,7 +115,7 @@ class PriceEstimationService {
     final model = modelName.toUpperCase();
     final brandLower = brand.toLowerCase();
 
-    // Samsung
+    // Dòng máy Samsung
     if (brandLower.contains('samsung')) {
       if (model.contains('S24')) return PriceEstimationConstants.basePriceSamsungS24;
       if (model.contains('S23')) return PriceEstimationConstants.basePriceSamsungS23;
@@ -129,7 +129,7 @@ class PriceEstimationService {
       return PriceEstimationConstants.basePriceSamsungDefault;
     }
 
-    // iPhone
+    // Dòng máy iPhone
     if (brandLower.contains('apple') || model.contains('IPHONE')) {
       if (model.contains('15')) return PriceEstimationConstants.basePriceIphone15;
       if (model.contains('14')) return PriceEstimationConstants.basePriceIphone14;
@@ -142,7 +142,7 @@ class PriceEstimationService {
       return PriceEstimationConstants.basePriceIphoneDefault;
     }
 
-    // Xiaomi
+    // Dòng máy Xiaomi
     if (brandLower.contains('xiaomi')) {
       if (model.contains('14')) return PriceEstimationConstants.basePriceXiaomi14;
       if (model.contains('13')) return PriceEstimationConstants.basePriceXiaomi13;
@@ -150,14 +150,14 @@ class PriceEstimationService {
       return PriceEstimationConstants.basePriceXiaomiDefault;
     }
 
-    // Oppo
+    // Dòng máy Oppo
     if (brandLower.contains('oppo')) {
       if (model.contains('FIND')) return PriceEstimationConstants.basePriceOppoFind;
       if (model.contains('RENO')) return PriceEstimationConstants.basePriceOppoReno;
       return PriceEstimationConstants.basePriceOppoDefault;
     }
 
-    // Default
+    // Mặc định cho các dòng máy khác
     return PriceEstimationConstants.basePriceUnknown;
   }
 

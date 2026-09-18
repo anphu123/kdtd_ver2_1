@@ -53,10 +53,10 @@ class KeysTestController extends GetxController {
             }
           }
         } catch (_) {
-          // ignore malformed events
+          // Bỏ qua các sự kiện sai định dạng
         }
       }, onError: (_) {
-        // ignore
+        // Bỏ qua lỗi stream
       });
     } on MissingPluginException {
       // Native EventChannel chưa sẵn sàng — luồng chính vẫn hoạt động
@@ -73,7 +73,7 @@ class KeysTestController extends GetxController {
     try {
       _keySub?.cancel();
     } catch (_) {
-      // Ignore cancellation errors
+      // Bỏ qua lỗi khi hủy subscription
     }
     super.onClose();
   }
@@ -152,7 +152,7 @@ class KeysTestController extends GetxController {
       try {
         sub?.cancel();
       } catch (_) {
-        // Ignore "No active stream" errors
+        // Bỏ qua lỗi khi không có stream đang hoạt động
       }
       completer.complete(value);
     }
@@ -168,10 +168,10 @@ class KeysTestController extends GetxController {
           complete(true);
         }
       } catch (_) {
-        // ignore malformed events
+        // Bỏ qua các sự kiện sai định dạng
       }
     }, onError: (_) {
-      // ignore
+      // Bỏ qua lỗi stream
     });
 
     timer = Timer(Duration(seconds: seconds), () => complete(false));
