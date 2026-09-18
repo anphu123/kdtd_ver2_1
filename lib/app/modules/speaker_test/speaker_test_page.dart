@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 
 import 'speaker_test_controller.dart';
 
@@ -17,38 +19,38 @@ class SpeakerTestPage extends GetView<SpeakerTestController> {
     return Obx(() {
       final playing = controller.playing.value;
       return Scaffold(
-        appBar: AppBar(title: const Text('Test Loa ngoài')),
+        appBar: AppBar(title: Text(LocaleKeys.speaker_test_title.trans())),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 playing ? Icons.volume_up_rounded : Icons.volume_mute,
-                size: 96,
+                size: 96.r,
               ),
-              const SizedBox(height: 12),
-              const Text('Bạn có nghe tiếng beep rõ không?'),
+              SizedBox(height: 12.h),
+              Text(LocaleKeys.speaker_test_instruction.trans()),
             ],
           ),
         ),
         bottomNavigationBar: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.r),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => controller.finish(false),
                     icon: const Icon(Icons.close),
-                    label: const Text('Không đạt'),
+                    label: Text(LocaleKeys.speaker_test_btn_fail.trans()),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () => controller.finish(true),
                     icon: const Icon(Icons.check),
-                    label: const Text('Đạt'),
+                    label: Text(LocaleKeys.speaker_test_btn_pass.trans()),
                   ),
                 ),
               ],

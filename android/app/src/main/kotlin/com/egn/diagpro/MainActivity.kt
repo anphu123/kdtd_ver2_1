@@ -157,7 +157,15 @@ class MainActivity : FlutterActivity() {
                         }
                     }
 
-                    // Thông tin RAM/ROM
+                    // Thông tin RAM/ROM & Device ID
+                    "getDeviceId" -> {
+                        try {
+                            val androidId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                            result.success(androidId ?: Build.ID)
+                        } catch (e: Exception) {
+                            result.success(Build.ID)
+                        }
+                    }
                     "getRamInfo" -> result.success(getRamInfo())
                     "getRomInfo" -> result.success(getRomInfo())
 

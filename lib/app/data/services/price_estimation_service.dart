@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:kdtd_ver2_1/app/core/constants/price_estimation_constants.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:http/http.dart' as http;
 
 /// Service để ước tính giá thu mua điện thoại
 class PriceEstimationService {
-  static const String _baseUrl =
-      'https://api.example.com'; // Thay bằng URL thực
+  // Thay bằng URL thực
+  static const String _baseUrl = PriceEstimationConstants.apiBaseUrl;
 
   /// Ước tính giá thu mua dựa trên điểm số và thông tin thiết bị
   static Future<PriceEstimate?> estimatePrice({
@@ -14,7 +17,6 @@ class PriceEstimationService {
     required int score,
     required int ramGb,
     required int romGb,
-    required String origin,
   }) async {
     try {
       // Gọi API để lấy giá
@@ -28,10 +30,10 @@ class PriceEstimationService {
               'score': score,
               'ramGb': ramGb,
               'romGb': romGb,
-              'origin': origin,
+           
             }),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(PriceEstimationConstants.apiTimeout);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -48,7 +50,7 @@ class PriceEstimationService {
       score: score,
       ramGb: ramGb,
       romGb: romGb,
-      origin: origin,
+ 
     );
   }
 
@@ -59,42 +61,43 @@ class PriceEstimationService {
     required int score,
     required int ramGb,
     required int romGb,
-    required String origin,
+
   }) {
     // Giá cơ bản theo hãng và model
     double basePrice = _getBasePrice(modelName, brand);
 
     // Điều chỉnh theo RAM/ROM
-    basePrice += (ramGb - 4) * 200000; // +200k mỗi GB RAM
-    basePrice += (romGb - 64) / 64 * 500000; // +500k mỗi 64GB ROM
+    basePrice +=
+        (ramGb - PriceEstimationConstants.ramBaselineGb) *
+        PriceEstimationConstants.pricePerExtraRamGb; // +tiền mỗi GB RAM vượt mốc
+    basePrice +=
+        (romGb - PriceEstimationConstants.romBaselineGb) /
+        PriceEstimationConstants.romStepGb *
+        PriceEstimationConstants.pricePerRomStep; // +tiền mỗi bước ROM vượt mốc
 
     // Điều chỉnh theo điểm số (score)
     double scoreMultiplier = score / 100.0;
 
     // Giảm giá theo độ hao mòn
-    if (score >= 90) {
-      scoreMultiplier = 1.0; // 100% giá
-    } else if (score >= 80) {
-      scoreMultiplier = 0.85; // 85% giá
-    } else if (score >= 70) {
-      scoreMultiplier = 0.70; // 70% giá
-    } else if (score >= 60) {
-      scoreMultiplier = 0.55; // 55% giá
+    if (score >= PriceEstimationConstants.scoreExcellentMin) {
+      scoreMultiplier = PriceEstimationConstants.scoreMultiplierExcellent;
+    } else if (score >= PriceEstimationConstants.scoreGoodMin) {
+      scoreMultiplier = PriceEstimationConstants.scoreMultiplierGood;
+    } else if (score >= PriceEstimationConstants.scoreFairMin) {
+      scoreMultiplier = PriceEstimationConstants.scoreMultiplierFair;
+    } else if (score >= PriceEstimationConstants.scorePoorMin) {
+      scoreMultiplier = PriceEstimationConstants.scoreMultiplierPoor;
     } else {
-      scoreMultiplier = 0.40; // 40% giá
+      scoreMultiplier = PriceEstimationConstants.scoreMultiplierBad;
     }
 
-    // Điều chỉnh theo xuất xứ
-    double originMultiplier = 1.0;
-    if (origin.toLowerCase().contains('trung quốc')) {
-      originMultiplier = 0.9; // -10%
-    } else if (origin.toLowerCase().contains('việt nam')) {
-      originMultiplier = 0.95; // -5%
-    }
 
-    final estimatedPrice = basePrice * scoreMultiplier * originMultiplier;
-    final minPrice = estimatedPrice * 0.9; // -10%
-    final maxPrice = estimatedPrice * 1.1; // +10%
+
+    final estimatedPrice = basePrice * scoreMultiplier ;
+    final minPrice =
+        estimatedPrice * (1 - PriceEstimationConstants.priceRangeMargin);
+    final maxPrice =
+        estimatedPrice * (1 + PriceEstimationConstants.priceRangeMargin);
 
     return PriceEstimate(
       minPrice: minPrice.round(),
@@ -102,7 +105,7 @@ class PriceEstimationService {
       estimatedPrice: estimatedPrice.round(),
       currency: 'VND',
       confidence: _calculateConfidence(score),
-      factors: _getPriceFactors(score, origin),
+      factors: _getPriceFactors(score),
       recommendation: _getRecommendation(score, estimatedPrice),
     );
   }
@@ -114,122 +117,127 @@ class PriceEstimationService {
 
     // Samsung
     if (brandLower.contains('samsung')) {
-      if (model.contains('S24')) return 20000000;
-      if (model.contains('S23')) return 15000000;
-      if (model.contains('S22')) return 12000000;
-      if (model.contains('S21')) return 10000000;
-      if (model.contains('S20')) return 8000000;
-      if (model.contains('A54')) return 7000000;
-      if (model.contains('A34')) return 5000000;
-      if (model.contains('FOLD')) return 25000000;
-      if (model.contains('FLIP')) return 15000000;
-      return 5000000; // Default Samsung
+      if (model.contains('S24')) return PriceEstimationConstants.basePriceSamsungS24;
+      if (model.contains('S23')) return PriceEstimationConstants.basePriceSamsungS23;
+      if (model.contains('S22')) return PriceEstimationConstants.basePriceSamsungS22;
+      if (model.contains('S21')) return PriceEstimationConstants.basePriceSamsungS21;
+      if (model.contains('S20')) return PriceEstimationConstants.basePriceSamsungS20;
+      if (model.contains('A54')) return PriceEstimationConstants.basePriceSamsungA54;
+      if (model.contains('A34')) return PriceEstimationConstants.basePriceSamsungA34;
+      if (model.contains('FOLD')) return PriceEstimationConstants.basePriceSamsungFold;
+      if (model.contains('FLIP')) return PriceEstimationConstants.basePriceSamsungFlip;
+      return PriceEstimationConstants.basePriceSamsungDefault;
     }
 
     // iPhone
     if (brandLower.contains('apple') || model.contains('IPHONE')) {
-      if (model.contains('15')) return 25000000;
-      if (model.contains('14')) return 20000000;
-      if (model.contains('13')) return 15000000;
-      if (model.contains('12')) return 12000000;
-      if (model.contains('11')) return 10000000;
-      if (model.contains('PRO MAX')) return 30000000;
-      return 15000000; // Default iPhone
+      if (model.contains('15')) return PriceEstimationConstants.basePriceIphone15;
+      if (model.contains('14')) return PriceEstimationConstants.basePriceIphone14;
+      if (model.contains('13')) return PriceEstimationConstants.basePriceIphone13;
+      if (model.contains('12')) return PriceEstimationConstants.basePriceIphone12;
+      if (model.contains('11')) return PriceEstimationConstants.basePriceIphone11;
+      if (model.contains('PRO MAX')) {
+        return PriceEstimationConstants.basePriceIphoneProMax;
+      }
+      return PriceEstimationConstants.basePriceIphoneDefault;
     }
 
     // Xiaomi
     if (brandLower.contains('xiaomi')) {
-      if (model.contains('14')) return 12000000;
-      if (model.contains('13')) return 10000000;
-      if (model.contains('12')) return 8000000;
-      return 5000000; // Default Xiaomi
+      if (model.contains('14')) return PriceEstimationConstants.basePriceXiaomi14;
+      if (model.contains('13')) return PriceEstimationConstants.basePriceXiaomi13;
+      if (model.contains('12')) return PriceEstimationConstants.basePriceXiaomi12;
+      return PriceEstimationConstants.basePriceXiaomiDefault;
     }
 
     // Oppo
     if (brandLower.contains('oppo')) {
-      if (model.contains('FIND')) return 10000000;
-      if (model.contains('RENO')) return 7000000;
-      return 4000000; // Default Oppo
+      if (model.contains('FIND')) return PriceEstimationConstants.basePriceOppoFind;
+      if (model.contains('RENO')) return PriceEstimationConstants.basePriceOppoReno;
+      return PriceEstimationConstants.basePriceOppoDefault;
     }
 
     // Default
-    return 3000000;
+    return PriceEstimationConstants.basePriceUnknown;
   }
 
   /// Tính độ tin cậy của ước tính
   static double _calculateConfidence(int score) {
-    if (score >= 90) return 0.95;
-    if (score >= 80) return 0.90;
-    if (score >= 70) return 0.85;
-    if (score >= 60) return 0.75;
-    return 0.60;
+    if (score >= PriceEstimationConstants.scoreExcellentMin) {
+      return PriceEstimationConstants.confidenceExcellent;
+    }
+    if (score >= PriceEstimationConstants.scoreGoodMin) {
+      return PriceEstimationConstants.confidenceGood;
+    }
+    if (score >= PriceEstimationConstants.scoreFairMin) {
+      return PriceEstimationConstants.confidenceFair;
+    }
+    if (score >= PriceEstimationConstants.scorePoorMin) {
+      return PriceEstimationConstants.confidencePoor;
+    }
+    return PriceEstimationConstants.confidenceBad;
   }
 
   /// Lấy các yếu tố ảnh hưởng giá
-  static List<PriceFactor> _getPriceFactors(int score, String origin) {
+  static List<PriceFactor> _getPriceFactors(int score) {
     final factors = <PriceFactor>[];
 
     // Điểm số
-    if (score >= 90) {
+    if (score >= PriceEstimationConstants.scoreExcellentMin) {
       factors.add(
         PriceFactor(
-          name: 'Tình trạng xuất sắc',
+          name: LocaleKeys.price_estimation_condition_excellent_name.trans(),
           impact: 'positive',
-          description: 'Máy như mới, giá cao',
+          description:
+              LocaleKeys.price_estimation_condition_excellent_description.trans(),
         ),
       );
-    } else if (score >= 80) {
+    } else if (score >= PriceEstimationConstants.scoreGoodMin) {
       factors.add(
         PriceFactor(
-          name: 'Tình trạng tốt',
+          name: LocaleKeys.price_estimation_condition_good_name.trans(),
           impact: 'neutral',
-          description: 'Giảm 15% so với mới',
+          description:
+              LocaleKeys.price_estimation_condition_good_description.trans(),
         ),
       );
-    } else if (score >= 70) {
+    } else if (score >= PriceEstimationConstants.scoreFairMin) {
       factors.add(
         PriceFactor(
-          name: 'Tình trạng khá',
+          name: LocaleKeys.price_estimation_condition_fair_name.trans(),
           impact: 'negative',
-          description: 'Giảm 30% so với mới',
+          description:
+              LocaleKeys.price_estimation_condition_fair_description.trans(),
         ),
       );
     } else {
       factors.add(
         PriceFactor(
-          name: 'Tình trạng yếu',
+          name: LocaleKeys.price_estimation_condition_poor_name.trans(),
           impact: 'negative',
-          description: 'Giảm 45-60% so với mới',
+          description:
+              LocaleKeys.price_estimation_condition_poor_description.trans(),
         ),
       );
     }
 
-    // Xuất xứ
-    if (origin.toLowerCase().contains('trung quốc')) {
-      factors.add(
-        PriceFactor(
-          name: 'Xuất xứ Trung Quốc',
-          impact: 'negative',
-          description: 'Giảm 10% giá',
-        ),
-      );
-    }
+
 
     return factors;
   }
 
   /// Lấy khuyến nghị
   static String _getRecommendation(int score, double price) {
-    if (score >= 90) {
-      return 'Máy trong tình trạng xuất sắc. Nên bán với giá cao.';
-    } else if (score >= 80) {
-      return 'Máy còn tốt. Giá thu mua hợp lý.';
-    } else if (score >= 70) {
-      return 'Máy có một số vấn đề nhỏ. Cân nhắc sửa chữa trước khi bán.';
-    } else if (score >= 60) {
-      return 'Máy có nhiều vấn đề. Nên sửa chữa để tăng giá.';
+    if (score >= PriceEstimationConstants.scoreExcellentMin) {
+      return LocaleKeys.price_estimation_recommendation_excellent.trans();
+    } else if (score >= PriceEstimationConstants.scoreGoodMin) {
+      return LocaleKeys.price_estimation_recommendation_good.trans();
+    } else if (score >= PriceEstimationConstants.scoreFairMin) {
+      return LocaleKeys.price_estimation_recommendation_fair.trans();
+    } else if (score >= PriceEstimationConstants.scorePoorMin) {
+      return LocaleKeys.price_estimation_recommendation_poor.trans();
     } else {
-      return 'Máy cần sửa chữa nhiều. Giá thu mua thấp.';
+      return LocaleKeys.price_estimation_recommendation_bad.trans();
     }
   }
 }

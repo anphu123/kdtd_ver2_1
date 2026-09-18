@@ -36,14 +36,18 @@ class PhaseHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? AppColors.green03B134.withValues(alpha: 0.1)
+                    ? AppColors.successSurface
                     : AppColors.neutralGreyLight,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isCompleted ? AppColors.successBorder : AppColors.neutralGreyLighter,
+                  width: 0.8,
+                ),
               ),
               child: Text(
                 '$passedCount/$totalCount',
                 style: AppTextStyles.badge.copyWith(
-                  color: isCompleted ? AppColors.green03B134 : AppColors.neutralGreyDark,
+                  color: isCompleted ? AppColors.success : AppColors.neutralGreyDark,
                 ),
               ),
             ),

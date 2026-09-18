@@ -12,6 +12,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 class AutoSuiteSection extends StatelessWidget {
   const AutoSuiteSection({
@@ -29,18 +30,11 @@ class AutoSuiteSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: AppColors.tradeInBorder),
       ),
       child: Column(
@@ -50,33 +44,35 @@ class AutoSuiteSection extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 36.r,
+                height: 36.r,
                 decoration: BoxDecoration(
-                  color: AppColors.tradeInBlue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.pviRedLighter,
+                  borderRadius: BorderRadius.circular(10.r),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.verified_rounded,
+                  size: 20.r,
                   color: AppColors.tradeInBlue,
-                  size: 20,
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Thẩm Định Chuẩn Thu Cũ',
+                      LocaleKeys.diagnostics_home_auto_suite_title.trans(),
                       style: AppTextStyles.cardTitle.copyWith(
                         color: AppColors.tradeInNavy,
+                        fontSize: 16.sp,
                       ),
                     ),
                     Text(
-                      'Định giá tự động chỉ trong 60 giây',
+                      LocaleKeys.diagnostics_home_auto_suite_subtitle.trans(),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.neutralGreyDark,
+                        fontSize: 12.sp,
                       ),
                     ),
                   ],
@@ -85,52 +81,46 @@ class AutoSuiteSection extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.h),
 
           // Big 1-Touch Button
           Container(
             width: double.infinity,
-            height: 54,
+            height: 48.h,
             decoration: BoxDecoration(
-              gradient: isRunning
-                  ? null
-                  : const LinearGradient(
-                      colors: [AppColors.tradeInBlue, AppColors.tradeInBlueLight],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-              color: isRunning ? AppColors.neutralGreyLighter : null,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isRunning
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: AppColors.tradeInBlue.withValues(alpha: 0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              color: isRunning ? AppColors.neutralGreyLighter : AppColors.pviRed,
+              borderRadius: BorderRadius.circular(12.r),
             ),
             child: Material(
               color: AppColors.transparent,
               child: InkWell(
                 onTap: isRunning ? null : onStartAuto,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12.r),
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        isRunning ? Icons.hourglass_empty_rounded : Icons.bolt_rounded,
-                        color: isRunning ? AppColors.neutralGreyDark : AppColors.white,
-                        size: 24,
+                        isRunning
+                            ? Icons.hourglass_empty_rounded
+                            : Icons.bolt_rounded,
+                        color:
+                            isRunning
+                                ? AppColors.neutralGreyDark
+                                : AppColors.white,
+                        size: 22.r,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                       Text(
-                        isRunning ? 'Đang Kiểm Định Máy...' : 'Bắt Đầu Thẩm Định Ngay',
+                        isRunning
+                            ? LocaleKeys.diagnostics_home_auto_suite_running
+                                .trans()
+                            : LocaleKeys.diagnostics_home_auto_suite_start.trans(),
                         style: AppTextStyles.button.copyWith(
-                          color: isRunning ? AppColors.neutralGreyDark : AppColors.white,
-                          fontSize: 16,
+                          color: isRunning
+                              ? AppColors.neutralGreyDark
+                              : AppColors.white,
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -141,19 +131,25 @@ class AutoSuiteSection extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
 
           // Privacy note
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.neutralGrey),
-              const SizedBox(width: 4),
-              Text(
-                'Bảo mật dữ liệu tuyệt đối • Không lưu thông tin riêng tư',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.neutralGrey,
-                  fontSize: 11,
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 13.r,
+                color: AppColors.neutralGrey,
+              ),
+              SizedBox(width: 4.w),
+              Flexible(
+                child: Text(
+                  LocaleKeys.diagnostics_home_auto_suite_privacy_note.trans(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.neutralGrey,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 /// DiagLogger - Centralized logging for diagnostics
 /// Giảm log spam, chỉ hiển thị khi debug mode bật
 class DiagLogger {
-  static bool _debugMode = false;
+  static bool _debugMode = kDebugMode;
   static bool _verboseMode = false;
 
   /// Bật debug mode

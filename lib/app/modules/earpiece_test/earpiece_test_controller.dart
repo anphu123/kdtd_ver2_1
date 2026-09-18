@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
+import 'package:kdtd_ver2_1/app/core/constants/audio_test_constants.dart';
 import 'package:kdtd_ver2_1/app/data/services/wav_tone_generator.dart';
 import 'package:proximity_sensor/proximity_sensor.dart';
 
@@ -42,13 +45,19 @@ class EarpieceTestController extends GetxController {
   Future<void> _start() async {
     try {
       // Setup audio player
-      await _player.setVolume(0.5);
+      await _player.setVolume(AudioTestConstants.earpieceVolume);
       await _player.setReleaseMode(ReleaseMode.loop);
 
       // Play sine wave through earpiece
-      await _player.play(BytesSource(
-        WavToneGenerator.sineWave(seconds: 2, freqHz: 800, amplitude: 0.3),
-      ));
+      await _player.play(
+        BytesSource(
+          WavToneGenerator.sineWave(
+            seconds: AudioTestConstants.earpieceToneSeconds,
+            freqHz: AudioTestConstants.earpieceToneFreqHz,
+            amplitude: AudioTestConstants.earpieceToneAmplitude,
+          ),
+        ),
+      );
 
       isPlaying.value = true;
 
@@ -66,13 +75,17 @@ class EarpieceTestController extends GetxController {
         }
       });
     } catch (e) {
-      Get.snackbar('Lỗi', '$e', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        LocaleKeys.earpiece_test_error_title.trans(),
+        '$e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
   void _startAutoPassTimer() {
     _autoPassTimer?.cancel();
-    _autoPassTimer = Timer(const Duration(seconds: 3), () {
+    _autoPassTimer = Timer(AudioTestConstants.earpieceAutoPassDelay, () {
       if (hasDetectedNear.value) {
         finish(true);
       }

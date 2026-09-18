@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 
@@ -62,7 +63,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
         backgroundColor: AppColors.black,
         appBar: AppBar(
           backgroundColor: AppColors.black87,
-          title: const Text('Test Loa trong'),
+          title: Text(LocaleKeys.earpiece_test_title.trans()),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => controller.finish(false),
@@ -70,18 +71,19 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.r),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Status indicator
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.r),
                   decoration: BoxDecoration(
-                    color: hasDetectedNear
-                        ? AppColors.pass.withValues(alpha: 0.2)
-                        : AppColors.info.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(16),
+                    color:
+                        hasDetectedNear
+                            ? AppColors.successDarkSurface
+                            : AppColors.infoDarkSurface,
+                    borderRadius: BorderRadius.circular(16.r),
                     border: Border.all(
                       color: hasDetectedNear ? AppColors.pass : AppColors.info,
                       width: 2,
@@ -92,16 +94,18 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                     children: [
                       Icon(
                         hasDetectedNear ? Icons.check_circle : Icons.sensors,
-                        color: hasDetectedNear ? AppColors.pass : AppColors.info,
-                        size: 24,
+                        color:
+                            hasDetectedNear ? AppColors.pass : AppColors.info,
+                        size: 24.r,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       Text(
                         hasDetectedNear
-                            ? 'Đã phát hiện cảm biến!'
-                            : 'Đang chờ phát hiện...',
+                            ? LocaleKeys.earpiece_test_status_detected.trans()
+                            : LocaleKeys.earpiece_test_status_waiting.trans(),
                         style: AppTextStyles.titleMedium.copyWith(
-                          color: hasDetectedNear ? AppColors.pass : AppColors.info,
+                          color:
+                              hasDetectedNear ? AppColors.pass : AppColors.info,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -109,59 +113,57 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                SizedBox(height: 48.h),
 
                 // Animated phone icon
                 AnimatedBuilder(
                   animation: _pulseController,
                   builder: (context, child) {
                     final scale = isNear ? 1.1 : 1.0;
-                    final opacity =
-                        isNear ? 1.0 : (0.5 + _pulseController.value * 0.5);
 
                     return Transform.scale(
                       scale: scale,
                       child: Container(
-                        width: 200,
-                        height: 200,
+                        width: 200.r,
+                        height: 200.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: hasDetectedNear
-                              ? AppColors.pass.withValues(alpha: opacity * 0.3)
-                              : AppColors.info.withValues(alpha: opacity * 0.3),
-                          boxShadow: isNear
-                              ? [
-                                  BoxShadow(
-                                    color: hasDetectedNear
-                                        ? AppColors.pass.withValues(alpha: 0.5)
-                                        : AppColors.info.withValues(alpha: 0.5),
-                                    blurRadius: 40,
-                                    spreadRadius: 10,
-                                  ),
-                                ]
-                              : null,
+                          color:
+                              hasDetectedNear
+                                  ? AppColors.successDarkSurface
+                                  : AppColors.infoDarkSurface,
+                          border: Border.all(
+                            color:
+                                hasDetectedNear
+                                    ? AppColors.pass
+                                    : AppColors.info,
+                            width: isNear ? 3.w : 1.w,
+                          ),
                         ),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             Icon(
                               Icons.phone_android,
-                              size: 100,
-                              color: hasDetectedNear ? AppColors.pass : AppColors.info,
+                              size: 100.r,
+                              color:
+                                  hasDetectedNear
+                                      ? AppColors.pass
+                                      : AppColors.info,
                             ),
                             if (isNear)
                               Positioned(
-                                top: 30,
-                                right: 50,
+                                top: 30.h,
+                                right: 50.w,
                                 child: Container(
-                                  padding: const EdgeInsets.all(8),
+                                  padding: EdgeInsets.all(8.r),
                                   decoration: const BoxDecoration(
                                     color: AppColors.warning,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.sensors,
-                                    size: 24,
+                                    size: 24.r,
                                     color: AppColors.white,
                                   ),
                                 ),
@@ -173,48 +175,48 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                   },
                 ),
 
-                const SizedBox(height: 48),
+                SizedBox(height: 48.h),
 
                 // Instructions
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20.r),
                   decoration: BoxDecoration(
                     color: AppColors.white10,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: Column(
                     children: [
                       Text(
                         hasDetectedNear
-                            ? 'Tự động kết thúc sau 3 giây...'
-                            : 'Hướng dẫn',
+                            ? LocaleKeys.earpiece_test_auto_finish.trans()
+                            : LocaleKeys.earpiece_test_instructions_title.trans(),
                         style: AppTextStyles.titleLarge.copyWith(
                           color: AppColors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       if (!hasDetectedNear) ...[
                         _buildInstructionStep(
                           '1',
-                          'Đặt điện thoại sát tai',
+                          LocaleKeys.earpiece_test_step1.trans(),
                           Icons.phone_in_talk,
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12.h),
                         _buildInstructionStep(
                           '2',
-                          'Cảm biến tiệm cận sẽ kích hoạt',
+                          LocaleKeys.earpiece_test_step2.trans(),
                           Icons.sensors,
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12.h),
                         _buildInstructionStep(
                           '3',
-                          'Xác nhận nghe thấy âm thanh',
+                          LocaleKeys.earpiece_test_step3.trans(),
                           Icons.hearing,
                         ),
                       ] else
                         Text(
-                          'Đã phát hiện cảm biến tiệm cận!\nBạn có nghe thấy âm thanh từ loa trong không?',
+                          LocaleKeys.earpiece_test_detected_instruction.trans(),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.white70,
                             height: 1.5,
@@ -225,21 +227,29 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: 32.h),
 
                 // Stats
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStat(
-                      'Trạng thái',
-                      isNear ? 'Gần' : 'Xa',
+                      LocaleKeys.earpiece_test_stat_status.trans(),
+                      isNear
+                          ? LocaleKeys.earpiece_test_near.trans()
+                          : LocaleKeys.earpiece_test_far.trans(),
                       isNear ? AppColors.pass : AppColors.neutralGrey,
                     ),
-                    _buildStat('Số lần', '$nearCount', AppColors.info),
                     _buildStat(
-                      'Âm thanh',
-                      isPlaying ? 'Đang phát' : 'Dừng',
+                      LocaleKeys.earpiece_test_stat_count.trans(),
+                      '$nearCount',
+                      AppColors.info,
+                    ),
+                    _buildStat(
+                      LocaleKeys.earpiece_test_stat_sound.trans(),
+                      isPlaying
+                          ? LocaleKeys.earpiece_test_playing.trans()
+                          : LocaleKeys.earpiece_test_stopped.trans(),
                       isPlaying ? AppColors.warning : AppColors.neutralGrey,
                     ),
                   ],
@@ -251,7 +261,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
         bottomNavigationBar: SafeArea(
           child: Container(
             color: AppColors.black87,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.r),
             child: Row(
               children: [
                 Expanded(
@@ -260,24 +270,29 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.white,
                       side: const BorderSide(color: AppColors.white),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     icon: const Icon(Icons.close),
-                    label: const Text('Không đạt'),
+                    label: Text(LocaleKeys.earpiece_test_btn_fail.trans()),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: () => controller.finish(true),
                     style: FilledButton.styleFrom(
-                      backgroundColor: hasDetectedNear
-                          ? AppColors.pass
-                          : AppColors.pass.withValues(alpha: 0.7),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor:
+                          hasDetectedNear
+                              ? AppColors.pass
+                              : AppColors.pass,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     icon: const Icon(Icons.check),
-                    label: Text(hasDetectedNear ? 'Đạt' : 'Đạt (Thủ công)'),
+                    label: Text(
+                      hasDetectedNear
+                          ? LocaleKeys.earpiece_test_btn_pass.trans()
+                          : LocaleKeys.earpiece_test_btn_pass_manual.trans(),
+                    ),
                   ),
                 ),
               ],
@@ -292,11 +307,11 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
     return Row(
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 32.r,
+          height: 32.r,
           decoration: BoxDecoration(
             color: AppColors.info,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.r),
           ),
           child: Center(
             child: Text(
@@ -308,9 +323,9 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Icon(icon, color: AppColors.white70, size: 20),
-        const SizedBox(width: 8),
+        SizedBox(width: 12.w),
+        Icon(icon, color: AppColors.white70, size: 20.r),
+        SizedBox(width: 8.w),
         Expanded(
           child: Text(
             text,
@@ -328,7 +343,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
           label,
           style: AppTextStyles.bodySmall.copyWith(color: AppColors.white70),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         Text(
           value,
           style: AppTextStyles.titleMedium.copyWith(

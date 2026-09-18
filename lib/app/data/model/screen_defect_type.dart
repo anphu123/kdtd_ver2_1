@@ -1,3 +1,8 @@
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:kdtd_ver2_1/app/core/constants/screen_defect_detection_constants.dart';
+
 /// Phân loại lỗi màn hình
 enum ScreenDefectType {
   /// Màn hình trong (LCD/OLED panel)
@@ -73,12 +78,15 @@ enum ScreenDefectSeverity {
 
 /// Các loại lỗi màn hình trong
 class InnerScreenDefects {
-  static const deadPixel = 'Dead Pixel';
-  static const brightPixel = 'Bright Pixel / Chảy mực';
-  static const burnIn = 'Burn-in / Vết ám';
-  static const colorBanding = 'Color Banding';
-  static const flickering = 'Nhấp nháy';
-  static const touchIssue = 'Lỗi cảm ứng';
+  static String get deadPixel => LocaleKeys.screen_defect_type_dead_pixel.trans();
+  static String get brightPixel =>
+      LocaleKeys.screen_defect_type_bright_pixel.trans();
+  static String get burnIn => LocaleKeys.screen_defect_type_burn_in.trans();
+  static String get colorBanding =>
+      LocaleKeys.screen_defect_type_color_banding.trans();
+  static String get flickering => LocaleKeys.screen_defect_type_flickering.trans();
+  static String get touchIssue =>
+      LocaleKeys.screen_defect_type_touch_issue.trans();
 
   static bool isInnerScreenDefect(String defectType) {
     return [
@@ -94,10 +102,10 @@ class InnerScreenDefects {
 
 /// Các loại lỗi màn hình ngoài
 class OuterScreenDefects {
-  static const scratch = 'Xước';
-  static const crack = 'Nứt';
-  static const shattered = 'Vỡ';
-  static const dent = 'Móp';
+  static String get scratch => LocaleKeys.screen_defect_type_scratch.trans();
+  static String get crack => LocaleKeys.screen_defect_type_crack.trans();
+  static String get shattered => LocaleKeys.screen_defect_type_shattered.trans();
+  static String get dent => LocaleKeys.screen_defect_type_dent.trans();
 
   static bool isOuterScreenDefect(String defectType) {
     return [scratch, crack, shattered, dent].contains(defectType);
@@ -106,13 +114,21 @@ class OuterScreenDefects {
   static ScreenDefectSeverity getSeverity(String defectType, int count) {
     if (defectType == shattered) return ScreenDefectSeverity.severe;
     if (defectType == crack) {
-      if (count >= 3) return ScreenDefectSeverity.severe;
-      if (count >= 2) return ScreenDefectSeverity.moderate;
+      if (count >= ScreenDefectSeverityThresholds.crackSevereCount) {
+        return ScreenDefectSeverity.severe;
+      }
+      if (count >= ScreenDefectSeverityThresholds.crackModerateCount) {
+        return ScreenDefectSeverity.moderate;
+      }
       return ScreenDefectSeverity.minor;
     }
     if (defectType == scratch) {
-      if (count >= 10) return ScreenDefectSeverity.moderate;
-      if (count >= 5) return ScreenDefectSeverity.minor;
+      if (count >= ScreenDefectSeverityThresholds.scratchModerateCount) {
+        return ScreenDefectSeverity.moderate;
+      }
+      if (count >= ScreenDefectSeverityThresholds.scratchMinorCount) {
+        return ScreenDefectSeverity.minor;
+      }
       return ScreenDefectSeverity.none;
     }
     return ScreenDefectSeverity.minor;

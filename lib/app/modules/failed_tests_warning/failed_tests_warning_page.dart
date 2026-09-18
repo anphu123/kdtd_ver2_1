@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
+import 'package:kdtd_ver2_1/app/core/widgets/pvi_modernist/pvi_modernist.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
+import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
 
@@ -20,357 +23,389 @@ class FailedTestsWarningPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grade = score >= 60 ? 'C' : 'D';
+    // Dùng chung ngưỡng xếp hạng với trang kết quả, tránh lệch hạng giữa 2 màn
+    final grade = DiagnosticGradeService.letterFromScore(score);
 
     return Scaffold(
       backgroundColor: AppColors.tradeInSurfaceBg,
       appBar: AppBar(
-        backgroundColor: AppColors.tradeInNavy,
+        backgroundColor: AppColors.pviNavy,
         foregroundColor: AppColors.white,
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Kết Quả Phân Hạng Thu Cũ',
-          style: AppTextStyles.titleMedium.copyWith(
+          LocaleKeys.failed_tests_warning_appbar_title.trans(),
+          style: AppTextStyles.appBarTitle.copyWith(
             color: AppColors.white,
-            fontWeight: FontWeight.bold,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.white),
+          icon: Icon(Icons.close_rounded, color: AppColors.white, size: 20.sp),
           onPressed: () => Get.back(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header Certificate / Grading Card
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.tradeInNavy, AppColors.tradeInDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 20.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Header Certificate / Grading Card
+                  _buildGradingCard(grade),
+                  SizedBox(height: 14.h),
+
+                  // 2. Subsidy Voucher Callout
+                  _buildSubsidyVoucher(grade),
+                  SizedBox(height: 16.h),
+
+                  // 3. Section Header
+                  _buildSectionHeader(
+                    title: 'CHI TIẾT LINH KIỆN CẦN LƯU Ý',
+                    subtitle: '${failedSteps.length} linh kiện phản hồi chưa đạt chuẩn',
+                    icon: Icons.assignment_late_outlined,
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // 4. Failed Tests Inset Group
+                  _buildFailedTestsInsetGroup(),
+                  SizedBox(height: 16.h),
+
+                  // 5. Trade-in benefits reassurance
+                  _buildReassuranceCard(),
+                ],
+              ),
+            ),
+          ),
+          // 6. Sticky Bottom Action Dock
+          _buildBottomActionDock(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradingCard(String grade) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: AppColors.warningSurface,
+                  borderRadius: BorderRadius.circular(6.r),
+                  border: Border.all(color: AppColors.warningBorder),
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.tradeInNavy.withValues(alpha: 0.15),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Grade & Score Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.tradeInGold.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.tradeInGold, width: 1.2),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.verified, color: AppColors.tradeInGold, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Phân Loại: Hạng $grade',
-                              style: AppTextStyles.labelMedium.copyWith(
-                                color: AppColors.tradeInGold,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.stars_rounded,
+                      color: AppColors.warningDark,
+                      size: 13.sp,
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'PVI ASSURANCE',
+                      style: AppTextStyles.badge.copyWith(
+                        color: AppColors.warningDark,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.tradeInDark,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Sức khỏe: $score/100',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.tradeInSlateLight,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Icon & Heading
-                  Container(
-                    width: 68,
-                    height: 68,
-                    decoration: BoxDecoration(
-                      color: AppColors.tradeInGold.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.tradeInGold.withValues(alpha: 0.4), width: 1.5),
                     ),
-                    child: const Icon(
-                      Icons.sync_alt_rounded,
-                      color: AppColors.tradeInGold,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  Text(
-                    'Đủ Điều Kiện Thu Cũ Lên Đời',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-
-                  Text(
-                    'Mặc dù ghi nhận một số lỗi linh kiện (${failedSteps.length} mục), thiết bị vẫn được thẩm định thu mua theo chuẩn Hạng $grade kèm gói trợ giá đặc quyền!',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.tradeInSlateLight,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: AppColors.pviNavySurface,
+                  borderRadius: BorderRadius.circular(6.r),
+                  border: Border.all(color: AppColors.pviNavyBorder),
+                ),
+                child: Text(
+                  'Điểm sức khỏe: $score/100',
+                  style: AppTextStyles.badge.copyWith(
+                    color: AppColors.pviNavy,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          Container(
+            width: 54.w,
+            height: 54.h,
+            decoration: BoxDecoration(
+              color: AppColors.warningSurface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.warningBorder, width: 1.5),
             ),
-            const SizedBox(height: 16),
-
-            // Subsidy Voucher Callout
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.tradeInGoldLight,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.tradeInGold.withValues(alpha: 0.6)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.tradeInGold.withValues(alpha: 0.25),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.card_giftcard, color: AppColors.tradeInGoldDark, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ưu Đãi Trợ Giá Lên Đời Hạng $grade',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            color: AppColors.tradeInGoldDark,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Tặng thêm 1.500.000đ khi đổi sang iPhone 16 / Galaxy S24 Series.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.tradeInNavy,
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: Icon(
+              Icons.sync_alt_rounded,
+              color: AppColors.warningDark,
+              size: 28.sp,
             ),
-            const SizedBox(height: 20),
-
-            // Failed Tests Details Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.tradeInBorder),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.assignment_late_outlined, color: AppColors.warning, size: 22),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Hạng mục ghi nhận lỗi (${failedSteps.length})',
-                        style: AppTextStyles.sectionHeader.copyWith(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Được khấu trừ hợp lý theo chính sách thu mua minh bạch, không ép giá:',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.tradeInSlate,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ...failedSteps.map((step) => _buildFailedItem(step)),
-                ],
-              ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            LocaleKeys.failed_tests_warning_eligible_title.trans(),
+            style: AppTextStyles.cardTitle.copyWith(
+              color: AppColors.tradeInNavy,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 20),
-
-            // Trade-in benefits reassurance
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.tradeInNavy.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.tradeInNavy.withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.check_circle_outline, color: AppColors.tradeInBlue, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Lợi ích khi lên đời ngay tại cửa hàng',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.tradeInNavy,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBulletPoint('Không cần chi tiền túi sửa chữa linh kiện hư hỏng'),
-                  _buildBulletPoint('Hỗ trợ sao lưu dữ liệu sang máy mới an toàn 100%'),
-                  _buildBulletPoint('Bù tiền chênh lệch trả góp 0% lãi suất linh hoạt'),
-                ],
-              ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            LocaleKeys.failed_tests_warning_eligible_description.trans(
+              namedArgs: {
+                'count': '${failedSteps.length}',
+                'grade': grade,
+              },
             ),
-            const SizedBox(height: 28),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 12.sp,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Action Buttons
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildSubsidyVoucher(String grade) {
+    return Container(
+      padding: EdgeInsets.all(14.r),
+      decoration: BoxDecoration(
+        color: AppColors.warningSurface,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.warningBorder, width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38.w,
+            height: 38.h,
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.warningBorder),
+            ),
+            child: Icon(
+              Icons.card_giftcard,
+              color: AppColors.warningDark,
+              size: 18.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Primary: View Trade-In valuation & showroom
-                Container(
-                  height: 54,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.tradeInBlue, AppColors.tradeInBlueLight],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.tradeInBlue.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                Text(
+                  LocaleKeys.failed_tests_warning_subsidy_offer_title.trans(
+                    namedArgs: {'grade': grade},
                   ),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Get.off(() => const DiagnosticResultPage());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    icon: const Icon(Icons.arrow_forward_rounded, color: AppColors.white, size: 20),
-                    label: Text(
-                      'Xem Định Giá & Chọn Máy Lên Đời',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    color: AppColors.warningDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.5.sp,
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                // Secondary: Retest
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Get.back();
-                    Get.find<DiagnosticsHomeController>().startWithPermissionCheck();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                    side: const BorderSide(color: AppColors.tradeInNavy, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: const Icon(Icons.refresh, color: AppColors.tradeInNavy, size: 20),
-                  label: Text(
-                    'Kiểm tra lại lần nữa',
-                    style: AppTextStyles.titleSmall.copyWith(
-                      color: AppColors.tradeInNavy,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Back to home
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: Text(
-                    'Quay về trang chủ',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.tradeInSlate,
-                    ),
+                SizedBox(height: 2.h),
+                Text(
+                  LocaleKeys.failed_tests_warning_subsidy_offer_description.trans(),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.tradeInNavy,
+                    fontSize: 11.5.sp,
+                    height: 1.3,
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14.sp, color: AppColors.tradeInNavy),
+            SizedBox(width: 6.w),
+            Text(
+              title,
+              style: AppTextStyles.badge.copyWith(
+                fontSize: 11.sp,
+                color: AppColors.tradeInNavy,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
+            ),
           ],
         ),
+        SizedBox(height: 2.h),
+        Padding(
+          padding: EdgeInsets.only(left: 20.w),
+          child: Text(
+            subtitle,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontSize: 11.sp,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFailedTestsInsetGroup() {
+    return PviInsetGroupCard(
+      dividerIndent: 56.w,
+      children: failedSteps.map((step) => _buildFailedItemRow(step)).toList(),
+    );
+  }
+
+  Widget _buildFailedItemRow(DiagStep step) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36.w,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: AppColors.pviRedSurface,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: AppColors.pviRedBorder),
+            ),
+            child: Icon(_getIcon(step.code), color: AppColors.pviRed, size: 18.sp),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.title,
+                  style: AppTextStyles.cardTitle.copyWith(
+                    color: AppColors.tradeInNavy,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5.sp,
+                  ),
+                ),
+                if (step.note != null && step.note!.isNotEmpty) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    step.note!,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 11.sp,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: AppColors.warningSurface,
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(color: AppColors.warningBorder),
+            ),
+            child: Text(
+              LocaleKeys.failed_tests_warning_needs_maintenance.trans(),
+              style: AppTextStyles.badge.copyWith(
+                color: AppColors.warningDark,
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReassuranceCard() {
+    return Container(
+      padding: EdgeInsets.all(14.r),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline_rounded,
+                color: AppColors.tradeInEmerald,
+                size: 18.sp,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                LocaleKeys.failed_tests_warning_benefits_title.trans(),
+                style: AppTextStyles.cardTitle.copyWith(
+                  color: AppColors.tradeInNavy,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5.sp,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_1.trans()),
+          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_2.trans()),
+          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_3.trans()),
+        ],
       ),
     );
   }
 
   Widget _buildBulletPoint(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 6.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 6, right: 10),
-            width: 5,
-            height: 5,
+            margin: EdgeInsets.only(top: 5.h, right: 8.w),
+            width: 5.w,
+            height: 5.h,
             decoration: const BoxDecoration(
-              color: AppColors.tradeInBlue,
+              color: AppColors.pviRed,
               shape: BoxShape.circle,
             ),
           ),
@@ -378,8 +413,9 @@ class FailedTestsWarningPage extends StatelessWidget {
             child: Text(
               text,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.tradeInDark,
-                height: 1.4,
+                color: AppColors.tradeInNavy,
+                fontSize: 11.5.sp,
+                height: 1.35,
               ),
             ),
           ),
@@ -388,64 +424,77 @@ class FailedTestsWarningPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFailedItem(DiagStep step) {
+  Widget _buildBottomActionDock() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.tradeInSurfaceBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.tradeInBorder),
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(
+          top: BorderSide(color: AppColors.border, width: 1),
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(_getIcon(step.code), color: AppColors.warning, size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  step.title,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.tradeInDark,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 48.h,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Get.off(() => const DiagnosticResultPage());
+                },
+                icon: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.white,
+                  size: 20.sp,
+                ),
+                label: Text(
+                  LocaleKeys.failed_tests_warning_view_valuation_button.trans(),
+                  style: AppTextStyles.button.copyWith(
+                    color: AppColors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                if (step.note != null && step.note!.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    step.note!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.tradeInSlate,
-                    ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.pviRed,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                ],
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.warningLight.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'Cần bảo dưỡng',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.tradeInGoldDark,
-                fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-        ],
+            SizedBox(height: 6.h),
+            SizedBox(
+              width: double.infinity,
+              height: 40.h,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  Get.find<DiagnosticsHomeController>().startWithPermissionCheck();
+                },
+                icon: Icon(Icons.refresh_rounded, size: 16.sp, color: AppColors.tradeInNavy),
+                label: Text(
+                  LocaleKeys.failed_tests_warning_retest_button.trans(),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.tradeInNavy,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -453,33 +502,33 @@ class FailedTestsWarningPage extends StatelessWidget {
   IconData _getIcon(String code) {
     switch (code) {
       case 'battery':
-        return Icons.battery_alert;
+        return Icons.battery_alert_rounded;
       case 'screen':
-        return Icons.phone_android;
+        return Icons.phone_android_rounded;
       case 'touch':
-        return Icons.touch_app;
+        return Icons.touch_app_rounded;
       case 'camera':
-        return Icons.camera_alt;
+        return Icons.camera_alt_rounded;
       case 'speaker':
-        return Icons.volume_up;
+        return Icons.volume_up_rounded;
       case 'mic':
-        return Icons.mic;
+        return Icons.mic_rounded;
       case 'ear':
-        return Icons.hearing;
+        return Icons.hearing_rounded;
       case 'vibrate':
-        return Icons.vibration;
+        return Icons.vibration_rounded;
       case 'keys':
-        return Icons.keyboard;
+        return Icons.keyboard_rounded;
       case 'wifi':
-        return Icons.wifi;
+        return Icons.wifi_rounded;
       case 'bt':
-        return Icons.bluetooth;
+        return Icons.bluetooth_rounded;
       case 'nfc':
-        return Icons.nfc;
+        return Icons.nfc_rounded;
       case 'gps':
-        return Icons.location_on;
+        return Icons.location_on_rounded;
       default:
-        return Icons.info_outline;
+        return Icons.info_outline_rounded;
     }
   }
 }

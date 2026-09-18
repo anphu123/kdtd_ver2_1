@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 
 import 'mic_test_controller.dart';
+import 'mic_test_labels.dart';
 import 'widgets/stat_item.dart';
 import 'widgets/waveform_painter.dart';
 
@@ -65,58 +67,14 @@ class _MicTestViewState extends State<_MicTestView>
     }
   }
 
-  static String _getInstructionText(MicTestPhase phase) {
-    switch (phase) {
-      case MicTestPhase.recording:
-        return 'Đang thu âm... Hãy nói "Một hai ba"';
-      case MicTestPhase.playing:
-        return 'Đang phát lại âm thanh đã thu...';
-      case MicTestPhase.confirming:
-        return 'Bạn có nghe thấy âm thanh vừa phát không?';
-    }
-  }
-
-  static Color _getPhaseColor(MicTestPhase phase, bool hasDetectedSound) {
-    switch (phase) {
-      case MicTestPhase.recording:
-        return hasDetectedSound ? AppColors.pass : AppColors.info;
-      case MicTestPhase.playing:
-        return AppColors.warning;
-      case MicTestPhase.confirming:
-        return AppColors.neutralPurple;
-    }
-  }
-
-  static IconData _getPhaseIcon(MicTestPhase phase, bool hasDetectedSound) {
-    switch (phase) {
-      case MicTestPhase.recording:
-        return hasDetectedSound ? Icons.check_circle : Icons.mic;
-      case MicTestPhase.playing:
-        return Icons.volume_up;
-      case MicTestPhase.confirming:
-        return Icons.help_outline;
-    }
-  }
-
-  static String _getPhaseStatus(MicTestPhase phase, bool hasDetectedSound) {
-    switch (phase) {
-      case MicTestPhase.recording:
-        return hasDetectedSound ? 'Đã phát hiện âm thanh!' : 'Đang lắng nghe...';
-      case MicTestPhase.playing:
-        return 'Đang phát lại...';
-      case MicTestPhase.confirming:
-        return 'Chờ xác nhận';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final phase = controller.phase.value;
       final hasDetectedSound = controller.hasDetectedSound.value;
       final amplitude = controller.amplitude.value;
-      final level = (amplitude.clamp(0, 20000)) / 20000.0;
-      final phaseColor = _getPhaseColor(phase, hasDetectedSound);
+      final level = controller.level;
+      final phaseColor = phase.phaseColor(hasDetectedSound);
       final error = controller.error.value;
       final ready = controller.ready.value;
 
@@ -124,7 +82,7 @@ class _MicTestViewState extends State<_MicTestView>
         backgroundColor: AppColors.black,
         appBar: AppBar(
           backgroundColor: AppColors.black87,
-          title: const Text('Test Micro'),
+          title: Text(LocaleKeys.mic_test_title.trans()),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => controller.finish(false),
@@ -132,7 +90,7 @@ class _MicTestViewState extends State<_MicTestView>
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.r),
             child: Builder(
               builder: (_) {
                 if (error != null) {
@@ -140,12 +98,12 @@ class _MicTestViewState extends State<_MicTestView>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           color: AppColors.fail,
-                          size: 64,
+                          size: 64.r,
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         Text(
                           error,
                           textAlign: TextAlign.center,
@@ -153,11 +111,11 @@ class _MicTestViewState extends State<_MicTestView>
                             color: AppColors.white,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24.h),
                         FilledButton.icon(
                           onPressed: controller.start,
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Thử lại'),
+                          label: Text(LocaleKeys.mic_test_retry.trans()),
                         ),
                       ],
                     ),
@@ -170,10 +128,12 @@ class _MicTestViewState extends State<_MicTestView>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const CircularProgressIndicator(color: AppColors.white),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16.h),
                         Text(
-                          'Đang chuẩn bị micro...',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
+                          LocaleKeys.mic_test_preparing.trans(),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -185,23 +145,25 @@ class _MicTestViewState extends State<_MicTestView>
                   children: [
                     // Status indicator
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16.r),
                       decoration: BoxDecoration(
-                        color: phaseColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: phaseColor, width: 2),
+                        color: hasDetectedSound
+                            ? AppColors.successSurface
+                            : AppColors.pviNavySurface,
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(color: phaseColor, width: 1.5),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _getPhaseIcon(phase, hasDetectedSound),
+                            phase.phaseIcon(hasDetectedSound),
                             color: phaseColor,
-                            size: 24,
+                            size: 24.r,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           Text(
-                            _getPhaseStatus(phase, hasDetectedSound),
+                            phase.phaseStatus(hasDetectedSound),
                             style: AppTextStyles.titleMedium.copyWith(
                               color: phaseColor,
                               fontWeight: FontWeight.bold,
@@ -211,49 +173,46 @@ class _MicTestViewState extends State<_MicTestView>
                       ),
                     ),
 
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48.h),
 
                     // Animated mic icon
                     AnimatedBuilder(
                       animation: _pulseController,
                       builder: (context, child) {
                         final scale = 1.0 + (level * 0.5);
-                        final opacity = 0.3 + (level * 0.7);
                         return Transform.scale(
                           scale: scale,
                           child: Container(
-                            width: 120,
-                            height: 120,
+                            width: 120.r,
+                            height: 120.r,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: hasDetectedSound
-                                  ? AppColors.pass.withValues(alpha: opacity)
-                                  : AppColors.info.withValues(alpha: opacity),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: hasDetectedSound
-                                      ? AppColors.pass.withValues(alpha: 0.5)
-                                      : AppColors.info.withValues(alpha: 0.5),
-                                  blurRadius: 30 * level,
-                                  spreadRadius: 10 * level,
-                                ),
-                              ],
+                              color:
+                                  hasDetectedSound
+                                      ? AppColors.pass
+                                      : AppColors.primary,
+                              border: Border.all(
+                                color: hasDetectedSound
+                                    ? AppColors.successBorder
+                                    : AppColors.pviNavyBorder,
+                                width: 3,
+                              ),
                             ),
                             child: Icon(
                               Icons.mic,
-                              size: 60,
-                              color: hasDetectedSound ? AppColors.pass : AppColors.info,
+                              size: 60.r,
+                              color: AppColors.white,
                             ),
                           ),
                         );
                       },
                     ),
 
-                    const SizedBox(height: 48),
+                    SizedBox(height: 48.h),
 
                     // Instruction based on phase
                     Text(
-                      _getInstructionText(phase),
+                      phase.instructionText,
                       style: AppTextStyles.titleMedium.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w500,
@@ -263,54 +222,59 @@ class _MicTestViewState extends State<_MicTestView>
 
                     // Countdown display during recording
                     if (phase == MicTestPhase.recording) ...[
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
                       Text(
                         '${controller.countdown.value}',
                         style: AppTextStyles.displayMedium.copyWith(
                           color: AppColors.white,
-                          fontSize: 48,
+                          fontSize: 48.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32.h),
 
                     // Waveform visualizer
                     Container(
-                      height: 100,
-                      padding: const EdgeInsets.all(16),
+                      height: 100.h,
+                      padding: EdgeInsets.all(16.r),
                       decoration: BoxDecoration(
                         color: AppColors.white10,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: CustomPaint(
                         painter: WaveformPainter(
                           amplitudes: controller.amplitudeHistory,
-                          color: hasDetectedSound ? AppColors.pass : AppColors.info,
+                          color:
+                              hasDetectedSound
+                                  ? AppColors.pass
+                                  : AppColors.info,
                         ),
-                        size: const Size(double.infinity, 68),
+                        size: Size(double.infinity, 68.h),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Stats
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         StatItem(
-                          label: 'Hiện tại',
+                          label: LocaleKeys.mic_test_stat_current.trans(),
                           value: amplitude.toStringAsFixed(0),
                           color: AppColors.info,
                         ),
                         StatItem(
-                          label: 'Cao nhất',
-                          value: controller.maxAmplitude.value.toStringAsFixed(0),
+                          label: LocaleKeys.mic_test_stat_max.trans(),
+                          value: controller.maxAmplitude.value.toStringAsFixed(
+                            0,
+                          ),
                           color: AppColors.pass,
                         ),
                         StatItem(
-                          label: 'Mức độ',
+                          label: LocaleKeys.mic_test_stat_level.trans(),
                           value: '${(level * 100).toStringAsFixed(0)}%',
                           color: AppColors.warning,
                         ),
@@ -325,44 +289,53 @@ class _MicTestViewState extends State<_MicTestView>
         bottomNavigationBar: SafeArea(
           child: Container(
             color: AppColors.black87,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16.r),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: phase == MicTestPhase.confirming
-                        ? () => controller.finish(false)
-                        : null,
+                    onPressed:
+                        phase == MicTestPhase.confirming
+                            ? () => controller.finish(false)
+                            : null,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.white,
                       side: const BorderSide(color: AppColors.white),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                       disabledForegroundColor: AppColors.neutralGrey,
                     ),
                     icon: const Icon(Icons.close),
                     label: Text(
-                      phase == MicTestPhase.confirming ? 'Không nghe rõ' : 'Chờ...',
+                      phase == MicTestPhase.confirming
+                          ? LocaleKeys.mic_test_btn_not_clear.trans()
+                          : LocaleKeys.mic_test_btn_waiting.trans(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: phase == MicTestPhase.confirming
-                        ? () => controller.finish(true)
-                        : null,
+                    onPressed:
+                        phase == MicTestPhase.confirming
+                            ? () => controller.finish(true)
+                            : null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: phase == MicTestPhase.confirming
-                          ? (hasDetectedSound ? AppColors.pass : AppColors.pass.withValues(alpha: 0.7))
-                          : AppColors.neutralGrey,
+                      backgroundColor:
+                          phase == MicTestPhase.confirming
+                              ? (hasDetectedSound
+                                  ? AppColors.pass
+                                  : AppColors.pass)
+                              : AppColors.neutralGrey,
                       disabledBackgroundColor: AppColors.neutralGrey,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
                     ),
                     icon: const Icon(Icons.check),
                     label: Text(
                       phase == MicTestPhase.confirming
-                          ? (hasDetectedSound ? 'Nghe rõ' : 'Nghe rõ (Thủ công)')
-                          : 'Chờ...',
+                          ? (hasDetectedSound
+                              ? LocaleKeys.mic_test_btn_clear.trans()
+                              : LocaleKeys.mic_test_btn_clear_manual.trans())
+                          : LocaleKeys.mic_test_btn_waiting.trans(),
                     ),
                   ),
                 ),

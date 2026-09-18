@@ -1,17 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/constants/screen_defect_detection_constants.dart';
 
 /// Một pattern (màu) hiển thị trong bài test tự động phát hiện lỗi màn hình.
 class TestPattern {
+  final String id;
   final String name;
   final Color color;
   final String description;
   final int duration; // seconds
 
   TestPattern({
+    required this.id,
     required this.name,
     required this.color,
     required this.description,
@@ -32,10 +37,10 @@ class ScreenDefect {
   });
 
   Map<String, dynamic> toMap() => {
-        'type': type,
-        'color': color,
-        'description': description,
-      };
+    'type': type,
+    'color': color,
+    'description': description,
+  };
 }
 
 /// ============================================================
@@ -50,40 +55,52 @@ class ScreenDefect {
 class ScreenDefectDetectionController extends GetxController {
   final List<TestPattern> patterns = [
     TestPattern(
-      name: 'Màu đỏ',
+      id: 'red',
+      name: LocaleKeys.screen_defect_detection_pattern_red_name.trans(),
       color: AppColors.red,
-      description: 'Kiểm tra pixel đỏ, vết sốc',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_red_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
     TestPattern(
-      name: 'Màu xanh lá',
+      id: 'green',
+      name: LocaleKeys.screen_defect_detection_pattern_green_name.trans(),
       color: AppColors.green,
-      description: 'Kiểm tra pixel xanh lá',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_green_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
     TestPattern(
-      name: 'Màu xanh dương',
+      id: 'blue',
+      name: LocaleKeys.screen_defect_detection_pattern_blue_name.trans(),
       color: AppColors.blue,
-      description: 'Kiểm tra pixel xanh dương',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_blue_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
     TestPattern(
-      name: 'Màu trắng',
+      id: 'white',
+      name: LocaleKeys.screen_defect_detection_pattern_white_name.trans(),
       color: AppColors.white,
-      description: 'Kiểm tra dead pixel, vết đen',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_white_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
     TestPattern(
-      name: 'Màu đen',
+      id: 'black',
+      name: LocaleKeys.screen_defect_detection_pattern_black_name.trans(),
       color: AppColors.black,
-      description: 'Kiểm tra bright pixel, chảy mực',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_black_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
     TestPattern(
-      name: 'Màu xám',
+      id: 'gray',
+      name: LocaleKeys.screen_defect_detection_pattern_gray_name.trans(),
       color: AppColors.neutralGrey,
-      description: 'Kiểm tra burn-in, vết ám',
-      duration: 3,
+      description:
+          LocaleKeys.screen_defect_detection_pattern_gray_description.trans(),
+      duration: ScreenDefectDetectionConstants.patternDurationSeconds,
     ),
   ];
 
@@ -106,14 +123,17 @@ class ScreenDefectDetectionController extends GetxController {
   }
 
   void _startAutoTest() {
-    _autoTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final pattern = patterns[currentStep.value];
-      if (timer.tick >= pattern.duration) {
-        _autoAnalyzeScreen();
-        timer.cancel();
-        _nextStep();
-      }
-    });
+    _autoTimer = Timer.periodic(
+      ScreenDefectDetectionConstants.patternTickInterval,
+      (timer) {
+        final pattern = patterns[currentStep.value];
+        if (timer.tick >= pattern.duration) {
+          _autoAnalyzeScreen();
+          timer.cancel();
+          _nextStep();
+        }
+      },
+    );
   }
 
   /// Tự động phân tích màn hình (giả lập - trong thực tế cần camera/sensor)
@@ -154,29 +174,39 @@ class ScreenDefectDetectionController extends GetxController {
     userConfirmedDefect.value = true;
     detectedDefects.add(
       ScreenDefect(
-        type: _getDefectType(pattern.name),
+        type: _getDefectType(pattern.id),
         color: pattern.name,
-        description: 'Phát hiện lỗi khi test ${pattern.name.toLowerCase()}',
+        description: LocaleKeys.screen_defect_detection_defect_description.trans(
+          namedArgs: {'pattern': pattern.name.toLowerCase()},
+        ),
       ),
     );
   }
 
-  String _getDefectType(String colorName) {
-    if (colorName.contains('đen')) return 'Chảy mực / Bright pixel';
-    if (colorName.contains('trắng')) return 'Dead pixel / Vết đen';
-    if (colorName.contains('xám')) return 'Burn-in / Vết ám';
-    return 'Pixel lỗi / Vết sốc';
+  String _getDefectType(String colorId) {
+    if (colorId == 'black') {
+      return LocaleKeys.screen_defect_detection_defect_type_black.trans();
+    }
+    if (colorId == 'white') {
+      return LocaleKeys.screen_defect_detection_defect_type_white.trans();
+    }
+    if (colorId == 'gray') {
+      return LocaleKeys.screen_defect_detection_defect_type_gray.trans();
+    }
+    return LocaleKeys.screen_defect_detection_defect_type_default.trans();
   }
 
   /// Kết thúc bài test và pop kết quả về màn hình gọi.
   void finish() {
     _autoTimer?.cancel();
     final hasDefects = detectedDefects.isNotEmpty;
-    Get.back(result: {
-      'passed': !hasDefects,
-      'hasIssue': hasDefects, // Thêm field này cho rule evaluator
-      'defects': detectedDefects.map((d) => d.toMap()).toList(),
-      'defectCount': detectedDefects.length,
-    });
+    Get.back(
+      result: {
+        'passed': !hasDefects,
+        'hasIssue': hasDefects, // Thêm field này cho rule evaluator
+        'defects': detectedDefects.map((d) => d.toMap()).toList(),
+        'defectCount': detectedDefects.length,
+      },
+    );
   }
 }

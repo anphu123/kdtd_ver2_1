@@ -60,8 +60,8 @@ class TouchGridTestController extends GetxController {
     if (hitCells.contains(index)) return;
     hitCells.add(index);
 
-    // Đủ 100% ô → tự động kết thúc (pop true)
-    if (totalCells.value > 0 && hitCells.length >= totalCells.value) {
+    // Đủ >= 95% ô → tự động kết thúc đạt chuẩn
+    if (totalCells.value > 0 && hitCells.length >= (totalCells.value * 0.95).ceil()) {
       finish(success: true);
     }
   }
@@ -70,7 +70,8 @@ class TouchGridTestController extends GetxController {
   void finish({bool success = false}) {
     _cancelIdleTimer();
     _cancelFinalizeTimer();
-    final ok = success || hitCells.length >= totalCells.value;
+    final ratio = totalCells.value > 0 ? hitCells.length / totalCells.value : 0.0;
+    final ok = success || ratio >= 0.90;
     Get.back(result: ok);
   }
 

@@ -19,7 +19,8 @@ library;
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -55,60 +56,60 @@ class PermissionPrecheckService {
   /// Danh sách tất cả quyền cần cho ứng dụng theo từng nền tảng
   static List<PermissionInfo> get allPermissions {
     final list = [
-      const PermissionInfo(
+      PermissionInfo(
         permission: Permission.camera,
         icon: Icons.camera_alt,
-        name: 'Camera',
-        description: 'Kiểm tra camera trước và sau',
+        name: LocaleKeys.permission_camera_name.trans(),
+        description: LocaleKeys.permission_camera_description.trans(),
         required: true,
       ),
-      const PermissionInfo(
+      PermissionInfo(
         permission: Permission.microphone,
         icon: Icons.mic,
-        name: 'Microphone',
-        description: 'Kiểm tra microphone thu âm',
+        name: LocaleKeys.permission_microphone_name.trans(),
+        description: LocaleKeys.permission_microphone_description.trans(),
         required: true,
       ),
-      const PermissionInfo(
+      PermissionInfo(
         permission: Permission.location,
         icon: Icons.location_on,
-        name: 'Vị trí',
-        description: 'Kiểm tra GPS và đọc SSID WiFi',
+        name: LocaleKeys.permission_location_name.trans(),
+        description: LocaleKeys.permission_location_description.trans(),
         required: false, // iOS có thể từ chối nhưng vẫn test được
       ),
     ];
 
     if (Platform.isAndroid) {
       list.addAll([
-        const PermissionInfo(
+        PermissionInfo(
           permission: Permission.phone,
           icon: Icons.phone,
-          name: 'Điện thoại',
-          description: 'Đọc IMEI, thông tin SIM',
+          name: LocaleKeys.permission_phone_name.trans(),
+          description: LocaleKeys.permission_phone_description.trans(),
           required: false,
         ),
-        const PermissionInfo(
+        PermissionInfo(
           permission: Permission.bluetoothScan,
           icon: Icons.bluetooth,
-          name: 'Bluetooth',
-          description: 'Kiểm tra Bluetooth scan',
+          name: LocaleKeys.permission_bluetooth_name.trans(),
+          description: LocaleKeys.permission_bluetooth_description.trans(),
           required: false,
         ),
-        const PermissionInfo(
+        PermissionInfo(
           permission: Permission.bluetoothConnect,
           icon: Icons.bluetooth_connected,
-          name: 'Bluetooth Connect',
-          description: 'Kết nối Bluetooth',
+          name: LocaleKeys.permission_bluetooth_connect_name.trans(),
+          description: LocaleKeys.permission_bluetooth_connect_description.trans(),
           required: false,
         ),
       ]);
     } else if (Platform.isIOS) {
       list.add(
-        const PermissionInfo(
+        PermissionInfo(
           permission: Permission.bluetooth,
           icon: Icons.bluetooth,
-          name: 'Bluetooth',
-          description: 'Kiểm tra kết nối Bluetooth',
+          name: LocaleKeys.permission_bluetooth_name.trans(),
+          description: LocaleKeys.permission_bluetooth_ios_description.trans(),
           required: false,
         ),
       );
@@ -126,6 +127,15 @@ class PermissionPrecheckService {
     }
 
     return results;
+  }
+
+  /// Kiểm tra xem tất cả các quyền bắt buộc đã được cấp hay chưa
+  static Future<bool> hasAllRequiredPermissions() async {
+    for (final info in allPermissions.where((p) => p.required)) {
+      final status = await info.permission.status;
+      if (!status.isGranted) return false;
+    }
+    return true;
   }
 
   /// Yêu cầu tất cả quyền (không hiển thị dialog giải thích)
@@ -186,11 +196,11 @@ class PermissionPrecheckService {
   ) async {
     final result = await Get.dialog<bool>(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.security, color: AppColors.info),
-            SizedBox(width: 8),
-            Text('Cấp Quyền Để Kiểm Định'),
+            const Icon(Icons.security, color: AppColors.info),
+            const SizedBox(width: 8),
+            Text(LocaleKeys.permission_grant_dialog_title.trans()),
           ],
         ),
         content: SingleChildScrollView(
@@ -199,7 +209,7 @@ class PermissionPrecheckService {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Ứng dụng cần các quyền sau để kiểm định chính xác:',
+                LocaleKeys.permission_grant_dialog_intro.trans(),
                 style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -209,7 +219,11 @@ class PermissionPrecheckService {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(info.icon, size: 24, color: AppColors.neutralGrey700),
+                      Icon(
+                        info.icon,
+                        size: 24,
+                        color: AppColors.neutralGrey700,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -235,7 +249,7 @@ class PermissionPrecheckService {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      'Bắt buộc',
+                                      LocaleKeys.permission_required_badge.trans(),
                                       style: AppTextStyles.bodySmall.copyWith(
                                         fontSize: 10,
                                         color: AppColors.fail,
@@ -265,11 +279,11 @@ class PermissionPrecheckService {
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Từ chối'),
+            child: Text(LocaleKeys.permission_deny_button.trans()),
           ),
           FilledButton(
             onPressed: () => Get.back(result: true),
-            child: const Text('Đồng ý cấp quyền'),
+            child: Text(LocaleKeys.permission_grant_button.trans()),
           ),
         ],
       ),
@@ -285,11 +299,11 @@ class PermissionPrecheckService {
   ) async {
     await Get.dialog(
       AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.error, color: AppColors.fail),
-            SizedBox(width: 8),
-            Text('Không Thể Tiếp Tục'),
+            const Icon(Icons.error, color: AppColors.fail),
+            const SizedBox(width: 8),
+            Text(LocaleKeys.permission_denied_dialog_title.trans()),
           ],
         ),
         content: Column(
@@ -297,29 +311,38 @@ class PermissionPrecheckService {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Quyền "${info.name}" là bắt buộc để kiểm định.',
+              LocaleKeys.permission_denied_dialog_message.trans(
+                namedArgs: {'name': info.name},
+              ),
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Mục đích: ${info.description}',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutralGreyDark),
+              LocaleKeys.permission_denied_dialog_purpose.trans(
+                namedArgs: {'description': info.description},
+              ),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.neutralGreyDark,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
-              'Vui lòng vào Cài đặt > Ứng dụng > Quyền để cấp quyền.',
+              LocaleKeys.permission_denied_dialog_instruction.trans(),
               style: AppTextStyles.bodySmall,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Đóng')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(LocaleKeys.permission_close_button.trans()),
+          ),
           FilledButton(
             onPressed: () {
               Get.back();
               openAppSettings();
             },
-            child: const Text('Mở Cài đặt'),
+            child: Text(LocaleKeys.permission_open_settings_button.trans()),
           ),
         ],
       ),
@@ -332,7 +355,7 @@ class PermissionPrecheckService {
 
     await Get.dialog(
       AlertDialog(
-        title: const Text('Trạng Thái Quyền'),
+        title: Text(LocaleKeys.permission_status_dialog_title.trans()),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -356,7 +379,10 @@ class PermissionPrecheckService {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Đóng')),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(LocaleKeys.permission_close_button.trans()),
+          ),
         ],
       ),
     );

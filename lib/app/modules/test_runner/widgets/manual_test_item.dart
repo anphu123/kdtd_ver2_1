@@ -22,7 +22,7 @@ class ManualTestItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.greyE5E5E5.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Material(
         color: AppColors.transparent,
@@ -38,7 +38,7 @@ class ManualTestItem extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: statusInfo.color.withValues(alpha: 0.1),
+                    color: statusInfo.surfaceColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -64,8 +64,9 @@ class ManualTestItem extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: statusInfo.color.withValues(alpha: 0.1),
+                    color: statusInfo.surfaceColor,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusInfo.borderColor, width: 0.8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -1,148 +1,177 @@
-// Mã màu cảnh báo (AE01, AW02, ...) đặt tên theo design token gốc thay vì
-// lowerCamelCase — giữ nguyên để khớp với bảng màu thiết kế.
 // ignore_for_file: constant_identifier_names
 
 import 'package:flutter/material.dart';
 
+/// AppColors - Hệ thống mã màu chuẩn hóa (Design System) của dự án
+/// Thiết kế 100% màu thuần (Pure Solid Colors - Không Shadow, Không Alpha)
+/// Định danh theo chuẩn nhận diện thương hiệu PVI INSURANCE:
+/// - PVI Corporate Navy (#173665): Màu nền thanh điều hướng, tiêu đề chính, thẻ thương hiệu
+/// - PVI Star Red (#E21F26): Màu ngôi sao PVI, nút CTA hành động chính, cảnh báo, điểm nhấn
+/// - PVI Accent Blue (#0055A5): Màu icon kết nối mạng, bluetooth, cảm biến
+/// - PVI Pure White (#FFFFFF): Màu nền thẻ card, văn bản tương phản trên nền tối
 class AppColors {
-  //linear gradient
-  static const LinearGradient secondaryGra01 = LinearGradient(
-    colors: [Color(0xFFFBB379), Color(0xFFFE675C)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  AppColors._();
 
-  //Palette color
-  // neutral
-  static const Color neutral01 = Color(0xFF171717);
-  static const Color neutral02 = Color(0xFF404040);
-  static const Color neutral03 = Color(0xFF737373);
-  static const Color neutral04 = Color(0xFFA3A3A3);
-  static const Color neutral05 = Color(0xFFD4D4D4);
-  static const Color neutral06 = Color(0xFFE6E6E6);
-  static const Color neutral07 = Color(0xFFF5F5F5);
-  static const Color neutral08 = Color(0xFFFAFAFA);
+  // ===========================================================================
+  // 1. PVI BRAND IDENTITY TOKENS (Màu thương hiệu chuẩn)
+  // ===========================================================================
 
-  // Alerts/Errors
-  static const Color AE01 = Color(0xFFE92525);
-  static const Color AE02 = Color(0xFFFFF0F0);
-  // Alerts/Warnings
-  static const Color AW01 = Color(0xFFEFB500);
-  static const Color AW02 = Color(0xFFFEF7DC);
-  // Alerts/Success
-  static const Color AS01 = Color(0xFF14BD33);
-  static const Color AS02 = Color(0xFFE7F7EF);
-  // Alerts/blue
-  static const Color AB01 = Color(0xFF0A68FF);
-  static const Color AB02 = Color(0xFFE8F1FF);
+  /// PVI Star Red (#E21F26) - Màu đỏ ngôi sao & thông báo PVI (CTA & Alert Accent)
+  static const Color pviRed = Color(0xFFE21F26);
+  static const Color pviRedDark = Color(0xFFB7141A);
+  static const Color pviRedLight = Color(0xFFEA4B50);
+  static const Color pviRedSurface = Color(0xFFFDF2F2); // Pure solid light red background
+  static const Color pviRedBorder = Color(0xFFFFD0D3); // Pure solid light red border
+  static const Color pviRedLighter = pviRedSurface;
 
-  // primary
-  static const Color primary01 = Color(0xFFD00000);
-  static const Color primary02 = Color(0xFFFF5050);
-  static const Color primary03 = Color(0xFFFFC0C0);
-  static const Color primary04 = Color(0xFFFFF0F0);
-  static const Color primary05 = Color(0xffFFFAFA);
+  /// PVI Corporate Navy (#173665) - Màu xanh navy đậm nhận diện PVI (Banner, Appbar, Headers)
+  static const Color pviNavy = Color(0xFF173665);
+  static const Color pviNavyDark = Color(0xFF0E2240);
+  static const Color pviNavyLight = Color(0xFF234B85);
+  static const Color pviNavySurface = Color(0xFFF0F4F8); // Pure solid light navy background
+  static const Color pviNavyBorder = Color(0xFFCFDBE8); // Pure solid navy border
+  static const Color pviNavyLighter = pviNavySurface;
 
-  // secondary P
-  static const Color secondaryP01 = Color(0xFF662A00);
-  static const Color secondaryP02 = Color(0xFF993F00);
-  static const Color secondaryP03 = Color(0xFFCC5400);
-  static const Color secondaryP05 = Color(0xFF287088);
-  static const Color secondaryP04 = Color(0xFFEFEEFE);
+  /// PVI Accent Blue (#0055A5) - Màu xanh dương kết nối, tính năng kỹ thuật
+  static const Color pviBlue = Color(0xFF0055A5);
+  static const Color pviBlueLight = Color(0xFF2E7FD1);
+  static const Color pviBlueSurface = Color(0xFFEBF3FB); // Pure solid light blue background
+  static const Color pviBlueBorder = Color(0xFFCCE0F5); // Pure solid blue border
+  static const Color pviBlueLighter = pviBlueSurface;
 
-  // stroke kiem dinh
-  static const Color strokeKiemDinh = Color(0xFFFAEBF9);
+  // ===========================================================================
+  // 2. SEMANTIC FUNCTIONAL TOKENS (Trạng thái chức năng)
+  // ===========================================================================
 
-  // fido_box
-  static const Color yellowFidoBox = Color(0xFFF1B522);
-  static const Color yellowFidoBoxText = Color(0xFFF1AE0C);
-  static const Color selectNavBar = Color(0xFFF6D723);
-  static const Color textColorgray = Color(0xFF495057);
-  static const Color selectTab = Color(0xFF454F5B);
-  static const Color backgrounSubtab = Color(0xFFD7D7D7);
-  static const Color bageColor = Color(0xFFFFE6B4);
-  static const Color fifoSale = Color(0xFFFF0000);
-  static const Color backgroundFidoBoxSub = Color(0xFFF6F6F6);
-  // Text fido_box
-  static const Color textNormal = Color(0xFF454F5B);
-  static const Color textBage = Color(0xFFFFAB00);
-  static const Color textDescription = Color(0xFFBEBEBE);
+  /// Primary action & Header
+  static const Color primary = pviNavy;
+  static const Color primaryDark = pviNavyDark;
+  static const Color primaryLight = pviNavyLight;
+  static const Color onPrimary = Color(0xFFFFFFFF);
 
-  // System
-  static const Color primary = Color(0xFF276992);
-  static const Color onPrimary = Color(0xFF6F9DBA);
-  static const Color text = Color(0xFF4A5155);
-  static const Color icon = Color(0xFF67A8C4);
-  static const Color success = Color(0xFF7CB5A3);
-  static const Color onSuccess = Color(0xFFD5E8E1);
-  static const Color error = Color(0xFFD96554);
-  static const Color onError = Color(0xFFECDAD7);
+  /// Secondary action & Call-To-Action (CTA)
+  static const Color secondary = pviRed;
+  static const Color secondaryDark = pviRedDark;
+  static const Color secondaryLight = pviRedLight;
+  static const Color onSecondary = Color(0xFFFFFFFF);
 
-  static const Color disable = gray20;
-  static const Color onDisable = gray60;
+  /// Success / Pass (Đạt kiểm định)
+  static const Color success = Color(0xFF10B981);
+  static const Color successDark = Color(0xFF059669);
+  static const Color successSurface = Color(0xFFD1FAE5); // Solid light green
+  static const Color successBorder = Color(0xFFA7F3D0); // Solid green border
+  static const Color onSuccess = Color(0xFFFFFFFF);
 
-  // Grays
-  static const Color gray5 = Color(0xFFFAFAFA);
-  static const Color gray10 = Color(0xFFF3F4F4);
-  static const Color gray20 = Color(0xFFEFF0F1);
-  static const Color gray40 = Color(0xFFCCCCCC);
-  static const Color gray60 = Color(0xFFAAAAAA);
-  static const Color gray80 = Color(0xFF424242);
+  /// Warning / Pending (Cảnh báo, kiểm tra lại)
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningDark = Color(0xFFD97706);
+  static const Color warningSurface = Color(0xFFFEF3C7); // Solid light amber
+  static const Color warningBorder = Color(0xFFFDE68A); // Solid amber border
+  static const Color onWarning = Color(0xFFFFFFFF);
 
-  // Background
-  static const Color background = Color(0xFFE5E5E5);
+  /// Error / Fail (Không đạt, lỗi)
+  static const Color error = pviRed;
+  static const Color errorDark = pviRedDark;
+  static const Color errorSurface = pviRedSurface;
+  static const Color errorBorder = pviRedBorder;
+  static const Color onError = Color(0xFFFFFFFF);
 
-  // Color app
+  /// Info / Guide (Hướng dẫn, chi tiết kỹ thuật)
+  static const Color info = pviBlue;
+  static const Color infoDark = Color(0xFF003E7A);
+  static const Color infoSurface = pviBlueSurface;
+  static const Color infoBorder = pviBlueBorder;
+  static const Color onInfo = Color(0xFFFFFFFF);
+
+  /// Solid dark status surfaces (for dark mode testing screens)
+  static const Color successDarkSurface = Color(0xFF0A3E2F);
+  static const Color infoDarkSurface = Color(0xFF0F2D4E);
+  static const Color warningDarkSurface = Color(0xFF3F2B07);
+  static const Color errorDarkSurface = Color(0xFF451113);
+
+  // ===========================================================================
+  // 3. SURFACE & BACKGROUND TOKENS (Nền & Viền thuần - 100% Solid)
+  // ===========================================================================
+
+  /// Nền chính toàn app (Clean light surface)
+  static const Color background = Color(0xFFF4F7FB);
+
+  /// Nền thẻ card / sheet
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSecondary = Color(0xFFF8FAFC);
+  static const Color surfaceSubtle = Color(0xFFEDF2F7);
+
+  /// Viền tiêu chuẩn
+  static const Color border = Color(0xFFDCE4EE);
+  static const Color borderSubtle = Color(0xFFEBF0F5);
+  static const Color borderStrong = Color(0xFFB8C9DC);
+
+  // ===========================================================================
+  // 4. TEXT & ICON COLOR HIERARCHY (Phân cấp chữ & biểu tượng)
+  // ===========================================================================
+
+  /// Tiêu đề chính, văn bản thương hiệu
+  static const Color textPrimary = pviNavy;
+
+  /// Nội dung thân bài, mô tả
+  static const Color textSecondary = Color(0xFF334155);
+
+  /// Chú thích, nhãn phụ, ngày tháng
+  static const Color textMuted = Color(0xFF64748B);
+
+  /// Chữ trên nền tối (Navy, Red, Primary button)
+  static const Color textOnDark = Color(0xFFFFFFFF);
+
+  /// Chữ trên nền thương hiệu
+  static const Color textOnBrand = Color(0xFFFFFFFF);
+
+  /// Chữ trạng thái vô hiệu hóa
+  static const Color textDisabled = Color(0xFF94A3B8);
+
+  /// Biểu tượng chính
+  static const Color icon = pviBlue;
+  static const Color iconMuted = Color(0xFF64748B);
+
+  // ===========================================================================
+  // 5. BASE & SOLID NEUTRALS (Màu cơ bản thuần)
+  // ===========================================================================
+
   static const Color white = Color(0xFFFFFFFF);
-  static const Color white70 = Color(0xB3FFFFFF);
-  static const Color white60 = Color(0x99FFFFFF);
-  static const Color white54 = Color(0x8AFFFFFF);
-  static const Color white38 = Color(0x61FFFFFF);
-  static const Color white30 = Color(0x4DFFFFFF);
-  static const Color white24 = Color(0x3DFFFFFF);
-  static const Color white12 = Color(0x1FFFFFFF);
-  static const Color white10 = Color(0x1AFFFFFF);
-
   static const Color black = Color(0xFF000000);
-  static const Color black87 = Color(0xDD000000);
-  static const Color black54 = Color(0x8A000000);
-  static const Color black45 = Color(0x73000000);
-  static const Color black38 = Color(0x61000000);
-  static const Color black26 = Color(0x42000000);
-  static const Color black12 = Color(0x1F000000);
-
-  static const Color gradientsBlue = Color(0xFF0199FE);
-  static const Color gradientsRed = Color(0xFFCC0102);
-  static const Color gray8F8F8F = Color(0xFF8F8F8F);
-  static const Color greyE5E5E5 = Color(0xFFE5E5E5);
-  static const Color borderPopulate = Color(0xFFE5E5E5);
-  static const Color black676767 = Color(0xFF676767);
-  static const Color redE82B2B = Color(0xFFE82B2B);
-  static const Color gray595454 = Color(0xFF595454);
-  static const Color blue4D81E7 = Color(0xFF4D81E7);
-  static const Color gray898B8C = Color(0xFF898B8C);
-  static const Color gray969696 = Color(0xFF969696);
   static const Color transparent = Color(0x00000000);
-  static const Color blue0F96FC = Color(0xFF0F96FC);
-  static const Color grayEFEFF1 = Color(0xFFEFEFF1);
-  static const Color gray67677A = Color(0xFF67677A);
-  static const Color green03B134 = Color(0xFF03B134);
-  static const Color yellowFEA400 = Color(0xFFFEA400);
-  static const Color yellowFBCE07 = Color(0xFFFBCE07);
-  static const Color grayE5E5E5 = Color(0xFFE5E5E5);
-  static const Color grayB5B7B8 = Color(0xFFB5B7B8);
-  static const Color grayF3F3F3 = Color(0xFFF3F3F3);
-  static const Color gradientsGreen1 = Color(0xFF000000);
-  static const Color gradientsGreen2 = Color(0xFF06661C);
-  static const Color primaryApp = Color(0xFF06661C);
-  static const Color blue006FFD = Color(0xFF006FFD);
-  static const Color redFF616D = Color(0xFFFF616D);
-  static const Color gray616161 = Color(0xFF616161);
-  static const Color red700 = Color(0xFF890108);
-  static const Color red600 = Color(0xFFB10710);
-  static const Color slate5B7C99 = Color(0xFF5B7C99);
 
-  // Standard Material palette equivalents
+  // Solid neutral greys (Zero alpha hex)
+  static const Color neutralGrey50 = Color(0xFFFAFAFA);
+  static const Color neutralGrey100 = Color(0xFFF5F5F5);
+  static const Color neutralGreyLight = Color(0xFFEEEEEE);
+  static const Color neutralGreyLighter = Color(0xFFE0E0E0);
+  static const Color neutralGreyMedium = Color(0xFFBDBDBD);
+  static const Color neutralGrey = Color(0xFF9E9E9E);
+  static const Color grey500 = neutralGrey;
+  static const Color neutralGreyDark = Color(0xFF757575);
+  static const Color neutralGrey700 = Color(0xFF616161);
+  static const Color neutralGrey800 = Color(0xFF424242);
+  static const Color neutralGrey900 = Color(0xFF212121);
+
+  // Solid grey equivalents for legacy translucent whites & blacks
+  static const Color white70 = Color(0xFFE2E8F0);
+  static const Color white60 = Color(0xFFCBD5E1);
+  static const Color white54 = Color(0xFFB8C9DC);
+  static const Color white38 = Color(0xFF94A3B8);
+  static const Color white30 = Color(0xFF64748B);
+  static const Color white24 = Color(0xFF475569);
+  static const Color white12 = Color(0xFF334155);
+  static const Color white10 = Color(0xFF1E293B);
+
+  static const Color black87 = Color(0xFF1E293B);
+  static const Color black676767 = Color(0xFF676767);
+  static const Color black54 = Color(0xFF64748B);
+  static const Color black45 = Color(0xFF94A3B8);
+  static const Color black38 = Color(0xFFCBD5E1);
+  static const Color black26 = Color(0xFFE2E8F0);
+  static const Color black12 = Color(0xFFF1F5F9);
+
+  // Standard Material color equivalents
   static const Color amber = Color(0xFFFFC107);
   static const Color amberLight = Color(0xFFFFE082);
   static const Color amberDark = Color(0xFFFFA000);
@@ -163,71 +192,152 @@ class AppColors {
   static const Color orangeLight = Color(0xFFFFB74D);
   static const Color orangeDark = Color(0xFFF57C00);
 
-  // ==================== Test/Diagnostics UI ====================
-  // Bí danh cho các màu dùng ở các màn test (pass/fail/warning/info...)
-  // Giữ đúng sắc độ thiết kế, đặt tên ngữ nghĩa thay vì gọi thẳng Colors.*.
-  static const Color pass = Color(0xFF4CAF50); // Colors.green
-  static const Color passLight = Color(0xFF66BB6A); // Colors.green.shade400
-  static const Color passLighter = Color(0xFFE8F5E9); // Colors.green.shade50
-  static const Color passDark = Color(0xFF388E3C); // Colors.green.shade700
-  static const Color passAccent = Color(0xFF69F0AE); // Colors.greenAccent
-
-  static const Color fail = Color(0xFFF44336); // Colors.red
-  static const Color failLight = Color(0xFFEF5350); // Colors.red.shade400
-  static const Color failLighter = Color(0xFFFFEBEE); // Colors.red.shade50
-  static const Color failLightest = Color(0xFFEF9A9A); // Colors.red.shade200
-  static const Color failDark = Color(0xFFD32F2F); // Colors.red.shade700
-  static const Color failAccent = Color(0xFFFF5252); // Colors.redAccent
-
-  static const Color warning = Color(0xFFFF9800); // Colors.orange
-  static const Color warningLight = Color(0xFFFFA726); // Colors.orange.shade400
-  static const Color warningLighter = Color(0xFFFFF3E0); // Colors.orange.shade50
-  static const Color warningDark = Color(0xFFFB8C00); // Colors.orange.shade600
-  static const Color warningDarker = Color(0xFFF57C00); // Colors.orange.shade700
-
-  static const Color info = Color(0xFF2196F3); // Colors.blue
-  static const Color infoLighter = Color(0xFFE3F2FD); // Colors.blue.shade50
-  static const Color infoLight = Color(0xFF90CAF9); // Colors.blue.shade200
-  static const Color infoMedium = Color(0xFF64B5F6); // Colors.blue.shade300
-  static const Color infoDark = Color(0xFF1976D2); // Colors.blue.shade700
-  static const Color infoDarker = Color(0xFF0D47A1); // Colors.blue.shade900
-
-  static const Color neutralGrey = Color(0xFF9E9E9E); // Colors.grey / grey[500]
-  static const Color grey500 = Color(0xFF9E9E9E);
-  static const Color neutralGrey50 = Color(0xFFFAFAFA);
-  static const Color neutralGrey100 = Color(0xFFF5F5F5);
-  static const Color neutralGreyLighter = Color(0xFFE0E0E0); // grey.shade300 / grey[300]
-  static const Color neutralGreyLight = Color(0xFFEEEEEE); // Colors.grey.shade200
-  static const Color neutralGreyMedium = Color(0xFFBDBDBD); // Colors.grey.shade400
-  static const Color neutralGreyDark = Color(0xFF757575); // grey.shade600 / grey[600]
-  static const Color neutralGrey700 = Color(0xFF616161);
-  static const Color neutralGrey800 = Color(0xFF424242);
-  static const Color neutralGrey900 = Color(0xFF212121);
-
-  static const Color neutralPurple = Color(0xFF9C27B0); // Colors.purple
+  static const Color neutralPurple = Color(0xFF9C27B0);
   static const Color purple = neutralPurple;
-  static const Color neutralTeal = Color(0xFF009688); // Colors.teal
+  static const Color neutralTeal = Color(0xFF009688);
   static const Color teal = neutralTeal;
-  static const Color neutralYellow = Color(0xFFFFEB3B); // Colors.yellow
+  static const Color neutralYellow = Color(0xFFFFEB3B);
   static const Color yellow = neutralYellow;
-  static const Color neutralPink = Color(0xFFE91E63); // Colors.pink
+  static const Color neutralPink = Color(0xFFE91E63);
   static const Color pink = neutralPink;
-  static const Color neutralCyan = Color(0xFF00BCD4); // Colors.cyan
+  static const Color neutralCyan = Color(0xFF00BCD4);
   static const Color cyan = neutralCyan;
-  static const Color neutralLightGreenAccent = Color(0xFFB9F6CA); // Colors.lightGreenAccent
+  static const Color neutralLightGreenAccent = Color(0xFFB9F6CA);
 
-  // ==================== Trade-In & Upgrade UI ====================
-  static const Color tradeInNavy = Color(0xFF0F172A); // Slate 900
-  static const Color tradeInDark = Color(0xFF1E293B); // Slate 800
-  static const Color tradeInSlate = Color(0xFF334155); // Slate 700
-  static const Color tradeInSlateLight = Color(0xFF94A3B8); // Slate 400
-  static const Color tradeInBlue = Color(0xFF2563EB); // Royal Blue
-  static const Color tradeInBlueLight = Color(0xFF3B82F6);
-  static const Color tradeInGold = Color(0xFFF59E0B); // Amber/Gold Voucher
-  static const Color tradeInGoldDark = Color(0xFFD97706);
-  static const Color tradeInGoldLight = Color(0xFFFEF3C7);
-  static const Color tradeInEmerald = Color(0xFF10B981); // Emerald Pass Green
-  static const Color tradeInEmeraldLight = Color(0xFFD1FAE5);
-  static const Color tradeInSurfaceBg = Color(0xFFF8FAFC); // Clean slate white
-  static const Color tradeInBorder = Color(0xFFE2E8F0);
+  // ===========================================================================
+  // 6. TEST & DIAGNOSTICS UI SEMANTICS (Bí danh cho luồng kiểm định)
+  // ===========================================================================
+
+  static const Color pass = success;
+  static const Color passLight = Color(0xFF66BB6A);
+  static const Color passLighter = successSurface;
+  static const Color passDark = successDark;
+  static const Color passAccent = Color(0xFF69F0AE);
+
+  static const Color fail = error;
+  static const Color failLight = Color(0xFFEF5350);
+  static const Color failLighter = errorSurface;
+  static const Color failLightest = Color(0xFFEF9A9A);
+  static const Color failDark = errorDark;
+  static const Color failAccent = Color(0xFFFF5252);
+
+  static const Color warningLight = Color(0xFFFFA726);
+  static const Color warningLighter = warningSurface;
+  static const Color warningDarker = Color(0xFFF57C00);
+
+  static const Color infoLight = Color(0xFF90CAF9);
+  static const Color infoLighter = infoSurface;
+  static const Color infoMedium = Color(0xFF64B5F6);
+  static const Color infoDarker = Color(0xFF0D47A1);
+
+  // ===========================================================================
+  // 7. BACKWARD COMPATIBILITY ALIASES (Tương thích mã nguồn hiện hữu)
+  // ===========================================================================
+
+  // Trade-in semantics mapped to PVI theme tokens
+  static const Color tradeInBlue = pviRed; // PVI Star Red CTA
+  static const Color tradeInBlueLight = pviRedLight;
+  static const Color tradeInNavy = pviNavy; // PVI Corporate Navy
+  static const Color tradeInDark = pviNavyDark;
+  static const Color tradeInSlate = Color(0xFF283E58);
+  static const Color tradeInSlateLight = Color(0xFF6E8299);
+  static const Color tradeInGold = warning;
+  static const Color tradeInGoldDark = warningDark;
+  static const Color tradeInGoldLight = warningSurface;
+  static const Color tradeInEmerald = success;
+  static const Color tradeInEmeraldLight = successSurface;
+  static const Color tradeInEmeraldBorder = successBorder;
+  static const Color tradeInSurfaceBg = background;
+  static const Color tradeInBorder = border;
+
+  // Legacy design system tokens
+  static const Color neutral01 = Color(0xFF171717);
+  static const Color neutral02 = Color(0xFF404040);
+  static const Color neutral03 = Color(0xFF737373);
+  static const Color neutral04 = Color(0xFFA3A3A3);
+  static const Color neutral05 = Color(0xFFD4D4D4);
+  static const Color neutral06 = Color(0xFFE6E6E6);
+  static const Color neutral07 = Color(0xFFF5F5F5);
+  static const Color neutral08 = Color(0xFFFAFAFA);
+
+  static const Color AE01 = pviRed;
+  static const Color AE02 = pviRedSurface;
+  static const Color AW01 = warning;
+  static const Color AW02 = warningSurface;
+  static const Color AS01 = success;
+  static const Color AS02 = successSurface;
+  static const Color AB01 = pviBlue;
+  static const Color AB02 = pviBlueSurface;
+
+  static const Color primary01 = pviRed;
+  static const Color primary02 = pviRedLight;
+  static const Color primary03 = Color(0xFFFFC0C0);
+  static const Color primary04 = pviRedSurface;
+  static const Color primary05 = Color(0xFFFFFAFA);
+
+  static const Color secondaryP01 = Color(0xFF662A00);
+  static const Color secondaryP02 = Color(0xFF993F00);
+  static const Color secondaryP03 = Color(0xFFCC5400);
+  static const Color secondaryP05 = Color(0xFF287088);
+  static const Color secondaryP04 = Color(0xFFEFEEFE);
+
+  static const Color strokeKiemDinh = Color(0xFFFAEBF9);
+  static const Color yellowFidoBox = Color(0xFFF1B522);
+  static const Color yellowFidoBoxText = Color(0xFFF1AE0C);
+  static const Color selectNavBar = Color(0xFFF6D723);
+  static const Color textColorgray = Color(0xFF495057);
+  static const Color selectTab = Color(0xFF454F5B);
+  static const Color backgrounSubtab = Color(0xFFD7D7D7);
+  static const Color bageColor = Color(0xFFFFE6B4);
+  static const Color fifoSale = pviRed;
+  static const Color backgroundFidoBoxSub = Color(0xFFF6F6F6);
+  static const Color textNormal = Color(0xFF454F5B);
+  static const Color textBage = Color(0xFFFFAB00);
+  static const Color textDescription = Color(0xFFBEBEBE);
+
+  static const Color text = textSecondary;
+  static const Color disable = Color(0xFFEFF0F1);
+  static const Color onDisable = Color(0xFFAAAAAA);
+
+  static const Color gray5 = Color(0xFFFAFAFA);
+  static const Color gray10 = Color(0xFFF3F4F4);
+  static const Color gray20 = Color(0xFFEFF0F1);
+  static const Color gray40 = Color(0xFFCCCCCC);
+  static const Color gray60 = Color(0xFFAAAAAA);
+  static const Color gray80 = Color(0xFF424242);
+
+  static const Color gradientsBlue = Color(0xFF0199FE);
+  static const Color gradientsRed = pviRed;
+  static const Color gray8F8F8F = Color(0xFF8F8F8F);
+  static const Color greyE5E5E5 = Color(0xFFE5E5E5);
+  static const Color borderPopulate = Color(0xFFE5E5E5);
+  static const Color redE82B2B = pviRed;
+  static const Color gray595454 = Color(0xFF595454);
+  static const Color blue4D81E7 = Color(0xFF4D81E7);
+  static const Color gray898B8C = Color(0xFF898B8C);
+  static const Color gray969696 = Color(0xFF969696);
+  static const Color blue0F96FC = Color(0xFF0F96FC);
+  static const Color grayEFEFF1 = Color(0xFFEFEFF1);
+  static const Color gray67677A = Color(0xFF67677A);
+  static const Color green03B134 = success;
+  static const Color yellowFEA400 = Color(0xFFFEA400);
+  static const Color yellowFBCE07 = Color(0xFFFBCE07);
+  static const Color grayB5B7B8 = Color(0xFFB5B7B8);
+  static const Color grayF3F3F3 = Color(0xFFF3F3F3);
+  static const Color gradientsGreen1 = Color(0xFF000000);
+  static const Color gradientsGreen2 = Color(0xFF06661C);
+  static const Color primaryApp = pviNavy;
+  static const Color blue006FFD = Color(0xFF006FFD);
+  static const Color redFF616D = Color(0xFFFF616D);
+  static const Color gray616161 = Color(0xFF616161);
+  static const Color red700 = Color(0xFF890108);
+  static const Color red600 = Color(0xFFB10710);
+  static const Color slate5B7C99 = Color(0xFF5B7C99);
+
+  // Legacy Linear Gradient (retained for backward compatibility)
+  static const LinearGradient secondaryGra01 = LinearGradient(
+    colors: [Color(0xFFFBB379), Color(0xFFFE675C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

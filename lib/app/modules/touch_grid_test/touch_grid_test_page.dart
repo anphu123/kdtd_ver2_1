@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/global_widgets/immersive_mode.dart';
@@ -19,9 +20,7 @@ class TouchGridTestPage extends GetView<TouchGridTestController> {
 
   @override
   Widget build(BuildContext context) {
-    return ImmersiveMode(
-      child: _TouchGridBody(controller: controller),
-    );
+    return ImmersiveMode(child: _TouchGridBody(controller: controller));
   }
 }
 
@@ -88,18 +87,16 @@ class _TouchGridBodyState extends State<_TouchGridBody> {
                     return Container(
                       decoration: BoxDecoration(
                         color: on ? AppColors.passLight : AppColors.infoDarker,
-                        border: Border.all(
-                          color: AppColors.white30,
-                          width: 1,
-                        ),
+                        border: Border.all(color: AppColors.white30, width: 1),
                       ),
-                      child: on
-                          ? const Icon(
-                              Icons.check_circle,
-                              color: AppColors.white,
-                              size: 32,
-                            )
-                          : null,
+                      child:
+                          on
+                              ? Icon(
+                                Icons.check_circle,
+                                color: AppColors.white,
+                                size: 32.r,
+                              )
+                              : null,
                     );
                   },
                 ),
@@ -107,21 +104,26 @@ class _TouchGridBodyState extends State<_TouchGridBody> {
 
               // Progress indicator
               Positioned(
-                top: 16,
-                left: 16,
-                right: 16,
+                top: 16.h,
+                left: 16.w,
+                right: 16.w,
                 child: SafeArea(
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12.r),
                     decoration: BoxDecoration(
-                      color: AppColors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.black87,
+                      borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Tiến độ: ${hitCells.length}/$_total',
+                          LocaleKeys.touch_grid_test_progress.trans(
+                            namedArgs: {
+                              'done': '${hitCells.length}',
+                              'total': '$_total',
+                            },
+                          ),
                           style: AppTextStyles.titleMedium.copyWith(
                             color: AppColors.white,
                             fontWeight: FontWeight.bold,
@@ -151,32 +153,42 @@ class _TouchGridBodyState extends State<_TouchGridBody> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Không có tương tác',
+                            LocaleKeys.touch_grid_test_no_interaction.trans(),
                             style: AppTextStyles.headlineSmall.copyWith(
                               color: AppColors.white,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16.h),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 8.h,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.failLight,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
                             child: Text(
-                              'Tự động kết thúc sau ${widget.controller.finalizeSecondsLeft.value} s',
+                              LocaleKeys.touch_grid_test_auto_finish_in.trans(
+                                namedArgs: {
+                                  'seconds':
+                                      '${widget.controller.finalizeSecondsLeft.value}',
+                                },
+                              ),
                               style: AppTextStyles.titleMedium.copyWith(
                                 color: AppColors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                fontSize: 18.sp,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8.h),
                           Text(
-                            'Chạm màn hình để tiếp tục kiểm tra',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white70),
+                            LocaleKeys.touch_grid_test_touch_to_continue.trans(),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.white70,
+                            ),
                           ),
                         ],
                       ),

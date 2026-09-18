@@ -10,6 +10,8 @@
 /// ============================================================
 library;
 
+import 'function_attribute.dart';
+
 /// Trạng thái của một bước kiểm định
 enum DiagStatus {
   /// Đang chờ thực thi
@@ -91,6 +93,9 @@ class DiagStep {
   /// Thời gian thực thi thực tế
   Duration? executionTime;
 
+  /// Ánh xạ thuộc tính chức năng trong hệ thống & DB
+  final FunctionAttribute? functionAttribute;
+
   DiagStep({
     required this.code,
     required this.title,
@@ -102,6 +107,7 @@ class DiagStep {
     this.status = DiagStatus.pending,
     this.note,
     this.executionTime,
+    this.functionAttribute,
   });
 
   /// Reset step về trạng thái ban đầu (để chạy lại)

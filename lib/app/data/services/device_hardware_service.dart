@@ -1,0 +1,310 @@
+import 'dart:io';
+
+import 'package:battery_plus/battery_plus.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:network_info_plus/network_info_plus.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+
+import 'package:kdtd_ver2_1/app/core/constants/diagnostics_constants.dart';
+import 'package:kdtd_ver2_1/app/data/services/device_info_helper.dart';
+import 'package:kdtd_ver2_1/app/data/services/diag_logger.dart';
+import 'package:kdtd_ver2_1/app/data/services/phone_info_service.dart';
+
+/// Dịch vụ đọc thông số phần cứng, kết nối mạng và cảm biến native của thiết bị.
+/// Tách biệt hoàn toàn logic platform/native ra khỏi controller.
+class DeviceHardwareService {
+  DeviceHardwareService._();
+
+  static final Battery _battery = Battery();
+  static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
+  static const MethodChannel _channel = MethodChannel(
+    DiagnosticsConstants.methodChannelName,
+  );
+
+  static Future<T?> _invoke<T>(String method, [dynamic arguments]) async {
+    try {
+      return await _channel.invokeMethod<T>(method, arguments);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Lấy Device ID duy nhất của thiết bị
+  static Future<String> getDeviceId() async {
+    try {
+      if (Platform.isAndroid) {
+        final nativeId = await _invoke<String>('getDeviceId');
+        if (nativeId != null && nativeId.isNotEmpty) {
+          return nativeId;
+        }
+        final a = await _deviceInfo.androidInfo;
+        return a.id;
+      } else if (Platform.isIOS) {
+        final i = await _deviceInfo.iosInfo;
+        return i.identifierForVendor ?? i.utsname.machine;
+      }
+    } catch (e) {
+      DiagLogger.warning('device_id', 'Lỗi lấy deviceId: $e');
+    }
+    return 'unknown';
+  }
+
+  /// Thu thập thông tin hệ điều hành, model, brand và marketing name
+  static Future<Map<String, dynamic>> getOsAndModel({
+    void Function(String marketingName)? onMarketingNameFetched,
+  }) async {
+    try {
+      final deviceId = await getDeviceId();
+
+      if (Platform.isAndroid) {
+        final a = await _deviceInfo.androidInfo;
+        final vendor = a.manufacturer.toLowerCase();
+        final marketingName =
+            a.brand.isNotEmpty &&
+                    !a.model.toLowerCase().contains(a.brand.toLowerCase())
+                ? '${a.brand.toUpperCase()} ${a.model}'
+                : a.model;
+
+        // Bất đồng bộ lấy marketing name từ API
+        PhoneInfoService.getMarketingName(a.model, a.brand).then((name) {
+          if (name != null && name.isNotEmpty && onMarketingNameFetched != null) {
+            onMarketingNameFetched(name);
+          }
+        }).catchError((e) {
+          DiagLogger.warning('phoneinfo', 'Lỗi lấy marketing name từ API: $e');
+        });
+
+        return {
+          'platform': 'android',
+          'deviceId': deviceId,
+          'sdk': a.version.sdkInt,
+          'release': a.version.release,
+          'model': a.model,
+          'marketingName': marketingName,
+          'brand': a.brand,
+          'manufacturer': a.manufacturer,
+          'vendor': vendor,
+          'isSamsung': vendor == 'samsung',
+          'isApple': false,
+        };
+      } else if (Platform.isIOS) {
+        final i = await _deviceInfo.iosInfo;
+        final machine = i.utsname.machine;
+        final friendlyName = await DeviceInfoHelper.getModel();
+
+        return {
+          'platform': 'ios',
+          'deviceId': deviceId,
+          'systemVersion': i.systemVersion,
+          'model': machine,
+          'marketingName': friendlyName,
+          'name': i.name,
+          'brand': 'Apple',
+          'manufacturer': 'Apple',
+          'vendor': 'apple',
+          'isSamsung': false,
+          'isApple': true,
+        };
+      }
+      return {'platform': 'unknown', 'deviceId': deviceId};
+    } catch (e) {
+      DiagLogger.error('osmodel', 'Lỗi lấy thông tin OS: $e');
+      return {'platform': 'error', 'error': e.toString(), 'deviceId': 'unknown'};
+    }
+  }
+
+  /// Thông tin Pin (mức sạc và trạng thái)
+  static Future<Map<String, dynamic>> getBatteryInfo() async {
+    final level = await _battery.batteryLevel;
+    final state = await _battery.batteryState;
+    return {'level': level, 'state': state.name};
+  }
+
+  /// Nguồn sạc (USB/AC/Wireless)
+  static Future<Map<String, dynamic>> getChargingInfo() async {
+    final state = await _battery.batteryState;
+    final src = await _invoke<String>('getChargingSource');
+    return {'state': state.name, 'source': src};
+  }
+
+  /// Trạng thái Wi-Fi
+  static Future<Map<String, dynamic>> getWifiInfo() async {
+    final wifiEnabled = await _invoke<bool>('isWifiEnabled');
+    final conn = await Connectivity().checkConnectivity();
+    final onWifi =
+        conn.contains(ConnectivityResult.wifi) ||
+        conn.contains(ConnectivityResult.ethernet);
+    String? ssid;
+    if (onWifi) {
+      try {
+        if (await Permission.locationWhenInUse.request().isGranted) {
+          ssid = await NetworkInfo().getWifiName();
+        }
+      } catch (_) {}
+    }
+    return {
+      'enabled': wifiEnabled ?? onWifi,
+      'connected': onWifi,
+      'ssid': ssid,
+    };
+  }
+
+  /// Trạng thái Mạng di động (sóng, radio 3G/4G/5G)
+  static Future<Map<String, dynamic>> getMobileNetworkInfo() async {
+    final phonePermission = await Permission.phone.status;
+    if (!phonePermission.isGranted) {
+      final result = await Permission.phone.request();
+      if (!result.isGranted) {
+        if (result.isPermanentlyDenied) await openAppSettings();
+        DiagLogger.warning('mobile', 'Không có quyền READ_PHONE_STATE');
+        return {'connected': false, 'error': 'permission_denied'};
+      }
+    }
+
+    final conn = await Connectivity().checkConnectivity();
+    final onMobile = conn.contains(ConnectivityResult.mobile);
+    int? dbm;
+    String? radio;
+    if (onMobile) {
+      final sig = await DeviceInfoHelper.getSignalStrength();
+      dbm = sig['dbm'];
+      radio = await _invoke<String>('getMobileRadioType');
+    }
+    return {'connected': onMobile, 'dbm': dbm, 'radio': radio};
+  }
+
+  /// Kiểm tra loại sóng di động có đạt 3G trở lên không
+  static bool is3GOrHigher(String radio) {
+    return DiagnosticsConstants.radios3GOrHigher.contains(radio.toUpperCase());
+  }
+
+  /// Quét Bluetooth
+  static Future<Map<String, dynamic>> getBluetoothInfo() async {
+    var btState = FlutterBluePlus.adapterStateNow;
+    if (btState != BluetoothAdapterState.on) {
+      try {
+        btState = await FlutterBluePlus.adapterState.first.timeout(
+          DiagnosticsConstants.bluetoothAdapterStateTimeout,
+        );
+      } catch (_) {}
+    }
+    bool scanOk = false;
+    if (btState == BluetoothAdapterState.on) {
+      try {
+        await FlutterBluePlus.startScan(
+          timeout: DiagnosticsConstants.bluetoothScanDuration,
+        );
+        await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
+        await FlutterBluePlus.stopScan();
+        scanOk = true;
+      } catch (_) {}
+    }
+    return {'enabled': btState == BluetoothAdapterState.on, 'scanOk': scanOk};
+  }
+
+  /// Trạng thái NFC
+  static Future<Map<String, dynamic>> getNfcInfo() async {
+    bool available = false;
+    try {
+      available = await NfcManager.instance.isAvailable();
+    } catch (_) {}
+    return {'available': available};
+  }
+
+  /// Ping các cảm biến (gia tốc kế, con quay hồi chuyển)
+  static Future<Map<String, dynamic>> getSensorsPing() async {
+    bool accel = false, gyro = false;
+    try {
+      final s = accelerometerEventStream().listen((_) {});
+      await Future.delayed(DiagnosticsConstants.sensorPingDuration);
+      await s.cancel();
+      accel = true;
+    } catch (_) {}
+    try {
+      final s = gyroscopeEventStream().listen((_) {});
+      await Future.delayed(DiagnosticsConstants.sensorPingDuration);
+      await s.cancel();
+      gyro = true;
+    } catch (_) {}
+    return {'accelerometer': accel, 'gyroscope': gyro};
+  }
+
+  /// Độ chính xác GPS
+  static Future<Map<String, dynamic>> getLocationAccuracy() async {
+    var perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      perm = await Geolocator.requestPermission();
+    }
+    final svc = await Geolocator.isLocationServiceEnabled();
+    double? accuracy;
+    if (svc &&
+        (perm == LocationPermission.always ||
+            perm == LocationPermission.whileInUse)) {
+      try {
+        final lastPos = await Geolocator.getLastKnownPosition();
+        if (lastPos != null) {
+          accuracy = lastPos.accuracy;
+        } else {
+          final curPos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              timeLimit: Duration(seconds: 4),
+            ),
+          );
+          accuracy = curPos.accuracy;
+        }
+      } catch (_) {}
+    }
+    return {'serviceOn': svc, 'accuracyM': accuracy};
+  }
+
+  /// Kiểm tra hỗ trợ sinh trắc học
+  static Future<Map<String, dynamic>> checkBiometrics() async {
+    final la = LocalAuthentication();
+    bool can = false, supported = false;
+    try {
+      can = await la.canCheckBiometrics;
+      supported = await la.isDeviceSupported();
+    } catch (_) {}
+    return {'canCheck': can, 'supported': supported};
+  }
+
+  /// Thông tin SIM
+  static Future<Map<String, dynamic>> getSimInfo() => DeviceInfoHelper.getSimInfo();
+
+  /// Đọc RAM
+  static Future<Map<String, dynamic>> getRamInfo() async {
+    try {
+      return await DeviceInfoHelper.getRamInfo();
+    } catch (_) {
+      return const {'freeBytes': null, 'totalBytes': null, 'source': 'error'};
+    }
+  }
+
+  /// Đọc ROM
+  static Future<Map<String, dynamic>> getRomInfo() async {
+    try {
+      return await DeviceInfoHelper.getRomInfo();
+    } catch (_) {
+      return const {'freeBytes': null, 'totalBytes': null, 'source': 'error'};
+    }
+  }
+
+  /// Tai nghe cắm dây có đang kết nối không
+  static Future<bool?> isWiredHeadsetPlugged() =>
+      _invoke<bool>('isWiredHeadsetPlugged');
+
+  /// Khóa màn hình (PIN / Mật khẩu)
+  static Future<bool?> isScreenLocked() => _invoke<bool>('isScreenLocked');
+
+  /// S-Pen (Samsung)
+  static Future<bool> isSPenSupported() async =>
+      (await _invoke<bool>('isSPenSupported')) == true;
+}

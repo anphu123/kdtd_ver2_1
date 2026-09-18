@@ -6,16 +6,17 @@ abstract class AppRoutes {
 
   // Route Names
   static const String initial = '/';
-  static const String onboarding = '/onboarding';
   static const String home = '/home';
 
   // Diagnostics Routes
   static const String diagnosticsHome = '/diagnostics/home';
+  static const String permissionCheck = '/diagnostics/permission-check';
   static const String diagnosticsAuto = '/diagnostics/auto';
   static const String diagnosticsAutoOld = '/diagnostics/autoOld';
   static const String diagnosticsDetail = '/diagnostics/detail';
   static const String deviceConfirmation = '/diagnostics/device-confirmation';
   static const String preTestGuide = '/diagnostics/pre-test-guide';
+  static const String testRunner = '/diagnostics/test-runner';
 
   // Test Routes
   static const String testCamera = '/test/camera';

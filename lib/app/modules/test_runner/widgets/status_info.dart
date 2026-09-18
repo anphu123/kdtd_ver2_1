@@ -11,14 +11,23 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 
-/// Thông tin trạng thái để hiển thị UI
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+
+/// Thông tin trạng thái để hiển thị UI (100% Solid Pure Colors)
 class StatusInfo {
   /// Màu sắc đặc trưng cho trạng thái
   final Color color;
+
+  /// Màu nền thuần cho trạng thái
+  final Color surfaceColor;
+
+  /// Màu viền thuần cho trạng thái
+  final Color borderColor;
 
   /// Icon đặc trưng cho trạng thái
   final IconData icon;
@@ -31,6 +40,8 @@ class StatusInfo {
 
   const StatusInfo({
     required this.color,
+    required this.surfaceColor,
+    required this.borderColor,
     required this.icon,
     required this.label,
     required this.labelEn,
@@ -41,38 +52,48 @@ class StatusInfo {
 StatusInfo getStatusInfo(DiagStatus status) {
   switch (status) {
     case DiagStatus.passed:
-      return const StatusInfo(
-        color: AppColors.green03B134,
+      return StatusInfo(
+        color: AppColors.success,
+        surfaceColor: AppColors.successSurface,
+        borderColor: AppColors.successBorder,
         icon: Icons.check_circle,
-        label: 'Đạt',
+        label: LocaleKeys.diagnostics_home_status_label_passed.trans(),
         labelEn: 'Passed',
       );
     case DiagStatus.failed:
-      return const StatusInfo(
-        color: AppColors.redE82B2B,
+      return StatusInfo(
+        color: AppColors.error,
+        surfaceColor: AppColors.errorSurface,
+        borderColor: AppColors.errorBorder,
         icon: Icons.cancel,
-        label: 'Lỗi',
+        label: LocaleKeys.diagnostics_home_status_label_failed.trans(),
         labelEn: 'Failed',
       );
     case DiagStatus.running:
-      return const StatusInfo(
-        color: AppColors.yellowFEA400,
+      return StatusInfo(
+        color: AppColors.warning,
+        surfaceColor: AppColors.warningSurface,
+        borderColor: AppColors.warningBorder,
         icon: Icons.autorenew,
-        label: 'Đang chạy',
+        label: LocaleKeys.diagnostics_home_status_label_running.trans(),
         labelEn: 'Running',
       );
     case DiagStatus.skipped:
-      return const StatusInfo(
-        color: AppColors.gray969696,
+      return StatusInfo(
+        color: AppColors.neutralGreyDark,
+        surfaceColor: AppColors.neutralGreyLight,
+        borderColor: AppColors.neutralGreyLighter,
         icon: Icons.remove_circle_outline,
-        label: 'Bỏ qua',
+        label: LocaleKeys.diagnostics_home_status_label_skipped.trans(),
         labelEn: 'Skipped',
       );
     case DiagStatus.pending:
-      return const StatusInfo(
-        color: AppColors.blue006FFD,
+      return StatusInfo(
+        color: AppColors.pviBlue,
+        surfaceColor: AppColors.pviBlueSurface,
+        borderColor: AppColors.pviBlueBorder,
         icon: Icons.play_circle_outline,
-        label: 'Chờ',
+        label: LocaleKeys.diagnostics_home_status_label_pending.trans(),
         labelEn: 'Pending',
       );
   }
@@ -150,53 +171,53 @@ IconData getTestIcon(String code) {
 String getTestTitle(String code) {
   switch (code) {
     case 'osmodel':
-      return 'Thông tin thiết bị';
+      return LocaleKeys.diagnostics_home_test_title_osmodel.trans();
     case 'battery':
-      return 'Pin & Sạc';
+      return LocaleKeys.diagnostics_home_test_title_battery.trans();
     case 'ram':
-      return 'Bộ nhớ RAM';
+      return LocaleKeys.diagnostics_home_test_title_ram.trans();
     case 'rom':
-      return 'Bộ nhớ ROM';
+      return LocaleKeys.diagnostics_home_test_title_rom.trans();
     case 'wifi':
-      return 'Wi-Fi';
+      return LocaleKeys.diagnostics_home_test_title_wifi.trans();
     case 'mobile':
-      return 'Mạng di động';
+      return LocaleKeys.diagnostics_home_test_title_mobile.trans();
     case 'bt':
-      return 'Bluetooth';
+      return LocaleKeys.diagnostics_home_test_title_bt.trans();
     case 'nfc':
-      return 'NFC';
+      return LocaleKeys.diagnostics_home_test_title_nfc.trans();
     case 'sim':
-      return 'Thẻ SIM';
+      return LocaleKeys.diagnostics_home_test_title_sim.trans();
     case 'sensors':
-      return 'Cảm biến';
+      return LocaleKeys.diagnostics_home_test_title_sensors.trans();
     case 'gps':
-      return 'Định vị GPS';
+      return LocaleKeys.diagnostics_home_test_title_gps.trans();
     case 'bio':
-      return 'Sinh trắc học';
+      return LocaleKeys.diagnostics_home_test_title_bio.trans();
     case 'charge':
-      return 'Nguồn sạc';
+      return LocaleKeys.diagnostics_home_test_title_charge.trans();
     case 'wired':
-      return 'Tai nghe có dây';
+      return LocaleKeys.diagnostics_home_test_title_wired.trans();
     case 'lock':
-      return 'Khóa màn hình';
+      return LocaleKeys.diagnostics_home_test_title_lock.trans();
     case 'spen':
-      return 'S-Pen';
+      return LocaleKeys.diagnostics_home_test_title_spen.trans();
     case 'vibrate':
-      return 'Rung';
+      return LocaleKeys.diagnostics_home_test_title_vibrate.trans();
     case 'screen':
-      return 'Màn hình';
+      return LocaleKeys.diagnostics_home_test_title_screen.trans();
     case 'touch':
-      return 'Cảm ứng';
+      return LocaleKeys.diagnostics_home_test_title_touch.trans();
     case 'camera':
-      return 'Camera';
+      return LocaleKeys.diagnostics_home_test_title_camera.trans();
     case 'speaker':
-      return 'Loa ngoài';
+      return LocaleKeys.diagnostics_home_test_title_speaker.trans();
     case 'mic':
-      return 'Microphone';
+      return LocaleKeys.diagnostics_home_test_title_mic.trans();
     case 'ear':
-      return 'Loa trong';
+      return LocaleKeys.diagnostics_home_test_title_ear.trans();
     case 'keys':
-      return 'Phím vật lý';
+      return LocaleKeys.diagnostics_home_test_title_keys.trans();
     default:
       return code;
   }

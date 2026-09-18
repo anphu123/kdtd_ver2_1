@@ -1,4 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:flutter/material.dart';
+
+import 'package:kdtd_ver2_1/app/core/constants/upgrade_device_constants.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 /// Dòng máy mới gợi ý để khách hàng lên đời
 class UpgradeDeviceOption {
@@ -33,7 +37,10 @@ class UpgradeDeviceOption {
   }
 
   /// Tính trả góp dự kiến 0% lãi suất (12 tháng)
-  int monthlyInstallment(int topUp, {int months = 12}) {
+  int monthlyInstallment(
+    int topUp, {
+    int months = UpgradeDeviceConstants.defaultInstallmentMonths,
+  }) {
     if (topUp <= 0) return 0;
     return (topUp / months).round();
   }
@@ -47,66 +54,86 @@ class UpgradeDeviceOption {
   String get formattedSubsidy => formatCurrency(subsidyAmount);
 
   /// Danh sách máy mới đề xuất hot nhất thị trường hiện nay
-  static List<UpgradeDeviceOption> get defaultOptions => const [
-        UpgradeDeviceOption(
-          id: 'ip16pm_256',
-          name: 'iPhone 16 Pro Max',
-          storage: '256GB',
-          brand: 'Apple',
-          colorName: 'Titan Sa Mạc',
-          retailPrice: 34990000,
-          subsidyAmount: 2000000,
-          tag: 'Hot Nhất',
-          icon: Icons.phone_iphone,
-          highlights: ['Camera Control', 'Chip A18 Pro', 'Titanium Grade 5'],
-        ),
-        UpgradeDeviceOption(
-          id: 's24u_256',
-          name: 'Galaxy S24 Ultra 5G',
-          storage: '256GB',
-          brand: 'Samsung',
-          colorName: 'Xám Titan',
-          retailPrice: 29990000,
-          subsidyAmount: 2000000,
-          tag: 'Trợ Giá 2 Triệu',
-          icon: Icons.smartphone,
-          highlights: ['Galaxy AI', 'S-Pen tích hợp', 'Camera 200MP'],
-        ),
-        UpgradeDeviceOption(
-          id: 'ip16_128',
-          name: 'iPhone 16',
-          storage: '128GB',
-          brand: 'Apple',
-          colorName: 'Xanh Lưu Ly',
-          retailPrice: 22490000,
-          subsidyAmount: 1500000,
-          tag: 'Mới Ra Mắt',
-          icon: Icons.phone_iphone,
-          highlights: ['Nút Action Button', 'Camera 48MP Fusion', 'Chip A18'],
-        ),
-        UpgradeDeviceOption(
-          id: 'zflip6_256',
-          name: 'Galaxy Z Flip6 5G',
-          storage: '256GB',
-          brand: 'Samsung',
-          colorName: 'Xanh Mint',
-          retailPrice: 24990000,
-          subsidyAmount: 2000000,
-          tag: 'Thời Thượng',
-          icon: Icons.splitscreen,
-          highlights: ['Màn gập bỏ túi', 'FlexCam AI', 'Pin 4.000mAh'],
-        ),
-        UpgradeDeviceOption(
-          id: 'mi14u_512',
-          name: 'Xiaomi 14 Ultra',
-          storage: '512GB',
-          brand: 'Xiaomi',
-          colorName: 'Đen Huyền Bí',
-          retailPrice: 27990000,
-          subsidyAmount: 1500000,
-          tag: 'Ống Kính Leica',
-          icon: Icons.camera,
-          highlights: ['Ống kính Leica Summilux', 'Snapdragon 8 Gen 3', 'Sạc 90W'],
-        ),
-      ];
+  static List<UpgradeDeviceOption> get defaultOptions => [
+    UpgradeDeviceOption(
+      id: 'ip16pm_256',
+      name: 'iPhone 16 Pro Max',
+      storage: '256GB',
+      brand: 'Apple',
+      colorName: LocaleKeys.upgrade_device_option_ip16pm_256_color.trans(),
+      retailPrice: 34990000,
+      subsidyAmount: 2000000,
+      tag: LocaleKeys.upgrade_device_option_ip16pm_256_tag.trans(),
+      icon: Icons.phone_iphone,
+      highlights: [
+        LocaleKeys.upgrade_device_option_ip16pm_256_highlight_1.trans(),
+        LocaleKeys.upgrade_device_option_ip16pm_256_highlight_2.trans(),
+        LocaleKeys.upgrade_device_option_ip16pm_256_highlight_3.trans(),
+      ],
+    ),
+    UpgradeDeviceOption(
+      id: 's24u_256',
+      name: 'Galaxy S24 Ultra 5G',
+      storage: '256GB',
+      brand: 'Samsung',
+      colorName: LocaleKeys.upgrade_device_option_s24u_256_color.trans(),
+      retailPrice: 29990000,
+      subsidyAmount: 2000000,
+      tag: LocaleKeys.upgrade_device_option_s24u_256_tag.trans(),
+      icon: Icons.smartphone,
+      highlights: [
+        LocaleKeys.upgrade_device_option_s24u_256_highlight_1.trans(),
+        LocaleKeys.upgrade_device_option_s24u_256_highlight_2.trans(),
+        LocaleKeys.upgrade_device_option_s24u_256_highlight_3.trans(),
+      ],
+    ),
+    UpgradeDeviceOption(
+      id: 'ip16_128',
+      name: 'iPhone 16',
+      storage: '128GB',
+      brand: 'Apple',
+      colorName: LocaleKeys.upgrade_device_option_ip16_128_color.trans(),
+      retailPrice: 22490000,
+      subsidyAmount: 1500000,
+      tag: LocaleKeys.upgrade_device_option_ip16_128_tag.trans(),
+      icon: Icons.phone_iphone,
+      highlights: [
+        LocaleKeys.upgrade_device_option_ip16_128_highlight_1.trans(),
+        LocaleKeys.upgrade_device_option_ip16_128_highlight_2.trans(),
+        LocaleKeys.upgrade_device_option_ip16_128_highlight_3.trans(),
+      ],
+    ),
+    UpgradeDeviceOption(
+      id: 'zflip6_256',
+      name: 'Galaxy Z Flip6 5G',
+      storage: '256GB',
+      brand: 'Samsung',
+      colorName: LocaleKeys.upgrade_device_option_zflip6_256_color.trans(),
+      retailPrice: 24990000,
+      subsidyAmount: 2000000,
+      tag: LocaleKeys.upgrade_device_option_zflip6_256_tag.trans(),
+      icon: Icons.splitscreen,
+      highlights: [
+        LocaleKeys.upgrade_device_option_zflip6_256_highlight_1.trans(),
+        LocaleKeys.upgrade_device_option_zflip6_256_highlight_2.trans(),
+        LocaleKeys.upgrade_device_option_zflip6_256_highlight_3.trans(),
+      ],
+    ),
+    UpgradeDeviceOption(
+      id: 'mi14u_512',
+      name: 'Xiaomi 14 Ultra',
+      storage: '512GB',
+      brand: 'Xiaomi',
+      colorName: LocaleKeys.upgrade_device_option_mi14u_512_color.trans(),
+      retailPrice: 27990000,
+      subsidyAmount: 1500000,
+      tag: LocaleKeys.upgrade_device_option_mi14u_512_tag.trans(),
+      icon: Icons.camera,
+      highlights: [
+        LocaleKeys.upgrade_device_option_mi14u_512_highlight_1.trans(),
+        LocaleKeys.upgrade_device_option_mi14u_512_highlight_2.trans(),
+        LocaleKeys.upgrade_device_option_mi14u_512_highlight_3.trans(),
+      ],
+    ),
+  ];
 }

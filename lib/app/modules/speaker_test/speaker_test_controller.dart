@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/constants/audio_test_constants.dart';
 import 'package:kdtd_ver2_1/app/data/services/wav_tone_generator.dart';
 
 /// ============================================================
@@ -30,7 +31,14 @@ class SpeakerTestController extends GetxController {
 
   Future<void> _playBeepLoop() async {
     await _player.setReleaseMode(ReleaseMode.loop);
-    await _player.play(BytesSource(WavToneGenerator.sineWave(seconds: 1, freqHz: 880)));
+    await _player.play(
+      BytesSource(
+        WavToneGenerator.sineWave(
+          seconds: AudioTestConstants.speakerToneSeconds,
+          freqHz: AudioTestConstants.speakerToneFreqHz,
+        ),
+      ),
+    );
     playing.value = true;
   }
 

@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  easy_localization: ^3.0.7
+  flutter_screenutil: ^5.9.3
   get:
   device_info_plus:
   battery_plus:
@@ -55,6 +57,8 @@ flutter:
   assets:
     - assets/diag_rules.json
     - assets/diag_thresholds.json
+    - assets/translations/vi.json
+    - assets/translations/en.json
 
 # Cấu hình FlutterGen — sinh mã tham chiếu asset kiểu an toàn (type-safe)
 # vào lib/gen/, thay vì gõ tay chuỗi đường dẫn "assets/...".

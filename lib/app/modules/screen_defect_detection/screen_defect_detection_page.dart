@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/global_widgets/immersive_mode.dart';
@@ -8,7 +9,8 @@ import 'screen_defect_detection_controller.dart';
 
 /// Tự động phát hiện lỗi màn hình: sốc, chảy mực, burn-in, dead pixel
 /// (UI thuần — toàn bộ nghiệp vụ sống trong [ScreenDefectDetectionController]).
-class ScreenDefectDetectionPage extends GetView<ScreenDefectDetectionController> {
+class ScreenDefectDetectionPage
+    extends GetView<ScreenDefectDetectionController> {
   const ScreenDefectDetectionPage({super.key});
 
   @override
@@ -21,10 +23,12 @@ class _ScreenDefectDetectionView extends StatefulWidget {
   const _ScreenDefectDetectionView();
 
   @override
-  State<_ScreenDefectDetectionView> createState() => _ScreenDefectDetectionViewState();
+  State<_ScreenDefectDetectionView> createState() =>
+      _ScreenDefectDetectionViewState();
 }
 
-class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> {
+class _ScreenDefectDetectionViewState
+    extends State<_ScreenDefectDetectionView> {
   late final ScreenDefectDetectionController controller =
       Get.find<ScreenDefectDetectionController>();
 
@@ -50,11 +54,11 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
               right: 0,
               child: SafeArea(
                 child: Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
+                  margin: EdgeInsets.all(16.r),
+                  padding: EdgeInsets.all(16.r),
                   decoration: BoxDecoration(
-                    color: AppColors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.black87,
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +75,7 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           Text(
                             '${step + 1}/${patterns.length}',
                             style: AppTextStyles.titleSmall.copyWith(
@@ -81,7 +85,7 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       // Pattern name
                       Text(
                         pattern.name,
@@ -90,29 +94,35 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         pattern.description,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.white70,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
                       // Instructions
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12.r),
                         decoration: BoxDecoration(
-                          color: AppColors.orange.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.orange, width: 1),
+                          color: AppColors.warningDarkSurface,
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(color: AppColors.warning, width: 1),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.visibility, color: AppColors.white, size: 20),
-                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.visibility,
+                              color: AppColors.white,
+                              size: 20.r,
+                            ),
+                            SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                'Quan sát kỹ màn hình. Nếu thấy vết lạ, nhấn "Báo lỗi"',
+                                LocaleKeys
+                                    .screen_defect_detection_observe_instruction
+                                    .trans(),
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.white,
                                 ),
@@ -134,7 +144,7 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
               right: 0,
               child: SafeArea(
                 child: Container(
-                  margin: const EdgeInsets.all(16),
+                  margin: EdgeInsets.all(16.r),
                   child: Row(
                     children: [
                       // Report defect button
@@ -144,37 +154,38 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.fail,
                             foregroundColor: AppColors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: EdgeInsets.symmetric(vertical: 16.h),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                           ),
                           icon: const Icon(Icons.report_problem),
                           label: Text(
-                            'Báo lỗi',
+                            LocaleKeys.screen_defect_detection_report_defect
+                                .trans(),
                             style: AppTextStyles.titleMedium.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12.w),
                       // Skip button
                       ElevatedButton(
                         onPressed: controller.skipToNext,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.white,
                           foregroundColor: AppColors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.w,
+                            vertical: 16.h,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
                         ),
                         child: Text(
-                          'Bỏ qua',
+                          LocaleKeys.screen_defect_detection_skip.trans(),
                           style: AppTextStyles.titleMedium.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -189,27 +200,29 @@ class _ScreenDefectDetectionViewState extends State<_ScreenDefectDetectionView> 
             // Defect indicator
             if (controller.userConfirmedDefect.value)
               Positioned(
-                top: 100,
-                right: 16,
+                top: 100.h,
+                right: 16.w,
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12.r),
                   decoration: BoxDecoration(
                     color: AppColors.fail,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.fail.withValues(alpha: 0.5),
-                        blurRadius: 10,
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: AppColors.white,
+                      width: 1.5,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning, color: AppColors.white, size: 20),
-                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.warning,
+                        color: AppColors.white,
+                        size: 20.r,
+                      ),
+                      SizedBox(width: 8.w),
                       Text(
-                        'Đã ghi nhận lỗi',
+                        LocaleKeys.screen_defect_detection_defect_recorded.trans(),
                         style: AppTextStyles.titleSmall.copyWith(
                           color: AppColors.white,
                           fontWeight: FontWeight.bold,

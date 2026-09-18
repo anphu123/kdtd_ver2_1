@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
+import 'package:kdtd_ver2_1/app/core/constants/audio_test_constants.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
@@ -82,18 +85,18 @@ class MicTestController extends GetxController {
     hasDetectedSound.value = false;
     error.value = null;
     amplitudeHistory.clear();
-    countdown.value = 5;
+    countdown.value = AudioTestConstants.micRecordingSeconds;
 
     try {
       final mic = await Permission.microphone.request();
       if (!mic.isGranted) {
-        error.value = 'Ứng dụng không có quyền Micro.';
+        error.value = LocaleKeys.mic_test_error_no_permission.trans();
         return;
       }
 
       final ok = await _rec.hasPermission();
       if (!ok) {
-        error.value = 'Thiết bị không cấp quyền ghi âm.';
+        error.value = LocaleKeys.mic_test_error_recording_permission.trans();
         return;
       }
 
@@ -108,25 +111,26 @@ class MicTestController extends GetxController {
 
       // Start recording for amplitude monitoring
       await _rec.start(
-        const RecordConfig(
+        RecordConfig(
           encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-          numChannels: 1,
+          bitRate: AudioTestConstants.recordingBitRate,
+          sampleRate: AudioTestConstants.recordingSampleRate,
+          numChannels: AudioTestConstants.recordingChannels,
         ),
         path: _recordingPath!,
       );
 
       await _sub?.cancel();
       _sub = _rec
-          .onAmplitudeChanged(const Duration(milliseconds: 100))
+          .onAmplitudeChanged(AudioTestConstants.amplitudeSampleInterval)
           .listen(
             (a) {
               final currentAmp = a.current.abs();
 
               // Lưu lịch sử amplitude cho waveform
               amplitudeHistory.add(currentAmp);
-              if (amplitudeHistory.length > 50) {
+              if (amplitudeHistory.length >
+                  AudioTestConstants.amplitudeHistoryMaxLength) {
                 amplitudeHistory.removeAt(0);
               }
 
@@ -134,13 +138,15 @@ class MicTestController extends GetxController {
               if (currentAmp > maxAmplitude.value) {
                 maxAmplitude.value = currentAmp;
               }
-              // Phát hiện âm thanh (threshold: 1000)
-              if (currentAmp > 1000) {
+              // Phát hiện âm thanh
+              if (currentAmp > AudioTestConstants.soundDetectionAmplitudeThreshold) {
                 hasDetectedSound.value = true;
               }
             },
             onError: (e) {
-              error.value = 'Lỗi amplitude: $e';
+              error.value = LocaleKeys.mic_test_error_amplitude.trans(
+                namedArgs: {'error': '$e'},
+              );
             },
           );
 
@@ -149,7 +155,9 @@ class MicTestController extends GetxController {
       // Bắt đầu countdown 5 giây
       _startRecordingCountdown();
     } catch (e) {
-      error.value = 'Không thể khởi động micro: $e';
+      error.value = LocaleKeys.mic_test_error_start_mic.trans(
+        namedArgs: {'error': '$e'},
+      );
     }
   }
 
@@ -188,13 +196,20 @@ class MicTestController extends GetxController {
         phase.value = MicTestPhase.confirming;
       }
     } catch (e) {
-      error.value = 'Lỗi khi phát lại: $e';
+      error.value = LocaleKeys.mic_test_error_playback.trans(
+        namedArgs: {'error': '$e'},
+      );
       phase.value = MicTestPhase.confirming;
     }
   }
 
   /// Kết thúc bài test — pop kết quả về màn hình trước.
   void finish(bool passed) => Get.back(result: passed);
+
+  /// Mức âm lượng đã chuẩn hoá (0.0 - 1.0) để hiển thị animation.
+  double get level =>
+      amplitude.value.clamp(0, AudioTestConstants.amplitudeLevelMax) /
+      AudioTestConstants.amplitudeLevelMax;
 
   // ==================== CLEANUP ====================
 

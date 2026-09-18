@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 /// Một dòng hiển thị trạng thái 1 phím vật lý (đã nhận/chưa nhận/thất bại).
 class KeyTile extends StatelessWidget {
@@ -21,10 +22,16 @@ class KeyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = active ? 'Đã nhận' : (failed ? 'Không nhận (Thất bại)' : 'Chưa nhận');
+    final subtitle =
+        active
+            ? LocaleKeys.keys_test_status_received.trans()
+            : (failed
+                ? LocaleKeys.keys_test_status_failed.trans()
+                : LocaleKeys.keys_test_status_not_received.trans());
 
     final Color? bg = active ? AppColors.neutralGreyLight : null;
-    final Color? iconColor = active ? Theme.of(context).colorScheme.primary : null;
+    final Color? iconColor =
+        active ? Theme.of(context).colorScheme.primary : null;
 
     return Card(
       elevation: 0,
@@ -34,11 +41,14 @@ class KeyTile extends StatelessWidget {
         title: Text(label),
         subtitle: Text(
           subtitle,
-          style: failed ? AppTextStyles.bodySmall.copyWith(color: AppColors.fail) : null,
+          style:
+              failed
+                  ? AppTextStyles.bodySmall.copyWith(color: AppColors.fail)
+                  : null,
         ),
         trailing: TextButton(
           onPressed: action,
-          child: const Text('Đánh dấu'),
+          child: Text(LocaleKeys.keys_test_mark.trans()),
         ),
       ),
     );

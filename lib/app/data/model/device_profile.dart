@@ -11,6 +11,11 @@
 /// ============================================================
 library;
 
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+
+import 'package:kdtd_ver2_1/app/core/constants/device_profile_constants.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+
 class DeviceProfile {
   /// Tên profile (thường là tên model hoặc dòng máy)
   final String name;
@@ -82,33 +87,34 @@ class DeviceProfile {
   }
 
   /// Kiểm tra có phải tier 5 (máy cũ/giá thấp) không
-  bool get isTier5 => tier == 5;
+  bool get isTier5 => tier == DeviceProfileConstants.lowEndTier;
 
   /// Kiểm tra có phải tier 1-2 (flagship) không
-  bool get isFlagship => tier <= 2;
+  bool get isFlagship => tier <= DeviceProfileConstants.flagshipTierMax;
 
   /// Kiểm tra có phải mid-range không
-  bool get isMidRange => tier == 3;
+  bool get isMidRange => tier == DeviceProfileConstants.midRangeTier;
 
   /// Có nên test màn hình tự động không
   /// Tier 5 luôn tự động test để tiết kiệm thời gian
-  bool get shouldAutoTestScreen => autoScreenTest || tier == 5;
+  bool get shouldAutoTestScreen =>
+      autoScreenTest || tier == DeviceProfileConstants.lowEndTier;
 
-  /// Mô tả tier bằng tiếng Việt
+  /// Mô tả tier (đa ngôn ngữ)
   String get tierDescription {
     switch (tier) {
       case 1:
-        return 'Flagship mới';
+        return LocaleKeys.device_profile_tier_1.trans();
       case 2:
-        return 'Flagship cũ';
+        return LocaleKeys.device_profile_tier_2.trans();
       case 3:
-        return 'Tầm trung';
+        return LocaleKeys.device_profile_tier_3.trans();
       case 4:
-        return 'Phổ thông';
+        return LocaleKeys.device_profile_tier_4.trans();
       case 5:
-        return 'Giá rẻ/Cũ';
+        return LocaleKeys.device_profile_tier_5.trans();
       default:
-        return 'Không xác định';
+        return LocaleKeys.device_profile_tier_unknown.trans();
     }
   }
 }

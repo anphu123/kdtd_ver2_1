@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/constants/screen_burnin_test_constants.dart';
 
 /// Một màu đơn sắc dùng để test màn hình (phát hiện sọc ám, pixel chết...).
 class ScreenTestColor {
@@ -15,16 +18,53 @@ class ScreenTestColor {
 
 /// Danh sách màu test (đơn sắc để dễ phát hiện vấn đề) — dùng chung bởi
 /// [ScreenBurnInTestController] (để tính bước kế/trước) và trang (để vẽ UI).
-const List<ScreenTestColor> kScreenBurnInTestColors = [
-  ScreenTestColor('Đen (Black)', AppColors.black, '🔍 Kiểm tra pixel sáng bất thường'),
-  ScreenTestColor('Trắng (White)', AppColors.white, '🔍 Kiểm tra pixel tối, vết ám'),
-  ScreenTestColor('Đỏ (Red)', AppColors.red, '🔍 Kiểm tra kênh màu đỏ'),
-  ScreenTestColor('Xanh lá (Green)', AppColors.green, '🔍 Kiểm tra kênh màu xanh lá'),
-  ScreenTestColor('Xanh dương (Blue)', AppColors.blue, '🔍 Kiểm tra kênh màu xanh dương'),
-  ScreenTestColor('Xám (Gray)', AppColors.neutralGrey, '🔍 Kiểm tra độ đồng đều'),
-  ScreenTestColor('Vàng (Yellow)', AppColors.neutralYellow, '🔍 Kiểm tra màu ấm'),
-  ScreenTestColor('Cyan', AppColors.neutralCyan, '🔍 Kiểm tra màu lạnh'),
-  ScreenTestColor('Magenta', AppColors.neutralPink, '🔍 Kiểm tra màu hồng'),
+/// Không phải `const` vì name/description dùng `.trans()`.
+List<ScreenTestColor> get kScreenBurnInTestColors => [
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_black_name.trans(),
+    AppColors.black,
+    LocaleKeys.screen_burnin_test_color_black_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_white_name.trans(),
+    AppColors.white,
+    LocaleKeys.screen_burnin_test_color_white_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_red_name.trans(),
+    AppColors.red,
+    LocaleKeys.screen_burnin_test_color_red_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_green_name.trans(),
+    AppColors.green,
+    LocaleKeys.screen_burnin_test_color_green_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_blue_name.trans(),
+    AppColors.blue,
+    LocaleKeys.screen_burnin_test_color_blue_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_gray_name.trans(),
+    AppColors.neutralGrey,
+    LocaleKeys.screen_burnin_test_color_gray_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_yellow_name.trans(),
+    AppColors.neutralYellow,
+    LocaleKeys.screen_burnin_test_color_yellow_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_cyan_name.trans(),
+    AppColors.neutralCyan,
+    LocaleKeys.screen_burnin_test_color_cyan_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.screen_burnin_test_color_magenta_name.trans(),
+    AppColors.neutralPink,
+    LocaleKeys.screen_burnin_test_color_magenta_desc.trans(),
+  ),
 ];
 
 /// ============================================================
@@ -45,12 +85,14 @@ class ScreenBurnInTestController extends GetxController {
   Timer? _autoTimer;
 
   void nextColor() {
-    currentIndex.value = (currentIndex.value + 1) % kScreenBurnInTestColors.length;
+    currentIndex.value =
+        (currentIndex.value + 1) % kScreenBurnInTestColors.length;
   }
 
   void previousColor() {
     currentIndex.value =
-        (currentIndex.value - 1 + kScreenBurnInTestColors.length) % kScreenBurnInTestColors.length;
+        (currentIndex.value - 1 + kScreenBurnInTestColors.length) %
+        kScreenBurnInTestColors.length;
   }
 
   void toggleAutoMode() {
@@ -63,7 +105,10 @@ class ScreenBurnInTestController extends GetxController {
 
   void _startAutoMode() {
     autoMode.value = true;
-    _autoTimer = Timer.periodic(const Duration(seconds: 2), (_) => nextColor());
+    _autoTimer = Timer.periodic(
+      ScreenBurnInTestConstants.manualAutoModeInterval,
+      (_) => nextColor(),
+    );
   }
 
   void _stopAutoMode() {

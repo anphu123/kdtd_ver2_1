@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/global_widgets/immersive_mode.dart';
@@ -25,7 +26,8 @@ class _AutoScreenBurnInTestView extends StatefulWidget {
   const _AutoScreenBurnInTestView();
 
   @override
-  State<_AutoScreenBurnInTestView> createState() => _AutoScreenBurnInTestViewState();
+  State<_AutoScreenBurnInTestView> createState() =>
+      _AutoScreenBurnInTestViewState();
 }
 
 class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
@@ -43,39 +45,39 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.screen_search_desktop,
-                  size: 80,
+                  size: 80.r,
                   color: AppColors.white,
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32.h),
                 Text(
-                  'Kiểm Tra Màn Hình Tự Động',
+                  LocaleKeys.auto_screen_burnin_test_title.trans(),
                   style: AppTextStyles.headlineSmall.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16.h),
                 Text(
-                  'Quan sát kỹ màn hình\nTìm sọc, vết ám, pixel bất thường',
+                  LocaleKeys.auto_screen_burnin_test_instruction_center.trans(),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: AppColors.white70,
                   ),
                 ),
-                const SizedBox(height: 48),
+                SizedBox(height: 48.h),
                 Text(
                   '${controller.countdown.value}',
                   style: AppTextStyles.displayLarge.copyWith(
                     color: AppColors.infoMedium,
-                    fontSize: 72,
+                    fontSize: 72.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 Text(
-                  'Bắt đầu sau...',
+                  LocaleKeys.auto_screen_burnin_test_starting_soon.trans(),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.white54,
                   ),
@@ -86,9 +88,12 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
         );
       }
 
-      final current = kAutoScreenBurnInTestColors[controller.currentIndex.value];
+      final current =
+          kAutoScreenBurnInTestColors[controller.currentIndex.value];
       final isDark = current.color.computeLuminance() < 0.5;
       final textColor = isDark ? AppColors.white : AppColors.black;
+      final textMutedColor = isDark ? AppColors.white70 : AppColors.textMuted;
+      final textHintColor = isDark ? AppColors.white54 : AppColors.neutralGreyDark;
       final buttonColor = isDark ? AppColors.white24 : AppColors.black12;
       final isRunning = controller.isRunning.value;
 
@@ -102,14 +107,14 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
 
               // Info nhỏ ở góc trên
               Positioned(
-                top: 16,
-                left: 16,
-                right: 16,
+                top: 16.h,
+                left: 16.w,
+                right: 16.w,
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12.r),
                   decoration: BoxDecoration(
                     color: buttonColor,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Row(
                     children: [
@@ -118,7 +123,15 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${controller.currentIndex.value + 1}/${kAutoScreenBurnInTestColors.length} • ${current.name}',
+                              LocaleKeys.auto_screen_burnin_test_progress_label.trans(
+                                namedArgs: {
+                                  'current':
+                                      '${controller.currentIndex.value + 1}',
+                                  'total':
+                                      '${kAutoScreenBurnInTestColors.length}',
+                                  'name': current.name,
+                                },
+                              ),
                               style: AppTextStyles.titleMedium.copyWith(
                                 color: textColor,
                                 fontWeight: FontWeight.bold,
@@ -127,14 +140,15 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
                             Text(
                               current.description,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: textColor.withValues(alpha: 0.7),
+                                color: textMutedColor,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        onPressed: isRunning ? controller.pause : controller.resume,
+                        onPressed:
+                            isRunning ? controller.pause : controller.resume,
                         icon: Icon(
                           isRunning ? Icons.pause : Icons.play_arrow,
                           color: textColor,
@@ -147,14 +161,16 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
 
               // Progress bar
               Positioned(
-                top: 80,
-                left: 16,
-                right: 16,
+                top: 80.h,
+                left: 16.w,
+                right: 16.w,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(4.r),
                   child: LinearProgressIndicator(
-                    value: (controller.currentIndex.value + 1) / kAutoScreenBurnInTestColors.length,
-                    minHeight: 8,
+                    value:
+                        (controller.currentIndex.value + 1) /
+                        kAutoScreenBurnInTestColors.length,
+                    minHeight: 8.h,
                     backgroundColor: buttonColor,
                     valueColor: AlwaysStoppedAnimation(
                       isDark ? AppColors.infoMedium : AppColors.infoDark,
@@ -166,16 +182,19 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
               // Hướng dẫn nhỏ ở giữa
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 10.h,
+                  ),
                   decoration: BoxDecoration(
                     color: buttonColor,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    'Tự động chuyển màu...\nChú ý quan sát',
+                    LocaleKeys.auto_screen_burnin_test_auto_switching.trans(),
                     textAlign: TextAlign.center,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: textColor.withValues(alpha: 0.5),
+                      color: textHintColor,
                     ),
                   ),
                 ),
@@ -183,50 +202,54 @@ class _AutoScreenBurnInTestViewState extends State<_AutoScreenBurnInTestView> {
 
               // Emergency buttons ở dưới
               Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
+                bottom: 16.h,
+                left: 16.w,
+                right: 16.w,
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.r),
                       decoration: BoxDecoration(
                         color: buttonColor,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Text(
-                        '⚠️ Nếu thấy sọc/ám/pixel chết → nhấn "Có vấn đề"',
+                        LocaleKeys.auto_screen_burnin_test_warning_text.trans(),
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: textColor.withValues(alpha: 0.8),
+                          color: textMutedColor,
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => controller.finish(true),
                             icon: const Icon(Icons.warning_amber),
-                            label: const Text('Có vấn đề'),
+                            label: Text(
+                              LocaleKeys.auto_screen_burnin_test_has_issue.trans(),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.failLight,
                               foregroundColor: AppColors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => controller.finish(false),
                             icon: const Icon(Icons.skip_next),
-                            label: const Text('Bỏ qua'),
+                            label: Text(
+                              LocaleKeys.auto_screen_burnin_test_skip.trans(),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: buttonColor,
                               foregroundColor: textColor,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
                             ),
                           ),
                         ),

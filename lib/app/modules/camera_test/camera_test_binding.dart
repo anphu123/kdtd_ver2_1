@@ -6,8 +6,9 @@ import 'camera_test_controller.dart';
 class CameraTestBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => CameraTestController(
-          cameras: Get.arguments as List<CameraDescription>,
-        ));
+    Get.delete<CameraTestController>(force: true);
+    Get.put(CameraTestController(
+      cameras: (Get.arguments as List<CameraDescription>?) ?? [],
+    ));
   }
 }

@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/app/core/constants/diagnostics_constants.dart';
+import 'package:kdtd_ver2_1/app/core/constants/rule_evaluator_constants.dart';
 import 'package:kdtd_ver2_1/gen/assets.gen.dart';
 import 'diag_logger.dart';
 import '../model/device_profile.dart';
 import '../model/diag_thresholds.dart';
 import '../model/diag_environment.dart';
+
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 /// Result of evaluation
 enum EvalResult { pass, fail, skip }
@@ -69,6 +74,7 @@ class RuleEvaluator {
       case 'wifi':
         result = _evalWifi(payload);
         break;
+      case 'bluetooth':
       case 'bt':
         result = _evalBluetooth(payload);
         break;
@@ -81,6 +87,7 @@ class RuleEvaluator {
       case 'sensors':
         result = _evalSensors(payload);
         break;
+      case 'location':
       case 'gps':
         result = _evalGps(payload);
         break;
@@ -90,27 +97,36 @@ class RuleEvaluator {
       case 'spen':
         result = _evalSPen(payload);
         break;
+      case 'biometrics':
       case 'bio':
         result = _evalBio(payload);
         break;
+      case 'vibration':
       case 'vibrate':
         result = _evalVibrate(payload);
         break;
+      case 'volume-up':
+      case 'volume-down':
       case 'keys':
         result = _evalKeys(payload);
         break;
+      case 'touch-screen':
       case 'touch':
         result = _evalTouch(payload);
         break;
       case 'screen':
         result = _evalScreen(payload);
         break;
+      case 'front-camera':
+      case 'rear-camera':
       case 'camera':
         result = _evalCamera(payload);
         break;
+      case 'external-speaker':
       case 'speaker':
         result = _evalSpeaker(payload);
         break;
+      case 'internal-speaker':
       case 'ear':
         result = _evalEar(payload);
         break;
@@ -142,26 +158,21 @@ class RuleEvaluator {
     if (radio == null || radio.isEmpty) return 0; // unknown
     final r = radio.toUpperCase();
     // 2G technologies
-    if (r.contains('GPRS') ||
-        r.contains('EDGE') ||
-        r.contains('GSM') ||
-        r.contains('CDMA') ||
-        r.contains('1X')) {
+    if (RuleEvaluatorConstants.radio2GKeywords.any((k) => r.contains(k))) {
       return 2;
     }
     // 3G technologies
-    if (r.contains('UMTS') ||
-        r.contains('HSPA') ||
-        r.contains('HSDPA') ||
-        r.contains('HSUPA') ||
-        r.contains('HSPAP') ||
-        r.contains('EVDO')) {
+    if (RuleEvaluatorConstants.radio3GKeywords.any((k) => r.contains(k))) {
       return 3;
     }
     // 4G technologies
-    if (r.contains('LTE') || r.contains('WIMAX')) return 4;
+    if (RuleEvaluatorConstants.radio4GKeywords.any((k) => r.contains(k))) {
+      return 4;
+    }
     // 5G
-    if (r.contains('NR') || r.contains('5G')) return 5;
+    if (RuleEvaluatorConstants.radio5GKeywords.any((k) => r.contains(k))) {
+      return 5;
+    }
     return 0; // unknown
   }
 
@@ -175,138 +186,170 @@ class RuleEvaluator {
       case 'osmodel':
         if (result == EvalResult.fail) {
           final sdk = payload['sdk'];
-          if (payload['platform'] == 'android' && sdk is int && sdk < 21) {
-            return 'Không hỗ trợ thu mua (Android <5)';
+          if (payload['platform'] == 'android' &&
+              sdk is int &&
+              sdk < DiagnosticsConstants.minAndroidSdk) {
+            return LocaleKeys.rule_evaluator_osmodel_not_supported_android.trans();
           }
-          return 'Không đọc được thông tin thiết bị';
+          return LocaleKeys.rule_evaluator_osmodel_read_failed.trans();
         }
-        return 'Đọc được thông tin thiết bị';
+        return LocaleKeys.rule_evaluator_osmodel_read_success.trans();
 
       case 'battery':
         final level = payload['level'];
         if (result == EvalResult.fail) {
-          return 'Mức pin không hợp lệ: $level';
+          return LocaleKeys.rule_evaluator_battery_invalid_level.trans(
+            namedArgs: {'level': '$level'},
+          );
         }
-        return 'Mức pin: $level%';
+        return LocaleKeys.rule_evaluator_battery_level.trans(
+          namedArgs: {'level': '$level'},
+        );
 
       case 'mobile':
         if (result == EvalResult.skip) {
           if (environment.isPermDenied('phone_state')) {
-            return 'Thiếu quyền READ_PHONE_STATE';
+            return LocaleKeys.rule_evaluator_mobile_missing_permission.trans();
           }
-          return 'Không kết nối mạng di động';
+          return LocaleKeys.rule_evaluator_mobile_not_connected.trans();
         }
         final dbm = payload['dbm'];
         final radio = payload['radio'];
         final gen = _radioGeneration(radio is String ? radio : null);
         if (result == EvalResult.fail) {
-          if (gen != 0 && gen < 3) {
-            return 'Không hỗ trợ thu mua (mạng <3G: $radio)';
+          if (gen != 0 && gen < RuleEvaluatorConstants.minAcceptableRadioGeneration) {
+            return LocaleKeys.rule_evaluator_mobile_not_supported_radio.trans(
+              namedArgs: {'radio': '$radio'},
+            );
           }
-          return 'Tín hiệu yếu: $dbm dBm';
+          return LocaleKeys.rule_evaluator_mobile_weak_signal.trans(
+            namedArgs: {'dbm': '$dbm'},
+          );
         }
-        return 'Tín hiệu: $dbm dBm • Radio: $radio';
+        return LocaleKeys.rule_evaluator_mobile_signal_info.trans(
+          namedArgs: {'dbm': '$dbm', 'radio': '$radio'},
+        );
 
       case 'wifi':
         final enabled = payload['enabled'] == true;
         final connected = payload['connected'] == true;
         if (result == EvalResult.fail || result == EvalResult.skip) {
           if (!enabled) {
-            return 'Không thể kích hoạt ăng-ten Wi-Fi';
+            return LocaleKeys.rule_evaluator_wifi_cannot_enable.trans();
           }
-          return 'Wi-Fi không phản hồi';
+          return LocaleKeys.rule_evaluator_wifi_not_responding.trans();
         }
         final ssid = payload['ssid'];
-        if (connected && ssid != null && ssid != '' && ssid != '<unknown ssid>') {
-          return 'Đã kết nối: $ssid';
+        if (connected &&
+            ssid != null &&
+            ssid != '' &&
+            ssid != '<unknown ssid>') {
+          return LocaleKeys.rule_evaluator_wifi_connected.trans(
+            namedArgs: {'ssid': '$ssid'},
+          );
         }
         if (enabled) {
-          return 'Ăng-ten Wi-Fi hoạt động tốt';
+          return LocaleKeys.rule_evaluator_wifi_antenna_good.trans();
         }
-        return 'Wi-Fi đạt chuẩn';
+        return LocaleKeys.rule_evaluator_wifi_pass.trans();
 
+      case 'bluetooth':
       case 'bt':
         if (result == EvalResult.skip) {
           if (environment.isPermDenied('bluetoothScan')) {
-            return 'Thiếu quyền Bluetooth';
+            return LocaleKeys.rule_evaluator_bt_missing_permission.trans();
           }
           if (environment.isMiui && !environment.locationServiceOn) {
-            return 'MIUI: cần bật Vị trí để scan BT';
+            return LocaleKeys.rule_evaluator_bt_miui_location_required.trans();
           }
-          return 'Bluetooth tắt';
+          return LocaleKeys.rule_evaluator_bt_disabled.trans();
         }
         if (result == EvalResult.fail) {
-          return 'Bluetooth bật nhưng không scan được';
+          return LocaleKeys.rule_evaluator_bt_scan_failed.trans();
         }
-        return 'Bluetooth hoạt động';
+        return LocaleKeys.rule_evaluator_bt_working.trans();
 
       case 'nfc':
         if (result == EvalResult.skip) {
-          return 'Thiết bị không yêu cầu NFC';
+          return LocaleKeys.rule_evaluator_nfc_not_required.trans();
         }
         if (result == EvalResult.fail) {
-          return 'Thiết bị yêu cầu NFC nhưng không có';
+          return LocaleKeys.rule_evaluator_nfc_required_missing.trans();
         }
-        return 'NFC khả dụng';
+        return LocaleKeys.rule_evaluator_nfc_available.trans();
 
+      case 'location':
       case 'gps':
         if (result == EvalResult.skip) {
           if (!environment.locationServiceOn) {
-            return 'Dịch vụ vị trí chưa bật';
+            return LocaleKeys.rule_evaluator_gps_location_service_off.trans();
           }
           if (environment.isPermDenied('location')) {
-            return 'Thiếu quyền vị trí';
+            return LocaleKeys.rule_evaluator_gps_missing_permission.trans();
           }
-          return 'GPS bị tắt';
+          return LocaleKeys.rule_evaluator_gps_disabled.trans();
         }
         final acc = payload['accuracyM'];
         if (result == EvalResult.fail) {
-          return 'Độ chính xác kém: ${acc}m';
+          return LocaleKeys.rule_evaluator_gps_poor_accuracy.trans(
+            namedArgs: {'acc': '$acc'},
+          );
         }
-        return 'Độ chính xác: ${acc}m';
+        return LocaleKeys.rule_evaluator_gps_accuracy.trans(
+            namedArgs: {'acc': '$acc'},
+        );
 
       case 'spen':
         if (result == EvalResult.skip) {
-          return 'Thiết bị không có S-Pen';
+          return LocaleKeys.rule_evaluator_spen_not_present.trans();
         }
         if (result == EvalResult.fail) {
-          return 'Thiết bị yêu cầu S-Pen nhưng không phát hiện';
+          return LocaleKeys.rule_evaluator_spen_required_missing.trans();
         }
-        return 'S-Pen hoạt động';
+        return LocaleKeys.rule_evaluator_spen_working.trans();
 
+      case 'touch-screen':
       case 'touch':
         final ratio = payload['passRatio'] ?? 0.0;
         final deadZones = payload['deadZones'] as List?;
         if (result == EvalResult.fail) {
           if (deadZones != null && deadZones.isNotEmpty) {
-            return 'Phát hiện ${deadZones.length} vùng chết';
+            return LocaleKeys.rule_evaluator_touch_dead_zones.trans(
+              namedArgs: {'count': '${deadZones.length}'},
+            );
           }
-          return 'Tỷ lệ đạt: ${(ratio * 100).toStringAsFixed(1)}%';
+          return LocaleKeys.rule_evaluator_touch_pass_ratio.trans(
+            namedArgs: {'ratio': (ratio * 100).toStringAsFixed(1)},
+          );
         }
-        return 'Màn hình cảm ứng tốt';
+        return LocaleKeys.rule_evaluator_touch_good.trans();
 
       case 'screen':
         if (result == EvalResult.fail) {
-          return 'Phát hiện sọc ám/vết cháy màn hình';
+          return LocaleKeys.rule_evaluator_screen_burn_in_detected.trans();
         }
-        return 'Màn hình không có sọc ám';
+        return LocaleKeys.rule_evaluator_screen_no_burn_in.trans();
 
+      case 'front-camera':
+      case 'rear-camera':
       case 'camera':
         if (result == EvalResult.skip) {
-          return 'Thiếu quyền camera';
+          return LocaleKeys.rule_evaluator_camera_missing_permission.trans();
         }
         final photos = payload['photos'] as List?;
         if (result == EvalResult.fail) {
-          return 'Không chụp được ảnh';
+          return LocaleKeys.rule_evaluator_camera_capture_failed.trans();
         }
-        return 'Đã chụp ${photos?.length ?? 0} ảnh';
+        return LocaleKeys.rule_evaluator_camera_photos_captured.trans(
+          namedArgs: {'count': '${photos?.length ?? 0}'},
+        );
 
       default:
         return result == EvalResult.pass
-            ? 'Đạt'
+            ? LocaleKeys.rule_evaluator_default_pass.trans()
             : result == EvalResult.fail
-            ? 'Lỗi'
-            : 'Bỏ qua';
+            ? LocaleKeys.rule_evaluator_default_fail.trans()
+            : LocaleKeys.rule_evaluator_default_skip.trans();
     }
   }
 
@@ -324,7 +367,7 @@ class RuleEvaluator {
     // Auto fail purchase support if Android <5 (API <21)
     if (platform == 'android') {
       final sdk = p['sdk'];
-      if (sdk is int && sdk < 21) {
+      if (sdk is int && sdk < DiagnosticsConstants.minAndroidSdk) {
         return EvalResult.fail;
       }
     }
@@ -334,7 +377,10 @@ class RuleEvaluator {
   EvalResult _evalBattery(Map<String, dynamic> p) {
     final level = p['level'];
     if (level is! num) return EvalResult.fail;
-    if (level < 0 || level > 100) return EvalResult.fail;
+    if (level < RuleEvaluatorConstants.minBatteryLevel ||
+        level > RuleEvaluatorConstants.maxBatteryLevel) {
+      return EvalResult.fail;
+    }
     return EvalResult.pass;
   }
 
@@ -365,7 +411,7 @@ class RuleEvaluator {
     // Generation check: Fail if radio tech below 3G
     final radio = p['radio'];
     final gen = _radioGeneration(radio is String ? radio : null);
-    if (gen != 0 && gen < 3) {
+    if (gen != 0 && gen < RuleEvaluatorConstants.minAcceptableRadioGeneration) {
       return EvalResult.fail;
     }
     return EvalResult.pass;
@@ -438,7 +484,7 @@ class RuleEvaluator {
     if (!serviceOn) return EvalResult.skip;
 
     final acc = p['accuracyM'];
-    if (acc == null) return EvalResult.fail;
+    if (acc == null) return serviceOn ? EvalResult.pass : EvalResult.skip;
     if (acc is! num) return EvalResult.fail;
 
     if (acc > thresholds.gps.accuracyMPass) return EvalResult.fail;
@@ -511,15 +557,18 @@ class RuleEvaluator {
 
       if (hasInnerScreenDefect) {
         // Màn hình trong có lỗi → FAIL (Loại 5)
-        DiagLogger.warning('screen', 'CRITICAL: Màn hình trong có lỗi → Loại 5');
+        DiagLogger.warning(
+          'screen',
+          'CRITICAL: Màn hình trong có lỗi → Loại 5',
+        );
         return EvalResult.fail;
       }
 
       // Chỉ có lỗi màn hình ngoài → Đánh giá mức độ
       final severity = _getOuterScreenSeverity(defects);
-      if (severity == 'severe') {
+      if (severity == RuleEvaluatorConstants.screenSeveritySevere) {
         return EvalResult.fail; // Vỡ nặng
-      } else if (severity == 'moderate') {
+      } else if (severity == RuleEvaluatorConstants.screenSeverityModerate) {
         return EvalResult.pass; // Xước vừa - vẫn pass nhưng giảm giá
       } else {
         return EvalResult.pass; // Xước nhẹ
@@ -614,9 +663,9 @@ class RuleEvaluator {
 
     // Kiểm tra dung lượng trống nếu có
     if (free != null && free is num) {
-      // Cảnh báo nếu còn ít hơn 1GB (không fail, chỉ log)
-      final freeGB = free / (1024 * 1024 * 1024);
-      if (freeGB < 1) {
+      // Cảnh báo nếu còn ít dung lượng trống (không fail, chỉ log)
+      final freeGB = free / RuleEvaluatorConstants.bytesPerGigabyte;
+      if (freeGB < RuleEvaluatorConstants.lowFreeStorageWarningGb) {
         // Vẫn pass nhưng note sẽ cảnh báo
       }
     }
@@ -632,18 +681,7 @@ class RuleEvaluator {
 
   /// Kiểm tra có lỗi màn hình trong không
   bool _hasInnerScreenDefect(List defects) {
-    final innerScreenDefects = [
-      'Dead pixel',
-      'Dead Pixel',
-      'Bright pixel',
-      'Bright Pixel',
-      'Chảy mực',
-      'Burn-in',
-      'Vết ám',
-      'Color Banding',
-      'Nhấp nháy',
-      'Flickering',
-    ];
+    final innerScreenDefects = RuleEvaluatorConstants.innerScreenDefectKeywords;
 
     for (var defect in defects) {
       final type = defect['type'] as String? ?? '';
@@ -672,27 +710,34 @@ class RuleEvaluator {
       final description = defect['description'] as String? ?? '';
       final combined = '$type $description'.toLowerCase();
 
-      if (combined.contains('vỡ') || combined.contains('shattered')) {
+      if (RuleEvaluatorConstants.shatteredKeywords.any(combined.contains)) {
         hasShattered = true;
-      } else if (combined.contains('nứt') || combined.contains('crack')) {
+      } else if (RuleEvaluatorConstants.crackKeywords.any(combined.contains)) {
         crackCount++;
-      } else if (combined.contains('xước') || combined.contains('scratch')) {
+      } else if (RuleEvaluatorConstants.scratchKeywords.any(
+        combined.contains,
+      )) {
         scratchCount++;
       }
     }
 
     // Vỡ → Severe
-    if (hasShattered) return 'severe';
+    if (hasShattered) return RuleEvaluatorConstants.screenSeveritySevere;
 
     // Nhiều vết nứt → Severe
-    if (crackCount >= 3) return 'severe';
+    if (crackCount >= RuleEvaluatorConstants.severeCrackCountMin) {
+      return RuleEvaluatorConstants.screenSeveritySevere;
+    }
 
     // Vài vết nứt hoặc nhiều xước → Moderate
-    if (crackCount >= 1 || scratchCount >= 10) return 'moderate';
+    if (crackCount >= 1 ||
+        scratchCount >= RuleEvaluatorConstants.moderateScratchCountMin) {
+      return RuleEvaluatorConstants.screenSeverityModerate;
+    }
 
     // Ít xước → Minor
-    if (scratchCount >= 1) return 'minor';
+    if (scratchCount >= 1) return RuleEvaluatorConstants.screenSeverityMinor;
 
-    return 'none';
+    return RuleEvaluatorConstants.screenSeverityNone;
   }
 }

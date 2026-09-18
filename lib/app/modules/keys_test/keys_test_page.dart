@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
+import 'package:kdtd_ver2_1/app/core/constants/keys_test_constants.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 
@@ -76,14 +78,17 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Plugin chưa sẵn sàng'),
-        content: const Text(
-            'Native EventChannel chưa được đăng ký. Vui lòng khởi động lại ứng dụng (full restart).'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(LocaleKeys.keys_test_plugin_not_ready_title.trans()),
+            content: Text(LocaleKeys.keys_test_plugin_not_ready_content.trans()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(LocaleKeys.keys_test_ok.trans()),
+              ),
+            ],
+          ),
     );
   }
 
@@ -91,7 +96,11 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
   /// đếm ngược hiển thị trực tiếp trong dialog. `controller.waitForKey`
   /// đảm nhiệm việc chờ key thực tế; dialog chỉ tự đóng khi future đó
   /// hoàn tất (bấm đúng phím hoặc hết giờ) hoặc khi người dùng bấm Hủy.
-  Future<bool> _askForKeyDialog(String title, int expectedKeyCode, {int seconds = 5}) async {
+  Future<bool> _askForKeyDialog(
+    String title,
+    int expectedKeyCode, {
+    int seconds = KeysTestConstants.keyPressTimeoutSeconds,
+  }) async {
     Future<bool> waitFuture;
     try {
       waitFuture = controller.waitForKey(expectedKeyCode, seconds: seconds);
@@ -141,7 +150,11 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
 
             return AlertDialog(
               title: Text(title),
-              content: Text('Vui lòng nhấn phím trong $remaining giây'),
+              content: Text(
+                LocaleKeys.keys_test_press_key_within_seconds.trans(
+                  namedArgs: {'seconds': '$remaining'},
+                ),
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -154,7 +167,7 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
                       // Context may be disposed
                     }
                   },
-                  child: const Text('Hủy'),
+                  child: Text(LocaleKeys.keys_test_cancel.trans()),
                 ),
               ],
             );
@@ -168,16 +181,24 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
 
   /// Chạy tự động: hỏi Volume Up rồi Volume Down.
   Future<void> _runAutoVolumeSequence() async {
-    final upOk = await _askForKeyDialog('Nhấn 1 lần phím Tăng âm lượng', 24, seconds: 5);
+    final upOk = await _askForKeyDialog(
+      LocaleKeys.keys_test_press_volume_up_once.trans(),
+      KeysTestConstants.androidKeyCodeVolumeUp,
+      seconds: KeysTestConstants.keyPressTimeoutSeconds,
+    );
     if (upOk) {
       controller.markVolUp();
     } else {
       controller.markVolUpFailed();
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(KeysTestConstants.autoSequenceGap);
 
-    final downOk = await _askForKeyDialog('Nhấn 1 lần phím Giảm âm lượng', 25, seconds: 5);
+    final downOk = await _askForKeyDialog(
+      LocaleKeys.keys_test_press_volume_down_once.trans(),
+      KeysTestConstants.androidKeyCodeVolumeDown,
+      seconds: KeysTestConstants.keyPressTimeoutSeconds,
+    );
     if (downOk) {
       controller.markVolDown();
     } else {
@@ -193,91 +214,104 @@ class _KeysTestBodyState extends State<_KeysTestBody> {
         if (!didPop) controller.markBackPressed();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Kiểm tra phím vật lý'),
-        ),
+        appBar: AppBar(title: Text(LocaleKeys.keys_test_title.trans())),
         body: SafeArea(
           child: Focus(
             focusNode: _focusNode,
             onKeyEvent: _onKeyEvent,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20.r),
               child: Obx(
                 () => Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Nhấn các phím vật lý để kiểm tra.\n\n'
-                      'Gợi ý: Một số thiết bị Android có thể không gửi sự kiện Volume vào app. '
-                      'Bạn có thể đánh dấu thủ công phím Nguồn.',
+                      LocaleKeys.keys_test_instruction.trans(),
                       style: AppTextStyles.bodyMedium,
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
                             onPressed: _runAutoVolumeSequence,
-                            child: const Text('Tự động Vol+/-', textAlign: TextAlign.center),
+                            child: Text(
+                              LocaleKeys.keys_test_auto_volume.trans(),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12.w),
                         Expanded(
                           child: TextButton(
-                            onPressed: () => controller.startVolumeCountdown(seconds: 5),
-                            child: const Text('Đếm ngược 5s', textAlign: TextAlign.center),
+                            onPressed:
+                                () => controller.startVolumeCountdown(
+                                  seconds: KeysTestConstants.keyPressTimeoutSeconds,
+                                ),
+                            child: Text(
+                              LocaleKeys.keys_test_countdown_5s.trans(),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     if (controller.remainingSeconds.value > 0)
                       Card(
                         color: AppColors.AW02,
                         child: Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: EdgeInsets.all(12.r),
                           child: Text(
-                              'Vui lòng nhấn Volume + và Volume - trong ${controller.remainingSeconds.value} giây'),
+                            LocaleKeys.keys_test_press_volume_countdown.trans(
+                              namedArgs: {
+                                'seconds':
+                                    '${controller.remainingSeconds.value}',
+                              },
+                            ),
+                          ),
                         ),
                       ),
                     KeyTile(
-                      label: 'Volume +',
+                      label: LocaleKeys.keys_test_volume_up.trans(),
                       active: controller.volUp.value,
                       failed: controller.volUpFailed.value,
                       icon: Icons.volume_up_rounded,
                       action: controller.markVolUp,
                     ),
                     KeyTile(
-                      label: 'Volume -',
+                      label: LocaleKeys.keys_test_volume_down.trans(),
                       active: controller.volDown.value,
                       failed: controller.volDownFailed.value,
                       icon: Icons.volume_down_rounded,
                       action: controller.markVolDown,
                     ),
                     KeyTile(
-                      label: 'Back',
+                      label: LocaleKeys.keys_test_back.trans(),
                       active: controller.backPressed.value,
                       icon: Icons.arrow_back_rounded,
                       action: controller.markBackPressed,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12.h),
                     Row(
                       children: [
                         Checkbox(
                           value: controller.powerConfirmed.value,
-                          onChanged: (v) => controller.setPowerConfirmed(v ?? false),
+                          onChanged:
+                              (v) => controller.setPowerConfirmed(v ?? false),
                         ),
-                        const Expanded(
-                          child: Text('Tôi đã kiểm tra phím Nguồn (không thể bắt sự kiện trực tiếp).'),
+                        Expanded(
+                          child: Text(LocaleKeys.keys_test_power_confirm.trans()),
                         ),
                       ],
                     ),
                     const Spacer(),
                     FilledButton(
-                      onPressed: (controller.volUp.value && controller.volDown.value)
-                          ? controller.finish
-                          : null,
-                      child: const Text('Hoàn tất'),
+                      onPressed:
+                          (controller.volUp.value && controller.volDown.value)
+                              ? controller.finish
+                              : null,
+                      child: Text(LocaleKeys.keys_test_finish.trans()),
                     ),
                   ],
                 ),

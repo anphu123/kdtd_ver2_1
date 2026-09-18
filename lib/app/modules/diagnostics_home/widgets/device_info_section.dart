@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
-/// Device Info Section - Displays device information and progress
+/// Device Info Section - Thiết kế Clean Light Minimalist theo chuẩn Trade-In Apple
+/// Tông sáng tối giản, nền trắng cao cấp, viền mảnh tinh tế, typography phân cấp rõ ràng.
 class DeviceInfoSection extends StatelessWidget {
   const DeviceInfoSection({
     super.key,
@@ -15,8 +17,9 @@ class DeviceInfoSection extends StatelessWidget {
     required this.total,
     this.ramInfo,
     this.romInfo,
-    this.origin,
     this.marketingName,
+    this.deviceId,
+    this.batteryLevel,
   });
 
   final String modelName;
@@ -28,18 +31,17 @@ class DeviceInfoSection extends StatelessWidget {
   final int total;
   final Map<String, dynamic>? ramInfo;
   final Map<String, dynamic>? romInfo;
-  final String? origin;
   final String? marketingName;
+  final String? deviceId;
+  final int? batteryLevel;
 
   int? _toGiB(dynamic v) {
-    if (v is! num) return null;
+    if (v is! num || v <= 0) return null;
     const giB = 1024 * 1024 * 1024;
     final gb = v.toDouble() / giB;
 
-    // Làm tròn theo các mức chuẩn: 2, 3, 4, 6, 8, 12, 16, 32, 64, 128, 256, 512
-    const standardSizes = [2, 3, 4, 6, 8, 12, 16, 32, 64, 128, 256, 512, 1024];
+    const standardSizes = [2, 3, 4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 512, 1024];
 
-    // Tìm mức gần nhất
     int closest = standardSizes[0];
     double minDiff = (gb - closest).abs();
 
@@ -59,294 +61,305 @@ class DeviceInfoSection extends StatelessWidget {
     final ramTotal = _toGiB(ramInfo?['totalBytes']);
     final romTotal = _toGiB(romInfo?['totalBytes']);
 
-    final displayName = marketingName != null &&
-            marketingName!.isNotEmpty &&
-            marketingName != '-'
-        ? marketingName!
-        : (modelName.isNotEmpty && modelName != '-' ? modelName : 'Thiết bị di động');
+    final displayName =
+        marketingName != null &&
+                marketingName!.isNotEmpty &&
+                marketingName != '-'
+            ? marketingName!
+            : (modelName.isNotEmpty && modelName != '-'
+                ? modelName
+                : LocaleKeys.diagnostics_home_default_device_name.trans());
 
-    final displayBrand =
-        brand.isNotEmpty && brand != '-' ? brand : (manufacturer.isNotEmpty ? manufacturer : platform);
+    // final displayBrand =
+    //     brand.isNotEmpty && brand != '-'
+    //         ? brand
+    //         : (manufacturer.isNotEmpty ? manufacturer : platform);
+
+    final displayModel =
+        modelName.isNotEmpty && modelName != '-' ? modelName : 'Chưa rõ mã';
+    final displayPlatform =
+        platform.isNotEmpty ? platform.toUpperCase() : 'HĐH';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.tradeInNavy, AppColors.tradeInDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.tradeInNavy.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.08),
+          color: AppColors.tradeInBorder,
           width: 1,
         ),
       ),
-      child: Stack(
-        children: [
-          // Background decorative glow
-          Positioned(
-            right: -30,
-            top: -30,
-            child: Container(
-              width: 130,
-              height: 130,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.tradeInBlue.withValues(alpha: 0.15),
-              ),
-            ),
-          ),
+      child: Padding(
+        padding: EdgeInsets.all(18.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Top Bar: Brand Pill + Trade-In Eligible Status Pill
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     // Brand Tag
+            //     Container(
+            //       padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.5.h),
+            //       decoration: BoxDecoration(
+            //         color: AppColors.tradeInSurfaceBg,
+            //         borderRadius: BorderRadius.circular(6.r),
+            //         border: Border.all(
+            //           color: AppColors.tradeInBorder,
+            //           width: 0.8,
+            //         ),
+            //       ),
+            //       child: Row(
+            //         mainAxisSize: MainAxisSize.min,
+            //         children: [
+            //           Icon(
+            //             Icons.verified_rounded,
+            //             size: 13.sp,
+            //             color: AppColors.tradeInBlue,
+            //           ),
+            //           SizedBox(width: 4.w),
+            //           Text(
+            //             displayBrand.toUpperCase(),
+            //             style: AppTextStyles.badge.copyWith(
+            //               color: AppColors.tradeInSlate,
+            //               letterSpacing: 0.5,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
 
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            //     // Trade-in Status Badge
+            //     Container(
+            //       padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.5.h),
+            //       decoration: BoxDecoration(
+            //         color: AppColors.tradeInEmeraldLight,
+            //         borderRadius: BorderRadius.circular(6.r),
+            //         border: Border.all(
+            //           color: AppColors.tradeInEmeraldBorder,
+            //           width: 0.8,
+            //         ),
+            //       ),
+            //       child: Row(
+            //         mainAxisSize: MainAxisSize.min,
+            //         children: [
+            //           Icon(
+            //             Icons.check_circle_rounded,
+            //             size: 13.sp,
+            //             color: AppColors.tradeInEmerald,
+            //           ),
+            //           SizedBox(width: 4.w),
+            //           Text(
+            //             LocaleKeys.diagnostics_home_trade_in_eligible_badge.trans(),
+            //             style: AppTextStyles.badge.copyWith(
+            //               color: AppColors.tradeInEmerald,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ],
+            // ),
+
+           // SizedBox(height: 14.h),
+
+            // 2. Main Device Hero Row (Icon + Marketing Name + Model Meta)
+            Row(
               children: [
-                // Top Tag Row: Brand + Trade-in Ready Chip
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        displayBrand.toUpperCase(),
-                        style: AppTextStyles.badge.copyWith(
-                          color: AppColors.white,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.tradeInEmerald.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.tradeInEmerald.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            size: 14,
-                            color: AppColors.tradeInEmerald,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Đủ điều kiện thu cũ',
-                            style: AppTextStyles.badge.copyWith(
-                              color: AppColors.tradeInEmerald,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-
-                // Device Name & Icon
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.tradeInBlue.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: AppColors.tradeInBlue.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.smartphone_rounded,
-                        color: AppColors.white,
-                        size: 26,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: AppTextStyles.titleLarge.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Model: $modelName • Nền tảng: $platform',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 18),
-
-                // Specs Badges Row (RAM, ROM, Origin, Camera)
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SpecPill(
-                        icon: Icons.memory_rounded,
-                        label: 'RAM',
-                        value: ramTotal != null ? '$ramTotal GB' : '4 GB',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _SpecPill(
-                        icon: Icons.storage_rounded,
-                        label: 'Bộ nhớ',
-                        value: romTotal != null ? '$romTotal GB' : '64 GB',
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _SpecPill(
-                        icon: Icons.public_rounded,
-                        label: 'Xuất xứ',
-                        value: origin ?? 'Chính hãng',
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Trade-In Subsidy Incentive Strip
+                // Device Icon Container (Clean Minimalist Light)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  width: 50.w,
+                  height: 50.h,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.tradeInGold.withValues(alpha: 0.2),
-                        AppColors.tradeInGoldDark.withValues(alpha: 0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.pviRedLighter,
+                    borderRadius: BorderRadius.circular(14.r),
                     border: Border.all(
-                      color: AppColors.tradeInGold.withValues(alpha: 0.35),
+                      color: AppColors.pviRedBorder,
+                      width: 1,
                     ),
                   ),
-                  child: Row(
+                  child: Icon(
+                    Icons.smartphone_rounded,
+                    color: AppColors.tradeInBlue,
+                    size: 26.sp,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+
+                // Device Name & Meta Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.stars_rounded,
-                        color: AppColors.tradeInGold,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ưu đãi trợ giá lên đời đến +2.000.000 đ',
-                              style: AppTextStyles.voucherBadge.copyWith(
-                                color: AppColors.tradeInGold,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              'Định giá chuẩn & chính xác sau 60s kiểm định',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        displayName,
+                        style: AppTextStyles.heroTitle.copyWith(
+                          color: AppColors.tradeInNavy,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 3.h),
+                      Text(
+                        'Model: $displayModel • $displayPlatform',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.tradeInSlateLight,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+
+            SizedBox(height: 14.h),
+
+            // 3. Hardware Specs: RAM & Bộ nhớ trong (Clean Light Tiles)
+            Row(
+              children: [
+                Expanded(
+                  child: _CleanSpecCard(
+                    icon: Icons.memory_rounded,
+                    iconColor: AppColors.pviBlue,
+                    category: 'RAM',
+                    value: ramTotal != null ? '$ramTotal GB' : '8 GB',
+                    subtitle: 'Bộ nhớ đệm',
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _CleanSpecCard(
+                    icon: Icons.sd_storage_rounded,
+                    iconColor: AppColors.pviNavy,
+                    category: 'BỘ NHỚ TRONG',
+                    value: romTotal != null ? '$romTotal GB' : '128 GB',
+                    subtitle: 'Dung lượng lưu trữ',
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 12.h),
+
+            // 4. Subtle Trust Guarantee Strip
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+              decoration: BoxDecoration(
+                color: AppColors.tradeInSurfaceBg,
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(
+                  color: AppColors.tradeInBorder,
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.verified_user_outlined,
+                    size: 14.sp,
+                    color: AppColors.tradeInBlue,
+                  ),
+                  SizedBox(width: 6.w),
+                  Expanded(
+                    child: Text(
+                      'Thẩm định tự động 100% • Quy trình chuẩn xác',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.tradeInSlate,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  Text(
+                    '~2 phút',
+                    style: AppTextStyles.badge.copyWith(
+                      color: AppColors.tradeInNavy,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _SpecPill extends StatelessWidget {
-  const _SpecPill({
+/// Thẻ thông số RAM / ROM phong cách Clean Light Minimalist
+class _CleanSpecCard extends StatelessWidget {
+  const _CleanSpecCard({
     required this.icon,
-    required this.label,
+    required this.iconColor,
+    required this.category,
     required this.value,
+    required this.subtitle,
   });
 
   final IconData icon;
-  final String label;
+  final Color iconColor;
+  final String category;
   final String value;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 12.w),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.tradeInSurfaceBg,
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.12),
+          color: AppColors.tradeInBorder,
           width: 0.8,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 12, color: AppColors.white70),
-              const SizedBox(width: 3),
-              Text(
-                label,
-                style: AppTextStyles.caption.copyWith(
-                  fontSize: 10,
-                  color: AppColors.white70,
+              Icon(icon, size: 14.sp, color: iconColor),
+              SizedBox(width: 5.w),
+              Flexible(
+                child: Text(
+                  category,
+                  style: AppTextStyles.overline.copyWith(
+                    color: AppColors.tradeInSlateLight,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 6.h),
           Text(
             value,
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.white,
-              fontSize: 12,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.cardTitle.copyWith(
+              color: AppColors.tradeInNavy,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            subtitle,
             textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.tradeInSlateLight,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

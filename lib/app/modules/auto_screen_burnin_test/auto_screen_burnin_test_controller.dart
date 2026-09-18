@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
+import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/core/constants/screen_burnin_test_constants.dart';
 
 /// Một màu đơn sắc dùng để test màn hình (phát hiện sọc ám, pixel chết...).
 class ScreenTestColor {
@@ -15,13 +18,38 @@ class ScreenTestColor {
 
 /// Danh sách màu test rút gọn cho chế độ auto — dùng chung bởi
 /// [AutoScreenBurnInTestController] (để tính bước kế) và trang (để vẽ UI).
-const List<ScreenTestColor> kAutoScreenBurnInTestColors = [
-  ScreenTestColor('Đen', AppColors.black, 'Pixel sáng bất thường'),
-  ScreenTestColor('Trắng', AppColors.white, 'Vết ám, burn-in'),
-  ScreenTestColor('Đỏ', AppColors.red, 'Kênh màu đỏ'),
-  ScreenTestColor('Xanh lá', AppColors.green, 'Kênh màu xanh lá'),
-  ScreenTestColor('Xanh dương', AppColors.blue, 'Kênh màu xanh dương'),
-  ScreenTestColor('Xám', AppColors.neutralGrey, 'Độ đồng đều màn hình'),
+/// Không phải `const` vì name/description dùng `.trans()`.
+List<ScreenTestColor> get kAutoScreenBurnInTestColors => [
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_black_name.trans(),
+    AppColors.black,
+    LocaleKeys.auto_screen_burnin_test_color_black_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_white_name.trans(),
+    AppColors.white,
+    LocaleKeys.auto_screen_burnin_test_color_white_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_red_name.trans(),
+    AppColors.red,
+    LocaleKeys.auto_screen_burnin_test_color_red_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_green_name.trans(),
+    AppColors.green,
+    LocaleKeys.auto_screen_burnin_test_color_green_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_blue_name.trans(),
+    AppColors.blue,
+    LocaleKeys.auto_screen_burnin_test_color_blue_desc.trans(),
+  ),
+  ScreenTestColor(
+    LocaleKeys.auto_screen_burnin_test_color_gray_name.trans(),
+    AppColors.neutralGrey,
+    LocaleKeys.auto_screen_burnin_test_color_gray_desc.trans(),
+  ),
 ];
 
 /// ============================================================
@@ -37,7 +65,7 @@ class AutoScreenBurnInTestController extends GetxController {
   final currentIndex = 0.obs;
 
   /// Số giây còn lại của đếm ngược trước khi bài test tự động bắt đầu.
-  final countdown = 3.obs;
+  final countdown = ScreenBurnInTestConstants.autoCountdownStartSeconds.obs;
 
   /// true khi đếm ngược đã xong và bài test tự động đã bắt đầu chạy.
   final started = false.obs;
@@ -55,27 +83,33 @@ class AutoScreenBurnInTestController extends GetxController {
   }
 
   void _startCountdown() {
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (countdown.value > 1) {
-        countdown.value--;
-      } else {
-        timer.cancel();
-        started.value = true;
-        _startAutoTest();
-      }
-    });
+    _countdownTimer = Timer.periodic(
+      ScreenBurnInTestConstants.autoCountdownTick,
+      (timer) {
+        if (countdown.value > 1) {
+          countdown.value--;
+        } else {
+          timer.cancel();
+          started.value = true;
+          _startAutoTest();
+        }
+      },
+    );
   }
 
   void _startAutoTest() {
-    _autoTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      if (currentIndex.value < kAutoScreenBurnInTestColors.length - 1) {
-        currentIndex.value++;
-      } else {
-        // Hoàn thành - tự động PASS (nếu user không báo vấn đề)
-        timer.cancel();
-        finish(false); // false = không có vấn đề
-      }
-    });
+    _autoTimer = Timer.periodic(
+      ScreenBurnInTestConstants.autoColorChangeInterval,
+      (timer) {
+        if (currentIndex.value < kAutoScreenBurnInTestColors.length - 1) {
+          currentIndex.value++;
+        } else {
+          // Hoàn thành - tự động PASS (nếu user không báo vấn đề)
+          timer.cancel();
+          finish(false); // false = không có vấn đề
+        }
+      },
+    );
   }
 
   void _stopAutoTimer() {
