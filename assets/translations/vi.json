@@ -683,5 +683,25 @@
     "section_question_check": "Khảo Sát Ngoại Quan",
     "btn_continue": "Tiếp tục",
     "bottom_sheet_title": "Chọn lại đáp án"
+  },
+  "upgrade_program": {
+    "serial_check_title": "Kiểm tra Serial",
+    "serial_check_description": "Nhập số Serial của thiết bị để kiểm tra điều kiện tham gia chương trình nâng cấp.",
+    "serial_check_input_hint": "Nhập số Serial (VD: PVI2026ip18)",
+    "serial_check_button": "Kiểm tra",
+    "serial_check_not_eligible_title": "Không đủ điều kiện",
+    "serial_check_not_eligible_desc": "Thiết bị không nằm trong chương trình nâng cấp. Sẽ chuyển sang luồng thu cũ đổi mới thông thường.",
+    "serial_check_continue_btn": "Tiếp tục",
+    "device_not_eligible_title": "Không đủ điều kiện tham gia",
+    "device_not_eligible_desc": "Thiết bị hiện tại ({grade}) không đủ điều kiện tham gia chương trình nâng cấp. Chỉ áp dụng cho máy Loại 1 và Loại 2.",
+    "device_not_eligible_got_it_btn": "Đã hiểu",
+    "employee_code_title": "Mã số nhân viên",
+    "employee_code_hint": "Nhập mã số nhân viên",
+    "employee_code_confirm_btn": "Xác nhận",
+    "employee_code_cancel_btn": "Huỷ",
+    "employee_code_error": "Mã số nhân viên không đúng, vui lòng nhập lại",
+    "congrats_title": "Chúc mừng",
+    "congrats_desc": "Bạn đã tham gia chương trình nâng cấp thành công với máy {modelName}!",
+    "congrats_home_btn": "Về trang chủ"
   }
 }

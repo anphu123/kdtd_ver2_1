@@ -21,6 +21,9 @@ class DiagnosticsHomeController extends GetxController {
   final isRunning = false.obs;
   final cosmeticSurvey = DeviceCosmeticSurvey().obs;
 
+  final serialNumber = ''.obs;
+  final isUpgradeEligible = false.obs;
+
   // ==================== THÔNG TIN THIẾT BỊ (DỮ LIỆU TỔNG HỢP) ====================
   Map<String, dynamic>? get _osModel =>
       info['osmodel'] as Map<String, dynamic>?;
@@ -147,12 +150,18 @@ class DiagnosticsHomeController extends GetxController {
 
   // ==================== QUY TRÌNH HÀNH ĐỘNG KIỂM ĐỊNH ====================
 
-  /// Luôn chuyển sang màn hình cấp quyền kiểm định riêng biệt trước khi bắt đầu
+  /// Luôn chuyển sang màn hình nhập serial trước, trừ khi đã kiểm tra xong.
   Future<void> startWithPermissionCheck() async {
     if (isRunning.value) return;
 
-    debugPrint('[DiagnosticsHome] Chuyển sang module màn hình cấp quyền kiểm định riêng biệt...');
-    Get.toNamed(AppRoutes.permissionCheck);
+    if (isUpgradeEligible.value) {
+      debugPrint('[DiagnosticsHome] Bỏ qua nhập serial do đã nhập đúng trước đó...');
+      Get.toNamed(AppRoutes.permissionCheck);
+      return;
+    }
+
+    debugPrint('[DiagnosticsHome] Chuyển sang module màn hình nhập serial...');
+    Get.toNamed(AppRoutes.serialCheck);
   }
 
   /// Quét thông tin cơ bản rồi vào thẳng Function Check (Test Runner).

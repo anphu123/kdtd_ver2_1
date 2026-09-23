@@ -665,5 +665,24 @@ abstract class  LocaleKeys {
   static const diagnostic_overview_btn_continue = 'diagnostic_overview.btn_continue';
   static const diagnostic_overview_bottom_sheet_title = 'diagnostic_overview.bottom_sheet_title';
   static const diagnostic_overview = 'diagnostic_overview';
+  static const upgrade_program_serial_check_title = 'upgrade_program.serial_check_title';
+  static const upgrade_program_serial_check_description = 'upgrade_program.serial_check_description';
+  static const upgrade_program_serial_check_input_hint = 'upgrade_program.serial_check_input_hint';
+  static const upgrade_program_serial_check_button = 'upgrade_program.serial_check_button';
+  static const upgrade_program_serial_check_not_eligible_title = 'upgrade_program.serial_check_not_eligible_title';
+  static const upgrade_program_serial_check_not_eligible_desc = 'upgrade_program.serial_check_not_eligible_desc';
+  static const upgrade_program_serial_check_continue_btn = 'upgrade_program.serial_check_continue_btn';
+  static const upgrade_program_device_not_eligible_title = 'upgrade_program.device_not_eligible_title';
+  static const upgrade_program_device_not_eligible_desc = 'upgrade_program.device_not_eligible_desc';
+  static const upgrade_program_device_not_eligible_got_it_btn = 'upgrade_program.device_not_eligible_got_it_btn';
+  static const upgrade_program_employee_code_title = 'upgrade_program.employee_code_title';
+  static const upgrade_program_employee_code_hint = 'upgrade_program.employee_code_hint';
+  static const upgrade_program_employee_code_confirm_btn = 'upgrade_program.employee_code_confirm_btn';
+  static const upgrade_program_employee_code_cancel_btn = 'upgrade_program.employee_code_cancel_btn';
+  static const upgrade_program_employee_code_error = 'upgrade_program.employee_code_error';
+  static const upgrade_program_congrats_title = 'upgrade_program.congrats_title';
+  static const upgrade_program_congrats_desc = 'upgrade_program.congrats_desc';
+  static const upgrade_program_congrats_home_btn = 'upgrade_program.congrats_home_btn';
+  static const upgrade_program = 'upgrade_program';
 
 }

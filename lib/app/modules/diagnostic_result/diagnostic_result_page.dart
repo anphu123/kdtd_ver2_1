@@ -9,8 +9,9 @@ import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/price_estimation_service.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
-import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 import 'package:kdtd_ver2_1/app/modules/question_check/question_check_controller.dart';
+import 'package:kdtd_ver2_1/app/core/constants/upgrade_program_constants.dart';
+import 'package:kdtd_ver2_1/app/core/widgets/upgrade_program_dialogs.dart';
 
 /// Trang kết quả thẩm định (Trade-In) — KHÔNG còn phần lên đời máy mới,
 /// chỉ hiển thị chứng nhận thẩm định + định giá thu cũ + chi tiết kiểm định.
@@ -26,11 +27,24 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
       Get.find<DiagnosticsHomeController>();
   PriceEstimate? priceEstimate;
   bool isLoadingPrice = true;
+  bool _hasShownEligibilityDialog = false;
 
   @override
   void initState() {
     super.initState();
     _fetchPriceEstimate();
+    // Serial đủ điều kiện nhưng máy rớt xuống dưới Loại 2 thì báo ngay khi mở màn
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.isUpgradeEligible.value == true &&
+          controller.finalDeviceType >
+              UpgradeProgramConstants.maxEligibleType &&
+          !_hasShownEligibilityDialog) {
+        _hasShownEligibilityDialog = true;
+        UpgradeProgramDialogs.showDeviceNotEligibleDialog(
+          DiagnosticGradeService.labelForType(controller.finalDeviceType),
+        );
+      }
+    });
   }
 
   Future<void> _fetchPriceEstimate() async {
@@ -413,18 +427,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                 height: 52.h,
                 child: FilledButton.icon(
                   onPressed: () {
-                    Get.snackbar(
-                      LocaleKeys
-                          .diagnostic_result_snackbar_trade_confirmed_title
-                          .trans(),
-                      LocaleKeys
-                          .diagnostic_result_snackbar_trade_confirmed_message
-                          .trans(),
-                      snackPosition: SnackPosition.TOP,
-                      backgroundColor: AppColors.white,
-                      colorText: AppColors.pviNavy,
-                    );
-                    Get.offAllNamed(AppRoutes.diagnosticsHome);
+                    UpgradeProgramDialogs.showEmployeeCodeDialog();
                   },
                   icon: Icon(
                     Icons.swap_horizontal_circle_rounded,

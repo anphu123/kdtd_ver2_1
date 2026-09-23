@@ -683,5 +683,25 @@
     "section_question_check": "Visual Survey",
     "btn_continue": "Continue",
     "bottom_sheet_title": "Select Answer"
+  },
+  "upgrade_program": {
+    "serial_check_title": "Serial Check",
+    "serial_check_description": "Enter the device Serial number to check eligibility for the upgrade program.",
+    "serial_check_input_hint": "Enter Serial (e.g., PVI2026ip18)",
+    "serial_check_button": "Check",
+    "serial_check_not_eligible_title": "Not Eligible",
+    "serial_check_not_eligible_desc": "Device is not in the upgrade program. Switching to standard trade-in flow.",
+    "serial_check_continue_btn": "Continue",
+    "device_not_eligible_title": "Not Eligible to Participate",
+    "device_not_eligible_desc": "Current device ({grade}) is not eligible for the upgrade program. Only Type 1 and Type 2 are applicable.",
+    "device_not_eligible_got_it_btn": "Got it",
+    "employee_code_title": "Employee Code",
+    "employee_code_hint": "Enter employee code",
+    "employee_code_confirm_btn": "Confirm",
+    "employee_code_cancel_btn": "Cancel",
+    "employee_code_error": "Incorrect employee code, please try again",
+    "congrats_title": "Congratulations",
+    "congrats_desc": "You have successfully participated in the upgrade program with {modelName}!",
+    "congrats_home_btn": "Back to Home"
   }
 }

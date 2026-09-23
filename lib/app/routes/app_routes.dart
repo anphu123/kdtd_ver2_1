@@ -10,6 +10,7 @@ abstract class AppRoutes {
 
   // Tuyến đường kiểm định (Diagnostics)
   static const String diagnosticsHome = '/diagnostics/home';
+  static const String serialCheck = '/diagnostics/serial-check';
   static const String permissionCheck = '/diagnostics/permission-check';
   static const String diagnosticsAuto = '/diagnostics/auto';
   static const String diagnosticsAutoOld = '/diagnostics/autoOld';

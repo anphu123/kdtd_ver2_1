@@ -5,6 +5,8 @@ import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_page.d
 import 'package:kdtd_ver2_1/app/modules/permission_check/permission_check_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/permission_check/permission_check_page.dart';
 import 'package:kdtd_ver2_1/app/modules/pre_test_guide/pre_test_guide_page.dart';
+import 'package:kdtd_ver2_1/app/modules/serial_check/serial_check_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/serial_check/serial_check_page.dart';
 import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_page.dart';
 
@@ -25,6 +27,14 @@ class AppPages {
       page: () => const DiagnosticsHomePage(),
       binding: DiagnosticsHomeBinding(),
       transition: Transition.fadeIn,
+    ),
+
+    // Màn hình nhập serial xét điều kiện chương trình nâng cấp
+    GetPage(
+      name: AppRoutes.serialCheck,
+      page: () => const SerialCheckPage(),
+      binding: SerialCheckBinding(),
+      transition: Transition.rightToLeft,
     ),
 
     // Màn hình kiểm tra & cấp quyền thiết bị
