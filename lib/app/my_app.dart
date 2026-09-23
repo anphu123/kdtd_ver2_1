@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           title: LocaleKeys.common_app_title.trans(),
-          debugShowCheckedModeBanner: false,
+          debugShowCheckedModeBanner: true,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.light,
