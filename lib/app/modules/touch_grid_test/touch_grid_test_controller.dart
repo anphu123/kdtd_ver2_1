@@ -1,4 +1,4 @@
-import 'dart:async';
+  import 'dart:async';
 
 import 'package:get/get.dart';
 
@@ -27,14 +27,20 @@ class TouchGridTestController extends GetxController {
   /// [isFinalizing] là true).
   final finalizeSecondsLeft = 5.obs;
 
+  /// Đã bấm "Bắt đầu" ở popup mở đầu hay chưa — trước đó KHÔNG ghi nhận
+  /// chạm và KHÔNG chạy bộ đếm idle, tránh tính nhầm lúc người dùng còn
+  /// đang đọc hướng dẫn.
+  final hasStarted = false.obs;
+
   Timer? _idleTimer;
   Timer? _finalizeTimer;
 
   bool get _isCurrentlyFinalizing => _finalizeTimer != null;
 
-  @override
-  void onInit() {
-    super.onInit();
+  /// Người dùng bấm "Bắt đầu" ở popup mở đầu — chính thức bắt đầu tính giờ.
+  void beginTest() {
+    if (hasStarted.value) return;
+    hasStarted.value = true;
     _startIdleTimer();
   }
 
@@ -55,23 +61,30 @@ class TouchGridTestController extends GetxController {
 
   /// Đánh dấu ô [index] đã được chạm.
   void markCell(int index) {
+    if (!hasStarted.value) return;
     _onUserInteraction();
 
     if (hitCells.contains(index)) return;
     hitCells.add(index);
 
-    // Đủ >= 95% ô → tự động kết thúc đạt chuẩn
-    if (totalCells.value > 0 && hitCells.length >= (totalCells.value * 0.95).ceil()) {
+    // Chỉ tự động kết thúc khi chạm ĐỦ 100% ô — không kết thúc sớm ở
+    // ngưỡng % nào khác. Trường hợp dừng sớm hơn chỉ có thể do bộ đếm idle
+    // 5 giây không tương tác (_startFinalizeTimer) tự gọi finish() riêng.
+    if (totalCells.value > 0 && hitCells.length >= totalCells.value) {
       finish(success: true);
     }
   }
 
   /// Kết thúc bài test — pop kết quả ngay qua `Get.back`.
+  ///
+  /// Trị tuyệt đối: PASS chỉ khi chạm đủ 100% ô, dưới 100% (kể cả 99%) đều
+  /// là FAIL — không có ngưỡng châm chước nào khác (trước đây từng cho pass
+  /// ở ≥90%, nay bỏ hẳn).
   void finish({bool success = false}) {
     _cancelIdleTimer();
     _cancelFinalizeTimer();
-    final ratio = totalCells.value > 0 ? hitCells.length / totalCells.value : 0.0;
-    final ok = success || ratio >= 0.90;
+    final isFullyCovered = totalCells.value > 0 && hitCells.length >= totalCells.value;
+    final ok = success || isFullyCovered;
     Get.back(result: ok);
   }
 

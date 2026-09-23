@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:kdtd_ver2_1/app/core/constants/audio_test_constants.dart';
+
 /// Vẽ dạng sóng âm lượng micro theo thời gian thực.
 class WaveformPainter extends CustomPainter {
   final List<double> amplitudes;
@@ -21,7 +23,9 @@ class WaveformPainter extends CustomPainter {
 
     for (int i = 0; i < amplitudes.length; i++) {
       final x = i * barWidth;
-      final normalizedAmp = (amplitudes[i].clamp(0, 20000) / 20000);
+      final normalizedAmp = ((amplitudes[i] - AudioTestConstants.amplitudeDbfsFloor) /
+              (0 - AudioTestConstants.amplitudeDbfsFloor))
+          .clamp(0.0, 1.0);
       final barHeight = normalizedAmp * size.height;
 
       canvas.drawLine(

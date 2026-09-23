@@ -6,10 +6,8 @@ import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_controller.dart'
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diag_step_labels.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
-import 'package:kdtd_ver2_1/app/core/widgets/pvi_modernist/pvi_modernist.dart';
+
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
-import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
-import 'package:kdtd_ver2_1/app/modules/failed_tests_warning/failed_tests_warning_page.dart';
 import 'widgets/widgets.dart';
 
 /// Màn hình chạy test (functional diagnostics): hiển thị tiến độ + danh sách
@@ -76,21 +74,17 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
     super.dispose();
   }
 
-  void _goToResult() {
-    final failedSteps = controller.steps.where((s) => s.status == DiagStatus.failed).toList();
-    if (controller.score < 70 && failedSteps.isNotEmpty) {
-      Get.to(() => FailedTestsWarningPage(
-        failedSteps: failedSteps,
-        score: controller.score,
-      ));
-    } else {
-      Get.to(() => const DiagnosticResultPage());
-    }
-  }
-
   /// Xử lý sự kiện nhấn vào một bài test để chạy lại hoặc xem chi tiết
   Future<void> _handleTestTap(DiagStep step) async {
     if (controller.isRunning.value) return;
+
+    // Cảm ứng màn hình là bước DUY NHẤT không tự chạy trong chuỗi tự động —
+    // bấm vào đây khi đang pending chính là thao tác kích hoạt bước đó.
+    if (step.phase == DiagPhase.screen && step.status == DiagStatus.pending) {
+      await controller.runManualScreenStep(step);
+      return;
+    }
+
     if (step.status == DiagStatus.pending) return;
 
     final result = await Get.dialog<String>(
@@ -141,59 +135,40 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
     }
   }
 
-  /// Xây dựng danh sách test grouped theo phase
+  /// Xây dựng danh sách test — 1 list liền mạch, KHÔNG chia nhóm theo phase
+  /// nữa (trước đây mỗi phase có 1 PhaseHeader riêng, bị chẻ thành nhiều
+  /// đoạn nhỏ rời rạc). Thứ tự lấy thẳng từ [controller.steps] — đã đúng
+  /// thứ tự thực thi (wifi, bluetooth, ..., touch-screen cuối cùng).
   List<Widget> _buildGroupedList() {
-    final widgets = <Widget>[];
+    return [
+      SliverToBoxAdapter(
+        child: Obx(() {
+          final currentSteps = controller.steps;
 
-    for (final phase in DiagPhase.values) {
-      final phaseSteps = controller.stepsForPhase(phase);
-      if (phaseSteps.isEmpty) continue;
-
-      widgets.add(
-        SliverToBoxAdapter(
-          child: Obx(() {
-            final currentSteps = controller.stepsForPhase(phase);
-            final passedCount = controller.passedCountForPhase(phase);
-            final totalCount = currentSteps.length;
-            final isCompleted = controller.isPhaseCompleted(phase);
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Column(
               children: [
-                PhaseHeader(
-                  title: phase.title,
-                  passedCount: passedCount,
-                  totalCount: totalCount,
-                  isCompleted: isCompleted,
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < currentSteps.length; i++) ...[
-                        AnimatedTestItem(
-                          key: _stepKeys.putIfAbsent(
-                            currentSteps[i].code,
-                            () => GlobalKey(),
-                          ),
-                          step: currentSteps[i],
-                          onTap: () => _handleTestTap(currentSteps[i]),
-                        ),
-                        if (i < currentSteps.length - 1)
-                          SizedBox(height: 8.h),
-                      ],
-                    ],
+                for (int i = 0; i < currentSteps.length; i++) ...[
+                  AnimatedTestItem(
+                    key: _stepKeys.putIfAbsent(
+                      currentSteps[i].code,
+                      () => GlobalKey(),
+                    ),
+                    step: currentSteps[i],
+                    onTap: () => _handleTestTap(currentSteps[i]),
+                    onRetry: controller.isRunning.value
+                        ? null
+                        : () => controller.restartStep(currentSteps[i]),
                   ),
-                ),
-                SizedBox(height: 12.h),
+                  if (i < currentSteps.length - 1) SizedBox(height: 8.h),
+                ],
               ],
-            );
-          }),
-        ),
-      );
-    }
-
-    return widgets;
+            ),
+          );
+        }),
+      ),
+    ];
   }
 
   @override
@@ -248,18 +223,18 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
       ),
       body: Column(
         children: [
-          // 1. Top Minimalist Stepper: Bước 3 (Kiểm định) active
-          Obx(() {
-            final completed = controller.completed;
-            final total = controller.steps.length;
-            final isAllDone = completed == total && total > 0;
+          // 1. Top Minimalist Stepper: Bước 2 (Kiểm định) active
+          // Obx(() {
+          //   final completed = controller.completed;
+          //   final total = controller.steps.length;
+          //   final isAllDone = completed == total && total > 0;
 
-            return PviModernistStepper(
-              currentStep: 3,
-              completedSteps: isAllDone ? const {1, 2, 3} : const {1, 2},
-            );
-          }),
-
+          //   return PviModernistStepper(
+          //     currentStep: 2,
+          //     completedSteps: isAllDone ? const {1, 2} : const {1},
+          //   );
+          // }),
+            SizedBox(height: 15.h),
           // 2. Nội dung danh sách bài test có thể cuộn
           Expanded(
             child: CustomScrollView(
@@ -267,74 +242,6 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
               slivers: [
                 // Progress indicator (có Obx nội bộ)
                 const SliverToBoxAdapter(child: ProgressIndicatorSection()),
-
-                // Banner thông báo có kết quả nhanh (Phản ứng theo completed & !isRunning)
-                SliverToBoxAdapter(
-                  child: Obx(() {
-                    final completed = controller.completed;
-                    final isRunning = controller.isRunning.value;
-
-                    if (completed == 0 || isRunning) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return Container(
-                      margin: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 4.h),
-                      padding: EdgeInsets.all(14.r),
-                      decoration: BoxDecoration(
-                        color: AppColors.tradeInEmeraldLight,
-                        borderRadius: BorderRadius.circular(16.r),
-                        border: Border.all(
-                          color: AppColors.tradeInEmeraldBorder,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.tradeInEmerald,
-                            size: 20.sp,
-                          ),
-                          SizedBox(width: 10.w),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  LocaleKeys.diagnostics_home_valuation_ready_title.trans(),
-                                  style: AppTextStyles.cardTitle.copyWith(
-                                    color: AppColors.pviNavy,
-                                    fontSize: 13.5.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 2.h),
-                                Text(
-                                  LocaleKeys.diagnostics_home_valuation_ready_subtitle.trans(),
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.textMuted,
-                                    fontSize: 11.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: _goToResult,
-                            child: Text(
-                              LocaleKeys.diagnostics_home_view_now.trans(),
-                              style: AppTextStyles.button.copyWith(
-                                fontSize: 12.5.sp,
-                                color: AppColors.pviRed,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
 
                 // Danh sách Sliver các bài test theo nhóm
                 ..._buildGroupedList(),
@@ -356,6 +263,11 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
     return Obx(() {
       final completed = controller.completed;
       final isRunning = controller.isRunning.value;
+      final allDone = controller.allStepsCompleted;
+      // Đã chạy qua ít nhất 1 lượt (không còn ở màn hình chờ bắt đầu) và
+      // không còn đang chạy — lúc này việc "Bắt đầu"/"Kiểm định lại" không
+      // còn ý nghĩa nữa, thay bằng nút "Tiếp tục" sang bước kế tiếp.
+      final showContinue = !isRunning && completed > 0;
 
       if (completed == 0 && isRunning) {
         return const SizedBox.shrink();
@@ -374,56 +286,51 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (completed > 0 && !isRunning) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: FilledButton.icon(
-                    onPressed: _goToResult,
-                    icon: Icon(Icons.arrow_forward_rounded, size: 20.sp, color: AppColors.white),
-                    label: Text(
-                      LocaleKeys.diagnostics_home_view_valuation_cta.trans(),
-                      style: AppTextStyles.button.copyWith(
-                        color: AppColors.white,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.pviRed,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 6.h),
-              ],
               SizedBox(
                 width: double.infinity,
                 height: 40.h,
-                child: OutlinedButton(
-                  onPressed: isRunning ? null : controller.startWithPermissionCheck,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                  ),
-                  child: Text(
-                    isRunning
-                        ? LocaleKeys.diagnostics_home_running_diagnostics.trans()
-                        : completed == 0
-                            ? LocaleKeys.diagnostics_home_start_diagnostics.trans()
-                            : LocaleKeys.diagnostics_home_restart_diagnostics.trans(),
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.tradeInSlate,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                ),
+                child: showContinue
+                    ? FilledButton(
+                        // Chỉ bấm được khi TOÀN BỘ step đã có kết quả cuối
+                        // (đạt/lỗi/bỏ qua đều được) — còn step nào pending
+                        // (vd chưa bấm "Cảm ứng màn hình"/"Sinh trắc học")
+                        // thì nút vẫn hiện nhưng bị khoá.
+                        onPressed: allDone ? controller.continueToNextStep : null,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.tradeInBlue,
+                          disabledBackgroundColor: AppColors.neutralGreyLighter,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                        child: Text(
+                          LocaleKeys.diagnostics_home_continue_diagnostics.trans(),
+                          style: AppTextStyles.button.copyWith(
+                            color: allDone ? AppColors.white : AppColors.textDisabled,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      )
+                    : OutlinedButton(
+                        onPressed: isRunning ? null : controller.startWithPermissionCheck,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                        child: Text(
+                          isRunning
+                              ? LocaleKeys.diagnostics_home_running_diagnostics.trans()
+                              : LocaleKeys.diagnostics_home_start_diagnostics.trans(),
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.tradeInSlate,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),

@@ -3,10 +3,12 @@ import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 
 /// Segmented Stepper chuẩn PVI Assurance Modernist
-/// Hiển thị tiến trình 3 bước cốt lõi:
-/// 1. Cấp quyền  ->  2. Đối soát  ->  3. Kiểm định
+/// Hiển thị tiến trình 2 bước cốt lõi:
+/// 1. Cấp quyền  ->  2. Kiểm định
+/// (Trước đây có thêm bước "Đối soát" ở giữa — đã bỏ khỏi luồng chính vì
+/// DeviceSpecsConfirmation không còn được điều hướng tới.)
 class PviModernistStepper extends StatelessWidget {
-  /// Bước hiện tại (1, 2, hoặc 3)
+  /// Bước hiện tại (1 hoặc 2)
   final int currentStep;
 
   /// Danh sách các bước đã hoàn thành (ví dụ: [1] khi bước 1 đã xong)
@@ -49,20 +51,6 @@ class PviModernistStepper extends StatelessWidget {
             Expanded(
               child: _buildStepPill(
                 stepIndex: 2,
-                label: 'Đối soát',
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w),
-              child: Icon(
-                Icons.chevron_right_rounded,
-                size: 16.sp,
-                color: AppColors.borderStrong,
-              ),
-            ),
-            Expanded(
-              child: _buildStepPill(
-                stepIndex: 3,
                 label: 'Kiểm định',
               ),
             ),

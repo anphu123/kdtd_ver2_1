@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:get/get.dart' hide Trans;
@@ -10,32 +9,26 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
-/// Các giai đoạn của bài test micro.
-enum MicTestPhase {
-  recording, // Đang thu âm 5 giây
-  playing, // Đang phát lại
-  confirming, // Chờ người dùng xác nhận
-}
-
 /// ============================================================
 /// MicTestController - Logic Bài Test Micro
 /// ============================================================
 ///
 /// Toàn bộ nghiệp vụ của bài test micro (xin quyền, thu âm 5 giây với
-/// theo dõi biên độ, phát lại, xử lý vòng đời ứng dụng) sống ở đây; trang
+/// theo dõi biên độ, xử lý vòng đời ứng dụng) sống ở đây; trang
 /// (`MicTestPage`) chỉ còn là UI thuần đọc các field `.obs` qua `Obx`.
+///
+/// Kết quả pass/fail được chấm TỰ ĐỘNG theo biên độ (dBm) đo được trong lúc
+/// ghi âm — không còn phát lại cho người dùng tự nghe rồi bấm "rõ/không rõ",
+/// vì cách đó chủ quan và không phản ánh đúng chất lượng phần cứng mic.
 class MicTestController extends GetxController {
   final AudioRecorder _rec = AudioRecorder();
-  final AudioPlayer _player = AudioPlayer();
   StreamSubscription<Amplitude>? _sub;
-  StreamSubscription<void>? _playerCompleteSub;
   String? _recordingPath;
   Timer? _countdownTimer;
 
   // ==================== TRẠNG THÁI PHẢN ỨNG ====================
-  final phase = MicTestPhase.recording.obs;
-  final amplitude = 0.0.obs;
-  final maxAmplitude = 0.0.obs;
+  final amplitude = AudioTestConstants.amplitudeDbfsFloor.obs;
+  final maxAmplitude = AudioTestConstants.amplitudeDbfsFloor.obs;
   final ready = false.obs;
   final hasDetectedSound = false.obs;
   final error = Rx<String?>(null);
@@ -45,18 +38,12 @@ class MicTestController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Setup player complete listener một lần duy nhất.
-    _playerCompleteSub = _player.onPlayerComplete.listen((_) {
-      phase.value = MicTestPhase.confirming;
-    });
     start();
   }
 
   @override
   void onClose() {
     _countdownTimer?.cancel();
-    _playerCompleteSub?.cancel();
-    _player.dispose();
     _disposeRecording();
     super.onClose();
   }
@@ -78,9 +65,8 @@ class MicTestController extends GetxController {
 
   /// Khởi động (hoặc khởi động lại) toàn bộ bài test micro.
   Future<void> start() async {
-    phase.value = MicTestPhase.recording;
-    amplitude.value = 0.0;
-    maxAmplitude.value = 0.0;
+    amplitude.value = AudioTestConstants.amplitudeDbfsFloor;
+    maxAmplitude.value = AudioTestConstants.amplitudeDbfsFloor;
     ready.value = false;
     hasDetectedSound.value = false;
     error.value = null;
@@ -110,22 +96,38 @@ class MicTestController extends GetxController {
           '${tempDir.path}/mic_test_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       // Bắt đầu ghi âm và theo dõi biên độ âm thanh
-      await _rec.start(
-        RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: AudioTestConstants.recordingBitRate,
-          sampleRate: AudioTestConstants.recordingSampleRate,
-          numChannels: AudioTestConstants.recordingChannels,
-        ),
-        path: _recordingPath!,
-      );
+      try {
+        await _rec.start(
+          RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            bitRate: AudioTestConstants.recordingBitRate,
+            sampleRate: AudioTestConstants.recordingSampleRate,
+            numChannels: AudioTestConstants.recordingChannels,
+            androidConfig: AndroidRecordConfig(
+              audioSource: AndroidAudioSource.unprocessed,
+            ),
+          ),
+          path: _recordingPath!,
+        );
+      } catch (e) {
+        // Fallback về mặc định nếu không hỗ trợ unprocessed
+        await _rec.start(
+          RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            bitRate: AudioTestConstants.recordingBitRate,
+            sampleRate: AudioTestConstants.recordingSampleRate,
+            numChannels: AudioTestConstants.recordingChannels,
+          ),
+          path: _recordingPath!,
+        );
+      }
 
       await _sub?.cancel();
       _sub = _rec
           .onAmplitudeChanged(AudioTestConstants.amplitudeSampleInterval)
           .listen(
             (a) {
-              final currentAmp = a.current.abs();
+              final currentAmp = a.current;
 
               // Lưu lịch sử amplitude cho waveform
               amplitudeHistory.add(currentAmp);
@@ -138,8 +140,8 @@ class MicTestController extends GetxController {
               if (currentAmp > maxAmplitude.value) {
                 maxAmplitude.value = currentAmp;
               }
-              // Phát hiện âm thanh
-              if (currentAmp > AudioTestConstants.soundDetectionAmplitudeThreshold) {
+              // Phát hiện âm thanh — đây là căn cứ DUY NHẤT để chấm pass/fail.
+              if (currentAmp > AudioTestConstants.soundDetectionDbfsThreshold) {
                 hasDetectedSound.value = true;
               }
             },
@@ -169,38 +171,24 @@ class MicTestController extends GetxController {
 
       if (next <= 0) {
         timer.cancel();
-        _stopRecordingAndPlayback();
+        _finishRecordingAndEvaluate();
       }
     });
   }
 
-  Future<void> _stopRecordingAndPlayback() async {
+  /// Dừng ghi âm và tự động chấm pass/fail theo biên độ đã đo được — không
+  /// cần phát lại, không cần người dùng xác nhận thủ công.
+  Future<void> _finishRecordingAndEvaluate() async {
     try {
-      // Dừng thu âm
       await _sub?.cancel();
       _sub = null;
 
       if (await _rec.isRecording()) {
         await _rec.stop();
       }
+    } catch (_) {}
 
-      // Chuyển sang phase phát lại
-      phase.value = MicTestPhase.playing;
-
-      // Phát lại file đã thu
-      if (_recordingPath != null && await File(_recordingPath!).exists()) {
-        await _player.play(DeviceFileSource(_recordingPath!));
-        // Listener đã được setup trong onInit, sẽ tự động chuyển phase
-      } else {
-        // Không có file, chuyển thẳng sang confirming
-        phase.value = MicTestPhase.confirming;
-      }
-    } catch (e) {
-      error.value = LocaleKeys.mic_test_error_playback.trans(
-        namedArgs: {'error': '$e'},
-      );
-      phase.value = MicTestPhase.confirming;
-    }
+    finish(hasDetectedSound.value);
   }
 
   /// Kết thúc bài test — pop kết quả về màn hình trước.
@@ -208,8 +196,9 @@ class MicTestController extends GetxController {
 
   /// Mức âm lượng đã chuẩn hoá (0.0 - 1.0) để hiển thị animation.
   double get level =>
-      amplitude.value.clamp(0, AudioTestConstants.amplitudeLevelMax) /
-      AudioTestConstants.amplitudeLevelMax;
+      ((amplitude.value - AudioTestConstants.amplitudeDbfsFloor) /
+              (0 - AudioTestConstants.amplitudeDbfsFloor))
+          .clamp(0.0, 1.0);
 
   // ==================== DỌN DẸP TÀI NGUYÊN ====================
 

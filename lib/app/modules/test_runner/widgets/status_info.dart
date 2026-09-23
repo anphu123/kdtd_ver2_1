@@ -99,10 +99,41 @@ StatusInfo getStatusInfo(DiagStatus status) {
   }
 }
 
-/// Lấy icon tương ứng với mã test
+/// Lấy icon tương ứng với mã test — khớp đúng code thực tế của 13 bước
+/// trong TestRunnerController (`_buildFunctionalSteps`), không phải bộ code
+/// rút gọn cũ ('bt', 'gps', 'bio'...) vốn không còn khớp với step nào nên
+/// luôn rơi vào icon mặc định (ô vuông rỗng).
 IconData getTestIcon(String code) {
   switch (code) {
-    // === THÔNG TIN HỆ THỐNG ===
+    case 'wifi':
+      return Icons.wifi;
+    case 'bluetooth':
+      return Icons.bluetooth;
+    case 'location':
+      return Icons.gps_fixed;
+    case 'vibration':
+      return Icons.vibration;
+    case 'biometrics':
+      return Icons.fingerprint;
+    case 'mic':
+      return Icons.mic;
+    case 'volume-up':
+      return Icons.volume_up;
+    case 'volume-down':
+      return Icons.volume_down;
+    case 'front-camera':
+      return Icons.camera_front;
+    case 'rear-camera':
+      return Icons.camera_rear;
+    case 'external-speaker':
+      return Icons.speaker;
+    case 'internal-speaker':
+      return Icons.hearing;
+    case 'touch-screen':
+      return Icons.touch_app;
+
+    // === Các code cũ/dự phòng (bộ rule_evaluator đầy đủ, không phải toàn
+    // bộ đều có step tương ứng trong luồng hiện tại) ===
     case 'osmodel':
       return Icons.phone_android;
     case 'battery':
@@ -111,28 +142,14 @@ IconData getTestIcon(String code) {
       return Icons.memory;
     case 'rom':
       return Icons.storage;
-
-    // === KẾT NỐI ===
-    case 'wifi':
-      return Icons.wifi;
     case 'mobile':
       return Icons.signal_cellular_4_bar;
-    case 'bt':
-      return Icons.bluetooth;
     case 'nfc':
       return Icons.nfc;
     case 'sim':
       return Icons.sim_card;
-
-    // === CẢM BIẾN ===
     case 'sensors':
       return Icons.sensors;
-    case 'gps':
-      return Icons.gps_fixed;
-    case 'bio':
-      return Icons.fingerprint;
-
-    // === PHẦN CỨNG ===
     case 'charge':
       return Icons.power;
     case 'wired':
@@ -141,24 +158,8 @@ IconData getTestIcon(String code) {
       return Icons.lock;
     case 'spen':
       return Icons.brush;
-    case 'vibrate':
-      return Icons.vibration;
-
-    // === MÀN HÌNH ===
     case 'screen':
       return Icons.smartphone;
-    case 'touch':
-      return Icons.touch_app;
-
-    // === KIỂM TRA THỦ CÔNG ===
-    case 'camera':
-      return Icons.camera_alt;
-    case 'speaker':
-      return Icons.volume_up;
-    case 'mic':
-      return Icons.mic;
-    case 'ear':
-      return Icons.hearing;
     case 'keys':
       return Icons.keyboard;
 

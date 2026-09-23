@@ -57,7 +57,6 @@ class PreTestPreparationGuidePage extends StatelessWidget {
                   // 3. Tiêu đề phân đoạn
                   _buildSectionHeader(
                     title: '5 BƯỚC CHUẨN BỊ THIẾT BỊ',
-                    subtitle: 'Thực hiện nhanh để bài test đạt độ chính xác tối đa',
                     icon: Icons.checklist_rounded,
                   ),
                   SizedBox(height: 8.h),
@@ -65,9 +64,6 @@ class PreTestPreparationGuidePage extends StatelessWidget {
                   // 4. Nhóm thẻ lồng các bước chuẩn bị
                   _buildGuideInsetGroup(),
                   SizedBox(height: 16.h),
-
-                  // 5. Thẻ ghi chú bảo mật & quyền riêng tư
-                  _buildSecurityNote(),
                 ],
               ),
             ),
@@ -87,110 +83,46 @@ class PreTestPreparationGuidePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: AppColors.pviRedSurface,
-                  borderRadius: BorderRadius.circular(6.r),
-                  border: Border.all(color: AppColors.pviRedBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.verified_user_rounded,
-                      color: AppColors.pviRed,
-                      size: 13.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'PVI ASSURANCE',
-                      style: AppTextStyles.badge.copyWith(
-                        color: AppColors.pviRed,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: AppColors.pviNavySurface,
-                  borderRadius: BorderRadius.circular(6.r),
-                  border: Border.all(color: AppColors.pviNavyBorder),
-                ),
-                child: Text(
-                  'CHUẨN BỊ KIỂM ĐỊNH',
-                  style: AppTextStyles.badge.copyWith(
-                    color: AppColors.pviNavy,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w700,
+          Container(
+            width: 42.w,
+            height: 42.h,
+            decoration: BoxDecoration(
+              color: AppColors.pviRedSurface,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColors.pviRedBorder, width: 1.2),
+            ),
+            child: Icon(
+              Icons.checklist_rounded,
+              color: AppColors.pviRed,
+              size: 22.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  LocaleKeys.pre_test_guide_header_title.trans(),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    color: AppColors.tradeInNavy,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15.sp,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 42.w,
-                height: 42.h,
-                decoration: BoxDecoration(
-                  color: AppColors.pviRedSurface,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColors.pviRedBorder, width: 1.2),
+                SizedBox(height: 2.h),
+                Text(
+                  'Thời gian ước tính: ~60 giây',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                child: Icon(
-                  Icons.checklist_rounded,
-                  color: AppColors.pviRed,
-                  size: 22.sp,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LocaleKeys.pre_test_guide_header_title.trans(),
-                      style: AppTextStyles.cardTitle.copyWith(
-                        color: AppColors.tradeInNavy,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15.sp,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      'Thời gian ước tính: ~60 giây',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Text(
-            LocaleKeys.pre_test_guide_header_description.trans(),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 11.5.sp,
-              height: 1.4,
+              ],
             ),
           ),
         ],
@@ -200,7 +132,6 @@ class PreTestPreparationGuidePage extends StatelessWidget {
 
   Widget _buildSectionHeader({
     required String title,
-    required String subtitle,
     required IconData icon,
   }) {
     return Column(
@@ -220,17 +151,6 @@ class PreTestPreparationGuidePage extends StatelessWidget {
               ),
             ),
           ],
-        ),
-        SizedBox(height: 2.h),
-        Padding(
-          padding: EdgeInsets.only(left: 20.w),
-          child: Text(
-            subtitle,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontSize: 11.sp,
-              color: AppColors.textMuted,
-            ),
-          ),
         ),
       ],
     );
@@ -347,61 +267,6 @@ class PreTestPreparationGuidePage extends StatelessWidget {
                 SizedBox(height: 3.h),
                 Text(
                   step.description,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 11.5.sp,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSecurityNote() {
-    return Container(
-      padding: EdgeInsets.all(14.r),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: AppColors.tradeInEmeraldLight,
-              borderRadius: BorderRadius.circular(10.r),
-              border: Border.all(color: AppColors.tradeInEmeraldBorder),
-            ),
-            child: Icon(
-              Icons.shield_outlined,
-              size: 20.sp,
-              color: AppColors.tradeInEmerald,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cam Kết Bảo Mật PVI',
-                  style: AppTextStyles.cardTitle.copyWith(
-                    fontSize: 13.sp,
-                    color: AppColors.tradeInNavy,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  LocaleKeys.pre_test_guide_security_note.trans(),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textMuted,
                     fontSize: 11.5.sp,

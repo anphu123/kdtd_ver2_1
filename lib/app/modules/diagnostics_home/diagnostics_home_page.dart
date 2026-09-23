@@ -118,62 +118,6 @@ class DiagnosticsHomePage extends StatelessWidget {
 
           SliverToBoxAdapter(child: SizedBox(height: 10.h)),
 
-          // 4. Thẻ cam kết chất lượng & bảo lãnh chuẩn PVI
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-              padding: EdgeInsets.all(14.r),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38.w,
-                    height: 38.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.tradeInEmeraldLight,
-                      borderRadius: BorderRadius.circular(10.r),
-                      border: Border.all(color: AppColors.tradeInEmeraldBorder),
-                    ),
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: AppColors.tradeInEmerald,
-                      size: 20.sp,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tiêu Chuẩn Định Giá & Bảo Lãnh PVI',
-                          style: AppTextStyles.cardTitle.copyWith(
-                            fontSize: 13.sp,
-                            color: AppColors.tradeInNavy,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 2.h),
-                        Text(
-                          'Quy trình chẩn đoán không xâm lấn dữ liệu, độ chính xác cao và hỗ trợ trợ giá thu cũ lên tới 2 triệu đồng.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontSize: 11.5.sp,
-                            color: AppColors.textMuted,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // Khoảng đệm phía dưới
           SliverToBoxAdapter(
             child: SizedBox(height: 24.h),

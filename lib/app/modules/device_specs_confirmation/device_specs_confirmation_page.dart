@@ -143,7 +143,6 @@ class _DeviceSpecsConfirmationPageState
                   // 4. Phần khảo sát nhanh ngoại quan máy
                   _buildSectionHeader(
                     title: 'KHẢO SÁT NGOẠI QUAN MÁY',
-                    subtitle: 'Đánh giá sơ bộ ngoại hình hỗ trợ định giá chuẩn xác',
                     icon: Icons.palette_outlined,
                   ),
                   SizedBox(height: 10.h),
@@ -425,56 +424,6 @@ class _DeviceSpecsConfirmationPageState
               ),
             ],
           ),
-          SizedBox(height: 8.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                LocaleKeys.device_specs_confirmation_valuation_price_range_label.trans(),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.tradeInNavy,
-                  fontSize: 12.sp,
-                ),
-              ),
-              Text(
-                LocaleKeys.device_specs_confirmation_valuation_price_range_value.trans(),
-                style: AppTextStyles.cardTitle.copyWith(
-                  color: AppColors.tradeInNavy,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(8.r),
-              border: Border.all(color: AppColors.warningBorder),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.card_giftcard,
-                  color: AppColors.warningDark,
-                  size: 15.sp,
-                ),
-                SizedBox(width: 6.w),
-                Expanded(
-                  child: Text(
-                    LocaleKeys.device_specs_confirmation_voucher_banner.trans(),
-                    style: AppTextStyles.badge.copyWith(
-                      color: AppColors.warningDark,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -482,7 +431,6 @@ class _DeviceSpecsConfirmationPageState
 
   Widget _buildSectionHeader({
     required String title,
-    required String subtitle,
     required IconData icon,
   }) {
     return Column(
@@ -502,17 +450,6 @@ class _DeviceSpecsConfirmationPageState
               ),
             ),
           ],
-        ),
-        SizedBox(height: 2.h),
-        Padding(
-          padding: EdgeInsets.only(left: 20.w),
-          child: Text(
-            subtitle,
-            style: AppTextStyles.bodySmall.copyWith(
-              fontSize: 11.sp,
-              color: AppColors.textMuted,
-            ),
-          ),
         ),
       ],
     );
@@ -633,7 +570,7 @@ class _DeviceSpecsConfirmationPageState
               size: 20.sp,
             ),
             label: Text(
-              'TIẾP TỤC: KIỂM ĐỊNH PHẦN CỨNG (BƯỚC 3)',
+              'TIẾP TỤC',
               style: AppTextStyles.button.copyWith(
                 color: AppColors.white,
                 fontSize: 14.sp,

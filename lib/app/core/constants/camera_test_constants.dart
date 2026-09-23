@@ -41,18 +41,20 @@ class CameraTestConstants {
   static const double gyroMagnitudeThreshold = 2.0;
 
   // ==================== NHỊP ĐỘ CÁC BƯỚC TEST ====================
-  /// Thời gian hiện snackbar báo thành công cho mỗi thao tác.
-  static const Duration actionSuccessSnackbarDuration = Duration(seconds: 1);
+  /// Thời gian chờ trước khi tự động chụp ảnh.
+  static const Duration autoCaptureDelay = Duration(milliseconds: 1500);
+
+  /// Thời gian chờ sau initialize() trước khi gắn CameraPreview vào cây
+  /// widget — né lỗi chớp màu (đỏ/hồng) ở vài khung hình đầu, một lỗi đã
+  /// biết của camera_android_camerax khi Texture mới khởi tạo.
+  static const Duration previewStabilizeDelay = Duration(milliseconds: 300);
 
   /// Thời gian chờ trước khi tự chuyển bước sau khi chụp ảnh.
   static const Duration postCaptureDelay = Duration(seconds: 2);
 
-  /// Thời gian chờ trước khi tự chuyển bước sau khi test focus.
-  static const Duration postFocusDelay = Duration(seconds: 2);
+  /// Ngưỡng độ sáng trung bình để xác định ảnh đen.
+  static const double blackFrameLuminanceThreshold = 20.0;
 
-  /// Thời gian bật đèn flash (torch) khi test flash.
-  static const Duration flashTorchDuration = Duration(seconds: 1);
-
-  /// Thời gian chờ trước khi tự chuyển bước sau khi test flash.
-  static const Duration postFlashDelay = Duration(seconds: 1);
+  /// Kích thước (pixel) để resize ảnh khi phân tích ảnh đen.
+  static const int blackFrameAnalysisResizeSize = 10;
 }

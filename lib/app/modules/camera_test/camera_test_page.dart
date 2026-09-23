@@ -9,7 +9,7 @@ import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 import 'camera_test_controller.dart';
 
-/// Camera Test Page - Toàn diện kiểm tra tất cả camera trên thiết bị
+/// Camera Test Page - Toàn diện kiểm tra tất cả camera trên thiết bị (Tự động)
 class CameraTestPage extends GetView<CameraTestController> {
   const CameraTestPage({super.key});
 
@@ -37,56 +37,30 @@ class CameraTestPage extends GetView<CameraTestController> {
                 : 'Kiểm tra Camera',
             style: AppTextStyles.titleMedium.copyWith(color: AppColors.white),
           ),
-          actions: [
-            if (isReady && !isFront)
-              IconButton(
-                icon: Icon(
-                  controller.isFlashOn.value
-                      ? Icons.flash_on
-                      : Icons.flash_off,
-                  color:
-                      controller.isFlashOn.value
-                          ? AppColors.warning
-                          : AppColors.white70,
-                ),
-                tooltip: 'Kiểm tra Đèn Flash',
-                onPressed: controller.testFlash,
-              ),
-            IconButton(
-              icon: const Icon(Icons.check, color: AppColors.pass),
-              tooltip: 'Xác nhận Camera tốt',
-              onPressed: controller.confirmCurrentCamera,
-            ),
-          ],
         ),
         body: Stack(
           children: [
             // ==================== KHUNG HÌNH XEM TRỰC TIẾP TỪ CAMERA ====================
             if (isReady && controller.controller.value != null)
               Positioned.fill(
-                child: GestureDetector(
-                  onTapDown: (details) {
-                    controller.testFocus(details.localPosition);
-                  },
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width:
-                          controller
-                              .controller
-                              .value!
-                              .value
-                              .previewSize!
-                              .height,
-                      height:
-                          controller
-                              .controller
-                              .value!
-                              .value
-                              .previewSize!
-                              .width,
-                      child: CameraPreview(controller.controller.value!),
-                    ),
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width:
+                        controller
+                            .controller
+                            .value!
+                            .value
+                            .previewSize!
+                            .height,
+                    height:
+                        controller
+                            .controller
+                            .value!
+                            .value
+                            .previewSize!
+                            .width,
+                    child: CameraPreview(controller.controller.value!),
                   ),
                 ),
               )
@@ -133,22 +107,23 @@ class CameraTestPage extends GetView<CameraTestController> {
                             final isCamFront =
                                 cam.lensDirection == CameraLensDirection.front;
                             final isSelected = idx == currentIdx;
-                            final isTested =
-                                controller.testedCameras.contains(idx);
+                            final result = controller.cameraResults[idx];
+                            final isTested = result != null;
+                            final passed = result == true;
 
                             return Padding(
                               padding: EdgeInsets.only(right: 8.0.w),
-                              child: ChoiceChip(
+                              child: Chip(
                                 avatar: Icon(
                                   isTested
-                                      ? Icons.check_circle
+                                      ? (passed ? Icons.check_circle : Icons.cancel)
                                       : (isCamFront
                                           ? Icons.camera_front
                                           : Icons.camera_rear),
                                   size: 16.r,
                                   color:
                                       isTested
-                                          ? AppColors.pass
+                                          ? (passed ? AppColors.pass : AppColors.error)
                                           : (isSelected
                                               ? AppColors.white
                                               : AppColors.white70),
@@ -167,8 +142,6 @@ class CameraTestPage extends GetView<CameraTestController> {
                                             : AppColors.white70,
                                   ),
                                 ),
-                                selected: isSelected,
-                                selectedColor: AppColors.primary,
                                 backgroundColor: AppColors.neutralGrey900,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20.r),
@@ -177,12 +150,11 @@ class CameraTestPage extends GetView<CameraTestController> {
                                         isSelected
                                             ? AppColors.primary
                                             : (isTested
-                                                ? AppColors.pass
+                                                ? (passed ? AppColors.pass : AppColors.error)
                                                 : Colors.transparent),
                                     width: 1.5,
                                   ),
                                 ),
-                                onSelected: (_) => controller.switchCamera(idx),
                               ),
                             );
                           }),
@@ -191,7 +163,7 @@ class CameraTestPage extends GetView<CameraTestController> {
 
                     SizedBox(height: 8.h),
 
-                    // Huy hiệu hướng dẫn thao tác
+                    // Huy hiệu hướng dẫn thao tác tự động
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 12.w,
@@ -212,9 +184,11 @@ class CameraTestPage extends GetView<CameraTestController> {
                           SizedBox(width: 6.w),
                           Flexible(
                             child: Text(
-                              isFront
-                                  ? 'Đang kiểm tra Camera trước (Chụp thử để xác nhận)'
-                                  : 'Đang kiểm tra Camera sau (${currentCam?.name ?? ""}) — Thử chạm để lấy nét',
+                              controller.isAutoCapturing.value
+                                  ? LocaleKeys.camera_test_auto_capturing.trans()
+                                  : (isFront
+                                      ? 'Đang kiểm tra Camera trước'
+                                      : 'Đang kiểm tra Camera sau (${currentCam?.name ?? ""})'),
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: AppColors.white,
                               ),
@@ -231,14 +205,19 @@ class CameraTestPage extends GetView<CameraTestController> {
             // ==================== HÌNH THU NHỎ ẢNH VỪA CHỤP ====================
             if (controller.capturedImagePath.value != null)
               Positioned(
-                bottom: 120.h,
+                bottom: 40.h,
                 left: 20.w,
                 child: Container(
                   width: 70.w,
                   height: 90.h,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10.r),
-                    border: Border.all(color: AppColors.pass, width: 2),
+                    border: Border.all(
+                      color: controller.cameraResults[currentIdx] == true 
+                          ? AppColors.pass 
+                          : AppColors.error, 
+                      width: 2
+                    ),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
@@ -252,8 +231,12 @@ class CameraTestPage extends GetView<CameraTestController> {
                         top: 4.h,
                         right: 4.w,
                         child: Icon(
-                          Icons.check_circle,
-                          color: AppColors.pass,
+                          controller.cameraResults[currentIdx] == true 
+                              ? Icons.check_circle
+                              : Icons.cancel,
+                          color: controller.cameraResults[currentIdx] == true 
+                              ? AppColors.pass
+                              : AppColors.error,
                           size: 18.r,
                         ),
                       ),
@@ -261,110 +244,30 @@ class CameraTestPage extends GetView<CameraTestController> {
                   ),
                 ),
               ),
-
-            // ==================== CÁC NÚT ĐIỀU KHIỂN NỔI ====================
-            if (isReady)
+              
+            if (controller.cameraResults[currentIdx] == false && controller.capturedImagePath.value != null)
               Positioned(
-                bottom: 110.h,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Nút Focus
-                    IconButton.filledTonal(
-                      onPressed: controller.testFocus,
-                      icon: Icon(Icons.center_focus_strong, size: 24.r),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.black54,
-                        foregroundColor: AppColors.white,
-                        padding: EdgeInsets.all(12.r),
-                      ),
-                      tooltip: 'Lấy nét',
+                bottom: 40.h,
+                left: 100.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    LocaleKeys.camera_test_black_frame_detected.trans(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
                     ),
-
-                    // Nút Chụp ảnh
-                    GestureDetector(
-                      onTap: controller.captureTest,
-                      child: Container(
-                        width: 72.r,
-                        height: 72.r,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.white,
-                          border: Border.all(
-                            color: AppColors.white70,
-                            width: 4,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          size: 32.r,
-                          color: AppColors.black,
-                        ),
-                      ),
-                    ),
-
-                    // Nút Chuyển camera (nếu có nhiều camera)
-                    if (total > 1)
-                      IconButton.filledTonal(
-                        onPressed: controller.nextCamera,
-                        icon: Icon(Icons.flip_camera_ios, size: 24.r),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.black54,
-                          foregroundColor: AppColors.white,
-                          padding: EdgeInsets.all(12.r),
-                        ),
-                        tooltip: 'Đổi Camera',
-                      )
-                    else
-                      SizedBox(width: 48.w),
-                  ],
+                  ),
                 ),
               ),
           ],
-        ),
-        // ==================== THANH ĐIỀU HƯỚNG BÊN DƯỚI ====================
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            color: AppColors.black87,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: OutlinedButton(
-                    onPressed: controller.skipCamera,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.white,
-                      side: const BorderSide(color: AppColors.white38),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                    ),
-                    child: Text(LocaleKeys.camera_test_skip.trans()),
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton.icon(
-                    onPressed: controller.confirmCurrentCamera,
-                    icon: Icon(Icons.check_circle_outline, size: 20.r),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.pass,
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                    ),
-                    label: Text(
-                      total > 1 &&
-                              controller.testedCameras.length < total
-                          ? 'Đạt cam này → Kế tiếp (${controller.testedCameras.length + 1}/$total)'
-                          : 'Xác nhận Camera tốt (Đạt)',
-                      style: AppTextStyles.button.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       );
     });

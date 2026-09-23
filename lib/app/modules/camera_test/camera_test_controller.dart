@@ -1,26 +1,24 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show Offset;
+import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/constants/camera_test_constants.dart';
 import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 
 /// ============================================================
 /// CameraTestController - Quản lý kiểm tra tất cả camera trên máy
 /// ============================================================
 ///
-/// Hỗ trợ kiểm tra mọi cảm biến camera có trên thiết bị:
+/// Hỗ trợ kiểm tra mọi cảm biến camera có trên thiết bị một cách TỰ ĐỘNG:
 /// - Duyệt qua từng camera trong danh sách [cameras]
 /// - Live Preview thời gian thực
-/// - Chụp ảnh thử nghiệm (Capture test)
-/// - Lấy nét tự động / Chạm để lấy nét (Auto-focus test)
-/// - Đèn flash trợ sáng (Flash torch test)
-/// - Giám sát cảm biến con quay hồi chuyển (OIS/EIS Stabilization)
+/// - Chụp ảnh tự động (Auto Capture) sau một khoảng thời gian
+/// - Tự động phát hiện ảnh đen (lỗi cảm biến hoặc bị che)
 class CameraTestController extends GetxController {
   CameraTestController({required this.cameras});
 
@@ -30,13 +28,13 @@ class CameraTestController extends GetxController {
   final controller = Rx<CameraController?>(null);
   final currentCameraIndex = 0.obs;
   final isInitializing = false.obs;
-  final testedCameras = <int>{}.obs;
+  final isAutoCapturing = false.obs;
+  final cameraResults = <int, bool>{}.obs;
 
-  final hasStabilization = false.obs;
   final cameraWarning = Rx<String?>(null);
   final isOriginal = true.obs;
   final capturedImagePath = Rx<String?>(null);
-  final isFlashOn = false.obs;
+  bool _closed = false;
 
   CameraDescription? get currentCamera =>
       (cameras.isNotEmpty && currentCameraIndex.value < cameras.length)
@@ -46,20 +44,15 @@ class CameraTestController extends GetxController {
   bool get isReady => controller.value?.value.isInitialized == true;
   int get totalCameras => cameras.length;
 
-  StreamSubscription<GyroscopeEvent>? _gyroSub;
-  double _maxGyro = 0.0;
-  final List<double> _gyroHistory = [];
-
   @override
   void onInit() {
     super.onInit();
-    debugPrint('[CameraTest] Khởi tạo bài test camera với ${cameras.length} camera:');
+    debugPrint('[CameraTest] Khởi tạo bài test tự động với ${cameras.length} camera:');
     for (int i = 0; i < cameras.length; i++) {
       final c = cameras[i];
       debugPrint('[CameraTest]  - Cam #$i: name=${c.name}, lens=${c.lensDirection}');
     }
     _verifyCameraConfiguration();
-    _startGyroMonitoring();
     if (cameras.isNotEmpty) {
       _openCamera(cameras[currentCameraIndex.value]);
     }
@@ -67,7 +60,7 @@ class CameraTestController extends GetxController {
 
   @override
   void onClose() {
-    _gyroSub?.cancel();
+    _closed = true;
     _disposeCameraSync();
     _cleanupCapturedImage();
     super.onClose();
@@ -82,41 +75,14 @@ class CameraTestController extends GetxController {
     }
   }
 
-  void _startGyroMonitoring() {
-    _gyroSub = gyroscopeEventStream().listen((event) {
-      final magnitude =
-          event.x * event.x + event.y * event.y + event.z * event.z;
-      if (magnitude > _maxGyro) _maxGyro = magnitude;
-
-      _gyroHistory.add(magnitude);
-      if (_gyroHistory.length > CameraTestConstants.gyroHistoryMaxLength) {
-        _gyroHistory.removeAt(0);
-      }
-
-      if (hasStabilization.value ||
-          _gyroHistory.length < CameraTestConstants.gyroHistoryMinSamples) {
-        return;
-      }
-
-      final avg = _gyroHistory.reduce((a, b) => a + b) / _gyroHistory.length;
-      final variance =
-          _gyroHistory
-              .map((v) => (v - avg) * (v - avg))
-              .reduce((a, b) => a + b) /
-          _gyroHistory.length;
-
-      if (variance < CameraTestConstants.gyroVarianceThreshold &&
-          _maxGyro > CameraTestConstants.gyroMagnitudeThreshold) {
-        hasStabilization.value = true;
-      }
-    });
-  }
-
   // ==================== VÒNG ĐỜI CAMERA ====================
   Future<void> _openCamera(CameraDescription camera) async {
     isInitializing.value = true;
-    capturedImagePath.value = null;
-    isFlashOn.value = false;
+    // Xoá luôn ảnh tạm của camera trước đó — nếu chỉ gán null, file cũ sẽ
+    // bị rò rỉ vì _runAutoTest() chỉ dọn file NGAY TRƯỚC lần chụp kế tiếp,
+    // còn capturedImagePath đã bị null ở đây nên mất luôn đường dẫn để xoá.
+    await _cleanupCapturedImage();
+    isAutoCapturing.value = false;
     await _disposeCameraSync();
 
     final cam = CameraController(
@@ -128,148 +94,117 @@ class CameraTestController extends GetxController {
 
     try {
       await cam.initialize();
+
+      // Đợi ổn định trước khi gắn CameraPreview vào cây widget — vài khung
+      // hình đầu tiên từ Texture mới khởi tạo có thể bị chớp màu (đỏ/hồng),
+      // lỗi đã biết của camera_android_camerax. Camera vẫn chạy ngầm trong
+      // lúc chờ nên khi hiện preview, khung hình đã ổn định.
+      await Future.delayed(CameraTestConstants.previewStabilizeDelay);
+      if (_closed) {
+        await cam.dispose();
+        return;
+      }
+
       controller.value = cam;
       isInitializing.value = false;
       debugPrint(
         '[CameraTest] Mở thành công Camera #${currentCameraIndex.value} (${camera.name}, ${camera.lensDirection})',
       );
+
+      _runAutoTest();
     } catch (e) {
       isInitializing.value = false;
       debugPrint('[CameraTest] Lỗi khởi tạo Camera #${currentCameraIndex.value}: $e');
+      cameraResults[currentCameraIndex.value] = false;
       Get.snackbar(
         LocaleKeys.camera_test_error_title.trans(),
         LocaleKeys.camera_test_error_init_camera.trans(namedArgs: {'error': '$e'}),
         snackPosition: SnackPosition.BOTTOM,
       );
+      _scheduleNextCamera();
     }
   }
 
-  Future<void> switchCamera(int index) async {
-    if (index < 0 || index >= cameras.length) return;
-    if (index == currentCameraIndex.value && controller.value != null) return;
-    currentCameraIndex.value = index;
-    await _openCamera(cameras[index]);
-  }
-
-  Future<void> nextCamera() async {
-    if (cameras.isEmpty) return;
-    final nextIdx = (currentCameraIndex.value + 1) % cameras.length;
-    await switchCamera(nextIdx);
-  }
-
-  // ==================== CÁC BÀI TEST: CHỤP ẢNH, LẤY NÉT, FLASH ====================
-  Future<void> captureTest() async {
+  Future<void> _runAutoTest() async {
     final cam = controller.value;
     if (cam == null || !cam.value.isInitialized) return;
 
+    try {
+      await cam.setFocusMode(FocusMode.auto);
+    } catch (_) {}
+
+    isAutoCapturing.value = true;
+    await Future.delayed(CameraTestConstants.autoCaptureDelay);
+    if (controller.value != cam) return; // Đã đổi camera hoặc thoát
+
+    bool passed = false;
     try {
       await _cleanupCapturedImage();
       final image = await cam.takePicture();
       capturedImagePath.value = image.path;
-      testedCameras.add(currentCameraIndex.value);
-      debugPrint('[CameraTest] Chụp ảnh thành công: ${image.path}');
-
-      Get.snackbar(
-        '',
-        LocaleKeys.camera_test_capture_success.trans(),
-        snackPosition: SnackPosition.BOTTOM,
-        duration: CameraTestConstants.actionSuccessSnackbarDuration,
-      );
-    } catch (e) {
-      debugPrint('[CameraTest] Lỗi chụp ảnh: $e');
-      Get.snackbar(
-        LocaleKeys.camera_test_error_title.trans(),
-        LocaleKeys.camera_test_capture_error.trans(namedArgs: {'error': '$e'}),
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  Future<void> testFocus([Offset? point]) async {
-    final cam = controller.value;
-    if (cam == null || !cam.value.isInitialized) return;
-
-    try {
-      final previewSize = cam.value.previewSize!;
-      final focusPoint = point ?? Offset(previewSize.width / 2, previewSize.height / 2);
-      await cam.setFocusPoint(focusPoint);
-      await cam.setFocusMode(FocusMode.auto);
-
-      Get.snackbar(
-        '',
-        LocaleKeys.camera_test_focus_success.trans(),
-        snackPosition: SnackPosition.BOTTOM,
-        duration: CameraTestConstants.actionSuccessSnackbarDuration,
-      );
-    } catch (e) {
-      debugPrint('[CameraTest] Lỗi lấy nét: $e');
-      Get.snackbar(
-        '',
-        LocaleKeys.camera_test_focus_unavailable.trans(namedArgs: {'error': '$e'}),
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  Future<void> testFlash() async {
-    final cam = controller.value;
-    if (cam == null || !cam.value.isInitialized) return;
-
-    try {
-      if (isFlashOn.value) {
-        await cam.setFlashMode(FlashMode.off);
-        isFlashOn.value = false;
-      } else {
-        await cam.setFlashMode(FlashMode.torch);
-        isFlashOn.value = true;
-        Future.delayed(CameraTestConstants.flashTorchDuration, () async {
-          try {
-            await cam.setFlashMode(FlashMode.off);
-            isFlashOn.value = false;
-          } catch (_) {}
-        });
+      
+      final isBlack = await _isImageBlack(image.path);
+      if (isBlack) {
+        debugPrint('[CameraTest] Lỗi: Phát hiện ảnh đen ở Camera #${currentCameraIndex.value}');
       }
-
-      Get.snackbar(
-        '',
-        LocaleKeys.camera_test_flash_success.trans(),
-        snackPosition: SnackPosition.BOTTOM,
-        duration: CameraTestConstants.actionSuccessSnackbarDuration,
-      );
+      passed = !isBlack;
     } catch (e) {
-      debugPrint('[CameraTest] Lỗi bật đèn flash: $e');
-      Get.snackbar(
-        '',
-        LocaleKeys.camera_test_flash_unavailable.trans(namedArgs: {'error': '$e'}),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      debugPrint('[CameraTest] Lỗi chụp ảnh tự động: $e');
+      passed = false;
     }
+
+    isAutoCapturing.value = false;
+    cameraResults[currentCameraIndex.value] = passed;
+
+    await Future.delayed(CameraTestConstants.postCaptureDelay);
+    if (controller.value != cam) return; // Đã đổi camera hoặc thoát
+
+    _scheduleNextCamera();
   }
-
-  // ==================== QUY TRÌNH ĐIỀU PHỐI (WORKFLOW) ====================
-  void confirmCurrentCamera() {
-    testedCameras.add(currentCameraIndex.value);
-    debugPrint('[CameraTest] Xác nhận Camera #${currentCameraIndex.value} hoạt động tốt.');
-
-    final untested = <int>[];
-    for (int i = 0; i < cameras.length; i++) {
-      if (!testedCameras.contains(i)) untested.add(i);
-    }
-
-    if (untested.isNotEmpty) {
-      debugPrint('[CameraTest] Chuyển tiếp tới Camera chưa test: #${untested.first}');
-      switchCamera(untested.first);
-    } else {
-      debugPrint('[CameraTest] Toàn bộ ${cameras.length} camera đã được kiểm tra đạt chuẩn!');
-      finish(true);
-    }
-  }
-
-  void skipCamera() {
+  
+  void _scheduleNextCamera() {
     if (currentCameraIndex.value + 1 < cameras.length) {
-      switchCamera(currentCameraIndex.value + 1);
+      currentCameraIndex.value = currentCameraIndex.value + 1;
+      _openCamera(cameras[currentCameraIndex.value]);
     } else {
-      finish(testedCameras.isNotEmpty);
+      bool allPassed = true;
+      for (int i = 0; i < cameras.length; i++) {
+        if (cameraResults[i] != true) {
+          allPassed = false;
+          break;
+        }
+      }
+      finish(allPassed);
+    }
+  }
+
+  Future<bool> _isImageBlack(String imagePath) async {
+    try {
+      final file = File(imagePath);
+      final bytes = await file.readAsBytes();
+      final codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: CameraTestConstants.blackFrameAnalysisResizeSize,
+        targetHeight: CameraTestConstants.blackFrameAnalysisResizeSize,
+      );
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      if (byteData == null) return false;
+
+      final data = byteData.buffer.asUint8List();
+      int totalLuminance = 0;
+      for (int i = 0; i < data.length; i += 4) {
+        final r = data[i];
+        final g = data[i + 1];
+        final b = data[i + 2];
+        totalLuminance += ((r * 299) + (g * 587) + (b * 114)) ~/ 1000;
+      }
+      final meanLuminance = totalLuminance / (data.length / 4);
+      return meanLuminance < CameraTestConstants.blackFrameLuminanceThreshold;
+    } catch (e) {
+      debugPrint('[CameraTest] Lỗi phân tích ảnh: $e');
+      return true; // Coi là lỗi nếu không thể decode
     }
   }
 
@@ -282,13 +217,25 @@ class CameraTestController extends GetxController {
   Future<void> _disposeCameraSync() async {
     final cam = controller.value;
     if (cam == null) return;
+
+    // Gỡ tham chiếu khỏi UI TRƯỚC khi dispose() — nếu dispose() chạy trong
+    // lúc CameraPreview vẫn còn lắng nghe controller này, listener nội bộ
+    // của nó (ValueListenableBuilder trong package camera) có thể bị notify
+    // ngay giữa lúc dispose() đang chạy và ném lỗi "Disposed
+    // CameraController, buildPreview() was called on a disposed
+    // CameraController". Đợi hết 1 frame để Flutter thực sự unmount
+    // CameraPreview cũ trước khi huỷ tài nguyên native bên dưới.
+    controller.value = null;
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+    } catch (_) {}
+
     try {
       try {
         await cam.stopImageStream();
       } catch (_) {}
       await cam.dispose();
     } catch (_) {}
-    controller.value = null;
   }
 
   Future<void> _cleanupCapturedImage() async {

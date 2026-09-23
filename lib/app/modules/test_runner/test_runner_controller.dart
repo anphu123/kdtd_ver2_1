@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:camera/camera.dart';
 import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart' hide Trans;
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
@@ -22,18 +25,17 @@ import 'package:kdtd_ver2_1/app/data/services/profile_manager.dart';
 import 'package:kdtd_ver2_1/app/data/services/rule_evaluator.dart';
 import 'package:kdtd_ver2_1/app/modules/camera_test/camera_test_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/camera_test/camera_test_page.dart';
-import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
-import 'package:kdtd_ver2_1/app/modules/earpiece_test/earpiece_test_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/earpiece_test/earpiece_test_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/earpiece_test/earpiece_test_page.dart';
-import 'package:kdtd_ver2_1/app/modules/failed_tests_warning/failed_tests_warning_page.dart';
 import 'package:kdtd_ver2_1/app/modules/keys_test/keys_test_controller.dart';
-import 'package:kdtd_ver2_1/app/modules/mic_test/mic_test_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/mic_test/mic_test_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/mic_test/mic_test_page.dart';
-import 'package:kdtd_ver2_1/app/modules/speaker_test/speaker_test_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/speaker_test/speaker_test_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/speaker_test/speaker_test_page.dart';
-import 'package:kdtd_ver2_1/app/modules/touch_grid_test/touch_grid_test_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/touch_grid_test/touch_grid_test_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/touch_grid_test/touch_grid_test_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
+import 'package:kdtd_ver2_1/app/modules/question_check/question_check_page.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
 /// TestRunnerController - Điều phối quá trình thực thi các bài kiểm tra chức năng
@@ -53,6 +55,11 @@ class TestRunnerController extends GetxController {
   int get total => steps.length;
   int get completed =>
       passedCount.value + failedCount.value + skippedCount.value;
+
+  /// TOÀN BỘ step đã có kết quả cuối (đạt/lỗi/bỏ qua đều tính) — không còn
+  /// step nào pending/running. Dùng để bật nút "Tiếp tục".
+  bool get allStepsCompleted =>
+      steps.isNotEmpty && steps.every((s) => s.isCompleted);
   int get score => total > 0 ? (passedCount.value * 100 / total).round() : 0;
   String get grade {
     if (score >= 90) return LocaleKeys.diagnostics_home_grade_excellent.trans();
@@ -335,10 +342,88 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _snapLocation() async {
     info['location'] = await DeviceHardwareService.getLocationAccuracy();
-    final loc = info['location'] as Map<String, dynamic>;
+    var loc = info['location'] as Map<String, dynamic>;
+
+    // serviceOn=false nghĩa là Dịch vụ vị trí (GPS) đang TẮT ở mức hệ thống
+    // — khác với việc CHƯA cấp quyền. Đây là cài đặt người dùng có thể tự
+    // bật ngay, KHÔNG phải lỗi phần cứng, nên không nên auto-fail luôn mà
+    // cho cơ hội mở Cài Đặt bật rồi thử lại trước khi kết luận.
+    if (loc['serviceOn'] != true) {
+      final enabled = await _promptEnableLocationService();
+      if (enabled) {
+        info['location'] = await DeviceHardwareService.getLocationAccuracy();
+        loc = info['location'] as Map<String, dynamic>;
+      }
+    }
+
     final ok = loc['serviceOn'] == true;
     debugPrint('[TestRunner] Kết quả GPS/Định vị: $ok ($loc)');
     return ok;
+  }
+
+  /// Hiện popup báo Dịch vụ vị trí đang tắt, cho chọn mở Cài Đặt hoặc bỏ
+  /// qua (coi là hỏng). Nếu bấm "Mở Cài Đặt", popup KHÔNG tự đóng ngay —
+  /// chờ tới khi app quay lại foreground (người dùng bật xong rồi quay
+  /// lại) mới tự đóng và báo hiệu để gọi lại kiểm tra, không cần thêm
+  /// thao tác thủ công nào khác.
+  Future<bool> _promptEnableLocationService() async {
+    final completer = Completer<bool>();
+    late final _AppResumeObserver observer;
+    observer = _AppResumeObserver(() {
+      if (!completer.isCompleted) {
+        if (Get.isDialogOpen == true) Get.back();
+        completer.complete(true);
+      }
+    });
+    WidgetsBinding.instance.addObserver(observer);
+
+    Get.dialog<void>(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.location_off_rounded, color: AppColors.tradeInBlue),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Dịch vụ vị trí đang tắt',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Ứng dụng đã được cấp quyền vị trí, nhưng Dịch vụ vị trí (GPS) trên máy đang tắt.\nBật lên trong Cài đặt rồi quay lại — hệ thống sẽ tự kiểm tra lại.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (!completer.isCompleted) completer.complete(false);
+                if (Get.isDialogOpen == true) Get.back();
+              },
+              child: const Text('Bỏ qua (Hỏng)'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                try {
+                  await Geolocator.openLocationSettings();
+                } catch (e) {
+                  debugPrint('[TestRunner] Không mở được Cài đặt vị trí: $e');
+                }
+              },
+              child: const Text('Mở Cài Đặt'),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    final result = await completer.future;
+    WidgetsBinding.instance.removeObserver(observer);
+    return result;
   }
 
   // ==================== BỘ CHẠY BÀI TEST TƯƠNG TÁC (LUỒNG 3) ====================
@@ -361,6 +446,12 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _testBiometrics() async {
     debugPrint('[TestRunner] Bắt đầu kiểm tra Sinh trắc học...');
+    // Đợi UI ổn định trước khi gọi hộp thoại vân tay hệ thống: ngay khi bước
+    // này chuyển sang "running", TestRunnerPage tự cuộn danh sách tới step
+    // (animation 500ms). Nếu gọi BiometricPrompt trong lúc cửa sổ đang
+    // resize/cuộn, Android có thể coi cửa sổ tạm mất focus và tự hủy hộp
+    // thoại ngay lập tức (ERROR_USER_CANCELED) trước khi người dùng kịp thấy.
+    await Future.delayed(const Duration(milliseconds: 600));
     try {
       final bioInfo = await DeviceHardwareService.checkBiometrics();
       if (bioInfo['canCheck'] != true && bioInfo['supported'] != true) {
@@ -368,8 +459,14 @@ class TestRunnerController extends GetxController {
         return true;
       }
       final la = LocalAuthentication();
+      // Nhắn đúng loại sinh trắc học theo nền tảng: iOS dùng Face ID (hoặc
+      // Touch ID trên máy còn nút Home), Android dùng vân tay — tránh nhắn
+      // chung chung "vân tay / Face ID" không khớp với máy đang cầm.
+      final reason = Platform.isIOS
+          ? 'Xác thực Face ID để kiểm tra cảm biến sinh trắc học'
+          : 'Xác thực vân tay để kiểm tra cảm biến sinh trắc học';
       final authenticated = await la.authenticate(
-        localizedReason: 'Xác thực vân tay / Face ID để kiểm tra cảm biến sinh trắc học',
+        localizedReason: reason,
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
@@ -377,6 +474,19 @@ class TestRunnerController extends GetxController {
       );
       debugPrint('[TestRunner] Kết quả xác thực sinh trắc học: $authenticated');
       return authenticated;
+    } on PlatformException catch (e) {
+      // NotEnrolled/NotAvailable: máy CÓ cảm biến (hoặc chưa xác định được)
+      // nhưng chưa có vân tay/khuôn mặt nào được đăng ký trên máy — rất
+      // thường gặp với máy đã factory reset để bán lại. Đây không phải lỗi
+      // PHẦN CỨNG nên không được tính là fail (coi như không áp dụng, giống
+      // nhánh "không hỗ trợ" ở trên) — nếu không sẽ hard-fail oan cả bài
+      // Function Check dù cảm biến vân tay vẫn hoạt động tốt.
+      if (e.code == auth_error.notEnrolled || e.code == auth_error.notAvailable) {
+        debugPrint('[TestRunner] Sinh trắc học chưa đăng ký/không khả dụng (${e.code}) — coi như không áp dụng.');
+        return true;
+      }
+      debugPrint('[TestRunner] Lỗi kiểm tra sinh trắc học: ${e.code} - ${e.message}');
+      return false;
     } catch (e) {
       debugPrint('[TestRunner] Lỗi kiểm tra sinh trắc học: $e');
       return false;
@@ -385,10 +495,14 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _openMicTest() async {
     debugPrint('[TestRunner] Mở màn hình kiểm tra Microphone [MicTestPage]...');
-    final result = (await Get.to<bool>(
-      () => const MicTestPage(),
-      binding: MicTestBinding(),
+    Get.isRegistered<MicTestController>()
+        ? Get.find<MicTestController>()
+        : Get.put(MicTestController());
+    final result = (await Get.dialog<bool>(
+      const MicTestPage(),
+      barrierDismissible: false,
     )) == true;
+    if (Get.isRegistered<MicTestController>()) Get.delete<MicTestController>();
     debugPrint('[TestRunner] Kết quả kiểm tra Microphone: $result');
     return result;
   }
@@ -399,48 +513,39 @@ class TestRunnerController extends GetxController {
         ? Get.find<KeysTestController>()
         : Get.put(KeysTestController());
 
-    final completer = Completer<bool>();
-    final waitFuture = keysController.waitForKey(24, seconds: 6);
-
-    Get.dialog<bool>(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.volume_up_rounded, color: AppColors.tradeInBlue),
-            SizedBox(width: 8),
-            Text('Nút Tăng âm lượng (+)'),
-          ],
-        ),
-        content: const Text(
-          'Vui lòng bấm nút TĂNG âm lượng (+) trên thân máy.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Bỏ qua / Hỏng'),
+    Get.dialog<void>(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.volume_up_rounded, color: AppColors.tradeInBlue),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nút Tăng âm lượng (+)',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Phím hoạt động tốt'),
+          content: const Text(
+            'Vui lòng bấm nút TĂNG âm lượng (+) trên thân máy.\nKết quả được ghi nhận tự động khi máy bắt được tín hiệu phím thật.',
           ),
-        ],
+        ),
       ),
       barrierDismissible: false,
-    ).then((userResult) {
-      if (!completer.isCompleted) completer.complete(userResult ?? false);
-    });
+    );
 
-    waitFuture.then((pressed) {
-      if (pressed && !completer.isCompleted) {
-        if (Get.isDialogOpen == true) Get.back(result: true);
-        completer.complete(true);
-      }
-    });
+    // Chỉ dựa vào sự kiện phím cứng THẬT (native key event). Không còn nút
+    // "Phím hoạt động tốt" để bấm khống — pass/fail hoàn toàn tự động theo
+    // waitForKey (tự trả về false khi hết 6s không bắt được phím).
+    final pressed = await keysController.waitForKey(24, seconds: 6);
+    if (Get.isDialogOpen == true) Get.back();
 
-    final res = await completer.future;
-    debugPrint('[TestRunner] Kết quả nút Tăng âm lượng: $res');
-    return res;
+    debugPrint('[TestRunner] Kết quả nút Tăng âm lượng: $pressed');
+    return pressed;
   }
 
   Future<bool> _openVolumeDownTest() async {
@@ -449,48 +554,39 @@ class TestRunnerController extends GetxController {
         ? Get.find<KeysTestController>()
         : Get.put(KeysTestController());
 
-    final completer = Completer<bool>();
-    final waitFuture = keysController.waitForKey(25, seconds: 6);
-
-    Get.dialog<bool>(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.volume_down_rounded, color: AppColors.tradeInBlue),
-            SizedBox(width: 8),
-            Text('Nút Giảm âm lượng (-)'),
-          ],
-        ),
-        content: const Text(
-          'Vui lòng bấm nút GIẢM âm lượng (-) trên thân máy.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Bỏ qua / Hỏng'),
+    Get.dialog<void>(
+      PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.volume_down_rounded, color: AppColors.tradeInBlue),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Nút Giảm âm lượng (-)',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            child: const Text('Phím hoạt động tốt'),
+          content: const Text(
+            'Vui lòng bấm nút GIẢM âm lượng (-) trên thân máy.\nKết quả được ghi nhận tự động khi máy bắt được tín hiệu phím thật.',
           ),
-        ],
+        ),
       ),
       barrierDismissible: false,
-    ).then((userResult) {
-      if (!completer.isCompleted) completer.complete(userResult ?? false);
-    });
+    );
 
-    waitFuture.then((pressed) {
-      if (pressed && !completer.isCompleted) {
-        if (Get.isDialogOpen == true) Get.back(result: true);
-        completer.complete(true);
-      }
-    });
+    // Chỉ dựa vào sự kiện phím cứng THẬT (native key event). Không còn nút
+    // "Phím hoạt động tốt" để bấm khống — pass/fail hoàn toàn tự động theo
+    // waitForKey (tự trả về false khi hết 6s không bắt được phím).
+    final pressed = await keysController.waitForKey(25, seconds: 6);
+    if (Get.isDialogOpen == true) Get.back();
 
-    final res = await completer.future;
-    debugPrint('[TestRunner] Kết quả nút Giảm âm lượng: $res');
-    return res;
+    debugPrint('[TestRunner] Kết quả nút Giảm âm lượng: $pressed');
+    return pressed;
   }
 
   Future<bool> _openFrontCameraTest() async {
@@ -556,30 +652,44 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _openSpeakerTest() async {
     debugPrint('[TestRunner] Mở màn hình kiểm tra loa ngoài [SpeakerTestPage]...');
-    final result = (await Get.to<bool>(
-      () => const SpeakerTestPage(),
-      binding: SpeakerTestBinding(),
+    Get.isRegistered<SpeakerTestController>()
+        ? Get.find<SpeakerTestController>()
+        : Get.put(SpeakerTestController());
+    final result = (await Get.dialog<bool>(
+      const SpeakerTestPage(),
+      barrierDismissible: false,
     )) == true;
+    if (Get.isRegistered<SpeakerTestController>()) Get.delete<SpeakerTestController>();
     debugPrint('[TestRunner] Kết quả kiểm tra loa ngoài: $result');
     return result;
   }
 
   Future<bool> _openEarpieceTest() async {
     debugPrint('[TestRunner] Mở màn hình kiểm tra loa trong/cảm biến tiệm cận [EarpieceTestPage]...');
-    final result = (await Get.to<bool>(
-      () => const EarpieceTestPage(),
-      binding: EarpieceTestBinding(),
+    Get.isRegistered<EarpieceTestController>()
+        ? Get.find<EarpieceTestController>()
+        : Get.put(EarpieceTestController());
+    final result = (await Get.dialog<bool>(
+      const EarpieceTestPage(),
+      barrierDismissible: false,
     )) == true;
+    if (Get.isRegistered<EarpieceTestController>()) Get.delete<EarpieceTestController>();
     debugPrint('[TestRunner] Kết quả kiểm tra loa trong: $result');
     return result;
   }
 
   Future<bool> _openTouchGrid() async {
-    debugPrint('[TestRunner] Mở màn hình kiểm tra cảm ứng [TouchGridTestPage]...');
-    final result = (await Get.to<bool>(
-      () => const TouchGridTestPage(),
-      binding: TouchGridTestBinding(),
+    debugPrint('[TestRunner] Mở popup kiểm tra cảm ứng [TouchGridTestPage]...');
+    Get.isRegistered<TouchGridTestController>()
+        ? Get.find<TouchGridTestController>()
+        : Get.put(TouchGridTestController());
+    final result = (await Get.dialog<bool>(
+      const TouchGridTestPage(),
+      barrierDismissible: false,
     )) == true;
+    if (Get.isRegistered<TouchGridTestController>()) {
+      Get.delete<TouchGridTestController>();
+    }
     debugPrint('[TestRunner] Kết quả kiểm tra cảm ứng: $result');
     return result;
   }
@@ -608,13 +718,76 @@ class TestRunnerController extends GetxController {
     }
     await _updateEnvironment();
 
+    // Kiểm tra sớm phần cứng sinh trắc học — máy không hỗ trợ thì đánh fail
+    // luôn, không cần chờ tới lượt mới biết.
+    try {
+      final bioInfo = await DeviceHardwareService.checkBiometrics();
+      if (bioInfo['canCheck'] != true && bioInfo['supported'] != true) {
+        final bioStep = steps.firstWhereOrNull((s) => s.code == 'biometrics');
+        if (bioStep != null) {
+          bioStep.status = DiagStatus.failed;
+          bioStep.note = LocaleKeys.rule_evaluator_default_fail.trans();
+          failedCount.value++;
+        }
+      }
+    } catch (_) {}
+
+    // Thứ tự chạy tự động khớp đúng 12 bước: wifi, bluetooth, location,
+    // vibration, biometrics, mic, volume-up/down, front/rear-camera,
+    // external/internal-speaker. touch-screen (phase `screen`) là TRƯỜNG
+    // HỢP ĐẶC BIỆT — theo đúng hành vi bản gốc, KHÔNG nằm trong chuỗi tự
+    // động, chỉ chạy khi người dùng tự bấm vào dòng "Cảm ứng màn hình"
+    // (xem [runManualScreenStep]).
     await _runPhase(DiagPhase.connectivity);
     await _runPhase(DiagPhase.sensors);
     await _runPhase(DiagPhase.hardware);
-    await _runPhase(DiagPhase.screen);
     await _runPhase(DiagPhase.manual);
 
     isRunning.value = false;
+
+    // Nếu còn bước touch-screen đang chờ (pending) — DỪNG LẠI ở đây, không
+    // tổng kết/điều hướng ngay. Người dùng phải tự bấm vào dòng đó
+    // (runManualScreenStep) thì mới tiếp tục sang bước tổng kết.
+    final screenStep = steps.firstWhereOrNull(
+      (s) => s.phase == DiagPhase.screen,
+    );
+    if (screenStep != null && screenStep.status == DiagStatus.pending) {
+      debugPrint('[TestRunner] 12 bước tự động đã xong — chờ người dùng tự bấm "Cảm ứng màn hình"...');
+      return;
+    }
+
+    await _finalizeDiagnostics();
+  }
+
+  /// Người dùng tự bấm vào bước "Cảm ứng màn hình" (phase `screen`) — bước
+  /// DUY NHẤT không nằm trong chuỗi tự động, phải tự kích hoạt thủ công
+  /// (đúng theo hành vi bản gốc: bấm vào đây mới bắt đầu, không tự chạy).
+  Future<void> runManualScreenStep(DiagStep step) async {
+    if (isRunning.value) return;
+    if (step.status != DiagStatus.pending) return;
+
+    isRunning.value = true;
+    debugPrint('[TestRunner] Người dùng tự kích hoạt bước: [${step.code}] ${step.title}');
+    step.status = DiagStatus.running;
+    step.note = _getRunningNote(step.code);
+    steps.refresh();
+
+    final stopwatch = Stopwatch()..start();
+    final result = await _runStepWithTimeout(step);
+    stopwatch.stop();
+
+    _evaluateStep(step, result);
+    debugPrint('[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)');
+    steps.refresh();
+    isRunning.value = false;
+
+    await _finalizeDiagnostics();
+  }
+
+  /// Tổng kết điểm số + điều hướng sang bước tiếp theo (Question Check) —
+  /// gọi sau khi TOÀN BỘ 13 bước đã có kết quả (12 tự động + touch-screen
+  /// thủ công).
+  Future<void> _finalizeDiagnostics() async {
     final totalDuration = DateTime.now().difference(
       _startTime ?? DateTime.now(),
     );
@@ -636,7 +809,8 @@ class TestRunnerController extends GetxController {
     );
 
     printTestResults();
-    _navigateToResult();
+    // KHÔNG tự động điều hướng nữa — người dùng tự xem lại kết quả rồi bấm
+    // nút "Tiếp tục" (xem [continueToNextStep]) mới sang bước kế tiếp.
   }
 
   void printTestResults() {
@@ -664,7 +838,7 @@ class TestRunnerController extends GetxController {
     };
 
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('[TestRunner] 📥 TEST_RESULTS_RESPONSE:\n${encoder.convert(response)}');
+    debugPrint('[TestRunner] TEST_RESULTS_RESPONSE:\n${encoder.convert(response)}');
   }
 
   Future<void> startWithPermissionCheck() async {
@@ -674,21 +848,21 @@ class TestRunnerController extends GetxController {
   }
 
   void _navigateToResult() {
-    final failedSteps = steps.where((s) => s.status == DiagStatus.failed).toList();
-    if (score < 70 && failedSteps.isNotEmpty) {
-      debugPrint('[TestRunner] Điểm kiểm định $score/100 có ${failedSteps.length} bài test không đạt -> FailedTestsWarningPage');
-      Get.off(() => FailedTestsWarningPage(
-        failedSteps: failedSteps,
-        score: score,
-      ));
-    } else {
-      debugPrint('[TestRunner] Hoàn tất kiểm định chức năng -> DiagnosticResultPage');
-      Get.off(() => const DiagnosticResultPage());
-    }
+    debugPrint('[TestRunner] Hoàn tất kiểm định chức năng -> QuestionCheckPage');
+    Get.off(() => const QuestionCheckPage());
+  }
+
+  /// Người dùng bấm nút "Tiếp tục" sau khi đã xem lại kết quả — chỉ cho đi
+  /// tiếp khi TOÀN BỘ step đã có kết quả cuối (đạt/lỗi/bỏ qua đều được).
+  void continueToNextStep() {
+    if (!allStepsCompleted) return;
+    _navigateToResult();
   }
 
   Future<void> _runPhase(DiagPhase phase) async {
-    final phaseSteps = steps.where((s) => s.phase == phase).toList();
+    // Bỏ qua step đã có kết quả từ trước (vd: biometrics bị precheck phần
+    // cứng đánh fail sớm) — tránh chạy lại đè lên kết quả đã có.
+    final phaseSteps = steps.where((s) => s.phase == phase && s.status == DiagStatus.pending).toList();
     if (phaseSteps.isEmpty) return;
 
     currentPhase.value = phase;
@@ -700,7 +874,7 @@ class TestRunnerController extends GetxController {
     DiagLogger.phaseStart(name, phaseSteps.length);
 
     for (final step in phaseSteps) {
-      debugPrint('[TestRunner] ⏳ Đang chạy bước: [${step.code}] ${step.title}');
+      debugPrint('[TestRunner] Đang chạy bước: [${step.code}] ${step.title}');
       step.status = DiagStatus.running;
       step.note = _getRunningNote(step.code);
       steps.refresh();
@@ -716,7 +890,7 @@ class TestRunnerController extends GetxController {
       }
 
       _evaluateStep(step, result);
-      debugPrint('[TestRunner] 🏁 Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)');
+      debugPrint('[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)');
       phaseProgress.value++;
       steps.refresh();
 
@@ -799,12 +973,18 @@ class TestRunnerController extends GetxController {
       }
     } else if (runSuccess) {
       step.status = DiagStatus.passed;
+      step.note = null;
       passedCount.value++;
     } else if (step.note?.contains('Timeout') == true) {
       step.status = DiagStatus.skipped;
       skippedCount.value++;
     } else {
+      // Không có RuleEvaluator lý giải cụ thể (VD: biometrics chỉ trả về
+      // true/false) — ghi đè note "đang chạy" còn sót lại bằng lý do THẤT
+      // BẠI thực sự, tránh hiển thị nhầm message "Đang thẩm định..." cho
+      // một bước đã kết thúc.
       step.status = DiagStatus.failed;
+      step.note = LocaleKeys.rule_evaluator_default_fail.trans();
       failedCount.value++;
     }
   }
@@ -827,7 +1007,7 @@ class TestRunnerController extends GetxController {
         return LocaleKeys.diagnostics_home_running_note_wifi.trans();
       case 'mobile':
         return LocaleKeys.diagnostics_home_running_note_mobile.trans();
-      case 'bt':
+      case 'bluetooth':
         return LocaleKeys.diagnostics_home_running_note_bt.trans();
       case 'nfc':
         return LocaleKeys.diagnostics_home_running_note_nfc.trans();
@@ -835,7 +1015,7 @@ class TestRunnerController extends GetxController {
         return LocaleKeys.diagnostics_home_running_note_sim.trans();
       case 'sensors':
         return LocaleKeys.diagnostics_home_running_note_sensors.trans();
-      case 'gps':
+      case 'location':
         return LocaleKeys.diagnostics_home_running_note_gps.trans();
       case 'charge':
         return LocaleKeys.diagnostics_home_running_note_charge.trans();
@@ -845,7 +1025,7 @@ class TestRunnerController extends GetxController {
         return LocaleKeys.diagnostics_home_running_note_lock.trans();
       case 'spen':
         return LocaleKeys.diagnostics_home_running_note_spen.trans();
-      case 'bio':
+      case 'biometrics':
         return LocaleKeys.diagnostics_home_running_note_bio.trans();
       default:
         return LocaleKeys.diagnostics_home_running_note_default.trans();
@@ -866,6 +1046,22 @@ class TestRunnerController extends GetxController {
         return 'SCREEN';
       case DiagPhase.manual:
         return 'MANUAL TESTS';
+    }
+  }
+}
+
+/// Quan sát vòng đời app tối giản — chỉ gọi [onResumed] đúng 1 lần khi app
+/// quay lại foreground, dùng để tự động thử lại kiểm tra sau khi người
+/// dùng đi bật 1 cài đặt hệ thống (VD: Dịch vụ vị trí) rồi quay lại app.
+class _AppResumeObserver extends WidgetsBindingObserver {
+  _AppResumeObserver(this.onResumed);
+
+  final VoidCallback onResumed;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      onResumed();
     }
   }
 }

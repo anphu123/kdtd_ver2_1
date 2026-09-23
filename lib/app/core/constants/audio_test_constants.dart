@@ -3,14 +3,16 @@ class AudioTestConstants {
   AudioTestConstants._();
 
   // ==================== KIỂM TRA MICROPHONE ====================
-  /// Số giây thu âm trước khi tự động phát lại.
+  /// Số giây thu âm trước khi tự động chấm kết quả theo biên độ đo được.
   static const int micRecordingSeconds = 5;
 
-  /// Ngưỡng biên độ coi là "đã phát hiện âm thanh".
-  static const double soundDetectionAmplitudeThreshold = 1000;
+  /// Ngưỡng biên độ (dBFS) coi là "đã phát hiện âm thanh".
+  /// Khoảng cách bình thường thường đạt -20 đến -10 dBFS, ồn nền dưới -45 dBFS.
+  /// Cần hiệu chỉnh thêm trên máy thật nếu cần.
+  static const double soundDetectionDbfsThreshold = -35.0;
 
-  /// Biên độ tối đa dùng để chuẩn hoá mức hiển thị (0.0 - 1.0) trên UI.
-  static const double amplitudeLevelMax = 20000;
+  /// Biên độ tối thiểu (dBFS) dùng để chuẩn hoá mức hiển thị (0.0 - 1.0) trên UI.
+  static const double amplitudeDbfsFloor = -60.0;
 
   /// Chu kỳ lấy mẫu biên độ micro.
   static const Duration amplitudeSampleInterval = Duration(milliseconds: 100);
