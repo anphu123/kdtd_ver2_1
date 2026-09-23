@@ -6,7 +6,9 @@ import 'package:kdtd_ver2_1/app/data/model/device_cosmetic_survey.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'package:kdtd_ver2_1/app/data/services/device_hardware_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/diag_logger.dart';
+import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/phone_info_service.dart';
+import 'package:kdtd_ver2_1/app/modules/question_check/question_check_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_controller.dart';
 import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 
@@ -123,7 +125,7 @@ class DiagnosticsHomeController extends GetxController {
     };
 
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('[DiagnosticsHome] 📥 DEVICE_INFO_RESPONSE:\n${encoder.convert(response)}');
+    debugPrint('[DiagnosticsHome] DEVICE_INFO_RESPONSE:\n${encoder.convert(response)}');
   }
 
   String _formatBytesToGb(dynamic bytes) {
@@ -153,7 +155,10 @@ class DiagnosticsHomeController extends GetxController {
     Get.toNamed(AppRoutes.permissionCheck);
   }
 
-  /// Quét thông tin cơ bản và chuyển sang màn xác nhận thông số & ngoại quan
+  /// Quét thông tin cơ bản rồi vào thẳng Function Check (Test Runner).
+  /// Luồng: Home -> PermissionCheck -> TestRunner -> QuestionCheck -> Result.
+  /// KHÔNG còn đi qua DeviceSpecsConfirmation/PreTestGuide (đã bỏ khỏi luồng
+  /// theo yêu cầu; 2 module đó vẫn giữ nguyên code, chỉ không điều hướng tới).
   Future<void> startCriticalScanAndConfirm() async {
     if (isRunning.value) return;
 
@@ -169,7 +174,7 @@ class DiagnosticsHomeController extends GetxController {
         : Get.put(TestRunnerController(), permanent: true);
     testRunner.setInitialInfo(info);
 
-    Get.toNamed(AppRoutes.deviceConfirmation);
+    Get.toNamed(AppRoutes.testRunner);
   }
 
   /// Chuyển tiếp sang TestRunnerController nếu có component gọi
@@ -193,6 +198,20 @@ class DiagnosticsHomeController extends GetxController {
   RxInt get passedCount => _runner?.passedCount ?? 0.obs;
   RxInt get failedCount => _runner?.failedCount ?? 0.obs;
   RxInt get skippedCount => _runner?.skippedCount ?? 0.obs;
+
+  int get questionCheckType {
+    if (Get.isRegistered<QuestionCheckController>()) {
+      return Get.find<QuestionCheckController>().overallType;
+    }
+    return 1;
+  }
+
+  int get finalDeviceType {
+    return DiagnosticGradeService.finalType(
+      hasFunctionCheckFailed: failedCount.value > 0,
+      questionCheckType: questionCheckType,
+    );
+  }
 
   void printTestResults() {
     _runner?.printTestResults();

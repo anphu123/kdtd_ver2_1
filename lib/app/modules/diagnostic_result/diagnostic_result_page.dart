@@ -5,14 +5,15 @@ import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/constants/diagnostic_result_constants.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
-import 'package:kdtd_ver2_1/app/core/widgets/pvi_modernist/pvi_modernist.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
-import 'package:kdtd_ver2_1/app/data/model/upgrade_device_option.dart';
 import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/price_estimation_service.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
+import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
+import 'package:kdtd_ver2_1/app/modules/question_check/question_check_controller.dart';
 
-/// Trang kết quả thẩm định & Lên đời máy mới (Trade-In & Upgrade)
+/// Trang kết quả thẩm định (Trade-In) — KHÔNG còn phần lên đời máy mới,
+/// chỉ hiển thị chứng nhận thẩm định + định giá thu cũ + chi tiết kiểm định.
 class DiagnosticResultPage extends StatefulWidget {
   const DiagnosticResultPage({super.key});
 
@@ -23,16 +24,12 @@ class DiagnosticResultPage extends StatefulWidget {
 class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
   final DiagnosticsHomeController controller =
       Get.find<DiagnosticsHomeController>();
-  late UpgradeDeviceOption selectedOption;
-  final List<UpgradeDeviceOption> upgradeOptions =
-      UpgradeDeviceOption.defaultOptions;
   PriceEstimate? priceEstimate;
   bool isLoadingPrice = true;
 
   @override
   void initState() {
     super.initState();
-    selectedOption = upgradeOptions.first;
     _fetchPriceEstimate();
   }
 
@@ -71,22 +68,27 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
   @override
   Widget build(BuildContext context) {
-    final total = controller.steps.length;
-    final passed = controller.passedCount.value;
-    final failed = controller.failedCount.value;
-    final score = controller.score;
-
     final baseTradeInValue =
         priceEstimate?.estimatedPrice ??
         DiagnosticResultConstants.fallbackTradeInValueVnd;
-    final totalSubsidy = selectedOption.subsidyAmount;
-    final totalValuation = baseTradeInValue + totalSubsidy;
-    final topUpAmount = selectedOption.calculateTopUp(baseTradeInValue);
+
+    final displayName =
+        controller.marketingName.isNotEmpty && controller.marketingName != '-'
+            ? controller.marketingName
+            : (controller.modelName.isNotEmpty && controller.modelName != '-'
+                ? controller.modelName
+                : LocaleKeys.diagnostic_result_default_device_name.trans());
+
+    final gradeColor = _getGradeColor(controller.finalDeviceType);
+    final gradeLabel = DiagnosticGradeService.labelForType(
+      controller.finalDeviceType,
+    );
 
     return Scaffold(
-      backgroundColor: AppColors.tradeInSurfaceBg,
+      backgroundColor: AppColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppColors.pviNavy,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -113,1153 +115,487 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               color: AppColors.white,
               size: 20.r,
             ),
-            onPressed:
-                () => _shareTradeInCertificate(
-                  baseTradeInValue,
-                  totalValuation,
-                  topUpAmount,
-                ),
+            onPressed: () => _shareTradeInCertificate(baseTradeInValue),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 120.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Thẻ chứng nhận thẩm định (Hero Card)
-                _buildCertificateCard(
-                  score,
-                  baseTradeInValue,
-                  totalSubsidy,
-                  totalValuation,
-                ),
-
-                SizedBox(height: 18.h),
-
-                // 2. Không gian trưng bày máy nâng cấp tương tác
-                _buildUpgradeShowroom(baseTradeInValue, topUpAmount),
-
-                SizedBox(height: 18.h),
-
-                // 3. Quy trình 3 bước Thu cũ đổi mới
-                _buildTradeInStepsCard(),
-
-                SizedBox(height: 18.h),
-
-                // 4. Bảng tổng hợp chi tiết kiểm định
-                _buildDiagnosticBreakdown(total, passed, failed),
-
-                SizedBox(height: 18.h),
-
-                // Các hành động phụ trợ
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Get.back();
-                          controller.startWithPermissionCheck();
-                        },
-                        icon: Icon(
-                          Icons.refresh_rounded,
-                          size: 18.r,
-                          color: AppColors.pviNavy,
-                        ),
-                        label: Text(
-                          LocaleKeys.diagnostic_result_retest_button.trans(),
-                          style: AppTextStyles.button.copyWith(
-                            color: AppColors.pviNavy,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 12.h),
-                          side: const BorderSide(
-                            color: AppColors.tradeInBorder,
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          controller.printTestResults();
-                          Get.snackbar(
-                            LocaleKeys.diagnostic_result_snackbar_printed_title
-                                .trans(),
-                            LocaleKeys
-                                .diagnostic_result_snackbar_printed_message
-                                .trans(),
-                          );
-                        },
-                        icon: Icon(
-                          Icons.print_outlined,
-                          size: 18.r,
-                          color: AppColors.pviNavy,
-                        ),
-                        label: Text(
-                          LocaleKeys.diagnostic_result_export_report_button
-                              .trans(),
-                          style: AppTextStyles.button.copyWith(
-                            color: AppColors.pviNavy,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 12.h),
-                          side: const BorderSide(
-                            color: AppColors.tradeInBorder,
-                            width: 1,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Thanh thanh toán/xác nhận cố định bên dưới
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildStickyBottomBar(topUpAmount),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Card 1: Chứng Nhận Thẩm Định & Định Giá Máy Cũ
-  Widget _buildCertificateCard(
-    int score,
-    int baseTradeInValue,
-    int subsidy,
-    int totalValuation,
-  ) {
-    final gradeText = DiagnosticGradeService.labelFromScore(score);
-
-    final displayName =
-        controller.marketingName.isNotEmpty && controller.marketingName != '-'
-            ? controller.marketingName
-            : (controller.modelName.isNotEmpty && controller.modelName != '-'
-                ? controller.modelName
-                : LocaleKeys.diagnostic_result_default_device_name.trans());
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.pviNavy,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.pviNavyBorder, width: 1),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(18.r),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Huy hiệu tiêu đề trên cùng
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.verified_rounded,
-                      color: AppColors.tradeInEmerald,
-                      size: 20.r,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      LocaleKeys.diagnostic_result_certificate_badge.trans(),
-                      style: AppTextStyles.badge.copyWith(
-                        color: AppColors.tradeInEmerald,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.pviNavyLighter,
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: AppColors.pviNavyBorder, width: 0.8),
-                  ),
-                  child: Text(
-                    gradeText,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 14.h),
-
-            // Tên thiết bị
-            Text(
-              displayName,
-              style: AppTextStyles.headlineSmall.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              LocaleKeys.diagnostic_result_health_score_line.trans(
-                namedArgs: {'score': '$score'},
-              ),
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.pviBlueLighter,
-              ),
-            ),
-
-            SizedBox(height: 18.h),
-
-            // Hộp nổi bật giá trị định giá
+            // 1. Hero header (navy)
             Container(
-              padding: EdgeInsets.all(16.r),
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + kToolbarHeight + 8.h,
+                bottom: 44.h,
+              ),
               decoration: BoxDecoration(
-                color: AppColors.pviNavyLighter,
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: AppColors.pviNavyBorder,
-                  width: 1,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.pviNavy, AppColors.pviNavyDark],
+                ),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(28.r),
                 ),
               ),
-              child: Column(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        LocaleKeys.diagnostic_result_trade_in_price_label
-                            .trans(),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.pviBlueLighter,
-                        ),
-                      ),
-                      isLoadingPrice
-                          ? SizedBox(
-                            width: 16.r,
-                            height: 16.r,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.white,
-                            ),
-                          )
-                          : Text(
-                            _formatPrice(baseTradeInValue),
-                            style: AppTextStyles.titleMedium.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                    ],
-                  ),
-                  SizedBox(height: 8.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.stars_rounded,
-                            color: AppColors.tradeInGold,
-                            size: 16.r,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            LocaleKeys.diagnostic_result_subsidy_label.trans(),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.tradeInGold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '+ ${_formatPrice(subsidy)}',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.tradeInGold,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10.h),
-                    child: const Divider(
-                      color: AppColors.pviNavyBorder,
-                      height: 1,
+                  SizedBox(width: 20.w),
+                  Container(
+                    width: 110.w,
+                    height: 140.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(18.r),
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            LocaleKeys
-                                .diagnostic_result_total_deduction_label
-                                .trans(),
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.tradeInEmeraldLight,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          SizedBox(height: 2.h),
-                          Text(
-                            LocaleKeys
-                                .diagnostic_result_total_deduction_note
-                                .trans(),
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.pviBlueLighter,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        _formatPrice(totalValuation),
-                        style: AppTextStyles.priceDisplay.copyWith(
-                          color: AppColors.tradeInEmerald,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Thẻ 2: Không gian trưng bày máy nâng cấp tương tác
-  Widget _buildUpgradeShowroom(int baseTradeInValue, int topUpAmount) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  LocaleKeys.diagnostic_result_showroom_title.trans(),
-                  style: AppTextStyles.sectionHeader.copyWith(
-                    color: AppColors.tradeInNavy,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  LocaleKeys.diagnostic_result_showroom_subtitle.trans(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.neutralGreyDark,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: AppColors.tradeInGoldLight,
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Text(
-                LocaleKeys.diagnostic_result_installment_badge.trans(),
-                style: AppTextStyles.badge.copyWith(
-                  color: AppColors.tradeInGoldDark,
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: 14.h),
-
-        // Băng chuyền hiển thị điện thoại dạng ngang
-        SizedBox(
-          height: 175.h,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: upgradeOptions.length,
-            separatorBuilder: (_, __) => SizedBox(width: 12.w),
-            itemBuilder: (context, index) {
-              final option = upgradeOptions[index];
-              final isSelected = option.id == selectedOption.id;
-              final diff = option.calculateTopUp(baseTradeInValue);
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedOption = option;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 155.w,
-                  padding: EdgeInsets.all(12.r),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(18.r),
-                    border: Border.all(
-                      color:
-                          isSelected
-                              ? AppColors.tradeInBlue
-                              : AppColors.tradeInBorder,
-                      width: isSelected ? 2.2 : 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Nhãn tag + Biểu tượng lựa chọn
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6.w,
-                              vertical: 2.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  isSelected
-                                      ? AppColors.tradeInBlue
-                                      : AppColors.neutralGreyLight,
-                              borderRadius: BorderRadius.circular(6.r),
-                            ),
-                            child: Text(
-                              option.tag,
-                              style: AppTextStyles.badge.copyWith(
-                                fontSize: 9.sp,
-                                color:
-                                    isSelected
-                                        ? AppColors.white
-                                        : AppColors.neutralGreyDark,
-                              ),
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.tradeInBlue,
-                              size: 16.r,
-                            ),
-                        ],
-                      ),
-
-                      // Biểu tượng thiết bị
-                      Center(
-                        child: Icon(
-                          option.icon,
-                          size: 38.r,
-                          color:
-                              isSelected
-                                  ? AppColors.tradeInBlue
-                                  : AppColors.tradeInSlate,
-                        ),
-                      ),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            option.name,
-                            style: AppTextStyles.labelMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.tradeInNavy,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '${option.storage} • ${option.colorName}',
-                            style: AppTextStyles.caption.copyWith(
-                              fontSize: 10.sp,
-                              color: AppColors.neutralGreyDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            LocaleKeys.diagnostic_result_topup_only_label.trans(
-                              namedArgs: {'amount': _formatPrice(diff)},
-                            ),
-                            style: AppTextStyles.badge.copyWith(
-                              color: AppColors.passDark,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        SizedBox(height: 16.h),
-
-        // Thẻ tính toán chi phí bù trừ nâng cấp thời gian thực
-        PviInsetGroupCard(
-          headerTitle: LocaleKeys.diagnostic_result_upgrade_math_title.trans(
-            namedArgs: {'name': selectedOption.name},
-          ),
-          headerTrailing: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 8.w,
-              vertical: 3.h,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.pviRedSurface,
-              borderRadius: BorderRadius.circular(6.r),
-              border: Border.all(color: AppColors.pviRedBorder, width: 0.8),
-            ),
-            child: Text(
-              selectedOption.storage,
-              style: AppTextStyles.badge.copyWith(
-                color: AppColors.pviRed,
-              ),
-            ),
-          ),
-          children: [
-            _buildMathRow(
-              LocaleKeys.diagnostic_result_retail_price_label.trans(),
-              selectedOption.formattedRetailPrice,
-              isSub: false,
-            ),
-            _buildMathRow(
-              LocaleKeys.diagnostic_result_deduct_trade_in_label.trans(),
-              '- ${_formatPrice(baseTradeInValue)}',
-              isHighlight: true,
-            ),
-            _buildMathRow(
-              LocaleKeys.diagnostic_result_deduct_subsidy_label.trans(),
-              '- ${selectedOption.formattedSubsidy}',
-              isGold: true,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      LocaleKeys.diagnostic_result_actual_topup_label.trans(),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.tradeInNavy,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.credit_card,
-                          size: 12.r,
-                          color: AppColors.pviBlue,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          LocaleKeys.diagnostic_result_installment_note.trans(
-                            namedArgs: {
-                              'amount': _formatPrice(
-                                selectedOption.monthlyInstallment(
-                                  topUpAmount,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18.r),
+                      child: FutureBuilder<String?>(
+                        future: controller.getPhoneImageUrl(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: SizedBox(
+                                width: 20.r,
+                                height: 20.r,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.pviNavyBorder,
                                 ),
                               ),
-                            },
+                            );
+                          }
+                          final url = snapshot.data;
+                          if (url != null && url.isNotEmpty) {
+                            return Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (_, __, ___) => Icon(
+                                    Icons.smartphone_outlined,
+                                    size: 48.r,
+                                    color: AppColors.tradeInSlateLight,
+                                  ),
+                            );
+                          }
+                          return Icon(
+                            Icons.smartphone_outlined,
+                            size: 48.r,
+                            color: AppColors.tradeInSlateLight,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
                           ),
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.pviBlue,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11.sp,
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_rounded,
+                                color: AppColors.successBorder,
+                                size: 14.r,
+                              ),
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: Text(
+                                  LocaleKeys.diagnostic_result_certificate_badge
+                                      .trans(),
+                                  style: AppTextStyles.badgeSmall.copyWith(
+                                    color: AppColors.successBorder,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        Text(
+                          displayName,
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20.sp,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 12.h),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 5.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: gradeColor,
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: Text(
+                            gradeLabel,
+                            style: AppTextStyles.badge.copyWith(
+                              color: AppColors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                Text(
-                  _formatPrice(topUpAmount),
-                  style: AppTextStyles.priceDisplay.copyWith(
-                    color: AppColors.passDark,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMathRow(
-    String label,
-    String value, {
-    bool isSub = true,
-    bool isHighlight = false,
-    bool isGold = false,
-  }) {
-    Color valueColor = AppColors.tradeInNavy;
-    if (isHighlight) valueColor = AppColors.passDark;
-    if (isGold) valueColor = AppColors.tradeInGoldDark;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isSub ? AppColors.neutralGreyDark : AppColors.tradeInNavy,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: valueColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Card 3: 3 Bước đổi máy
-  Widget _buildTradeInStepsCard() {
-    return PviInsetGroupCard(
-      headerTitle: LocaleKeys.diagnostic_result_steps_card_title.trans(),
-      children: [
-        _buildStepRow(
-          '1',
-          LocaleKeys.diagnostic_result_step1_title.trans(),
-          LocaleKeys.diagnostic_result_step1_desc.trans(),
-          true,
-        ),
-        _buildStepRow(
-          '2',
-          LocaleKeys.diagnostic_result_step2_title.trans(),
-          LocaleKeys.diagnostic_result_step2_desc.trans(),
-          false,
-        ),
-        _buildStepRow(
-          '3',
-          LocaleKeys.diagnostic_result_step3_title.trans(),
-          LocaleKeys.diagnostic_result_step3_desc.trans(),
-          false,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStepRow(String number, String title, String desc, bool isDone) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 24.r,
-          height: 24.r,
-          decoration: BoxDecoration(
-            color:
-                isDone
-                    ? AppColors.tradeInEmerald
-                    : AppColors.pviRedSurface,
-            shape: BoxShape.circle,
-            border: isDone ? null : Border.all(color: AppColors.pviRedBorder),
-          ),
-          child: Center(
-            child:
-                isDone
-                    ? Icon(Icons.check, size: 14.r, color: AppColors.white)
-                    : Text(
-                      number,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.pviNavy,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.tradeInNavy,
-                ),
-              ),
-              Text(
-                desc,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.neutralGreyDark,
-                  fontSize: 11.sp,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Card 4: Danh mục kiểm định chi tiết
-  Widget _buildDiagnosticBreakdown(int total, int passed, int failed) {
-    return PviInsetGroupCard(
-      headerTitle: LocaleKeys.diagnostic_result_diagnostic_breakdown_title.trans(),
-      headerTrailing: Row(
-        children: [
-          _buildMiniStat(
-            LocaleKeys.diagnostic_result_passed_stat.trans(
-              namedArgs: {'count': '$passed'},
-            ),
-            AppColors.pass,
-          ),
-          if (failed > 0) ...[
-            SizedBox(width: 6.w),
-            _buildMiniStat(
-              LocaleKeys.diagnostic_result_failed_stat.trans(
-                namedArgs: {'count': '$failed'},
-              ),
-              AppColors.fail,
-            ),
-          ],
-        ],
-      ),
-      children: [
-        ...controller.steps
-            .take(DiagnosticResultConstants.stepsPreviewLimit)
-            .map((step) => _buildStepResultTile(step)),
-        if (controller.steps.length >
-            DiagnosticResultConstants.stepsPreviewLimit)
-          Center(
-            child: TextButton.icon(
-              onPressed: () => _showFullDiagnosticsDialog(),
-              icon: Icon(
-                Icons.list_alt_rounded,
-                size: 16.r,
-                color: AppColors.pviNavy,
-              ),
-              label: Text(
-                LocaleKeys.diagnostic_result_view_all_tests.trans(
-                  namedArgs: {'count': '${controller.steps.length}'},
-                ),
-                style: AppTextStyles.button.copyWith(
-                  color: AppColors.pviNavy,
-                  fontSize: 13.sp,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildMiniStat(String text, Color color) {
-    Color surface = AppColors.neutralGreyLight;
-    Color border = AppColors.neutralGreyLighter;
-    if (color == AppColors.pass || color == AppColors.success) {
-      surface = AppColors.successSurface;
-      border = AppColors.successBorder;
-    } else if (color == AppColors.warning) {
-      surface = AppColors.warningSurface;
-      border = AppColors.warningBorder;
-    } else if (color == AppColors.fail || color == AppColors.error) {
-      surface = AppColors.pviRedSurface;
-      border = AppColors.pviRedBorder;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(6.r),
-        border: Border.all(color: border, width: 0.8),
-      ),
-      child: Text(
-        text,
-        style: AppTextStyles.badge.copyWith(color: color, fontSize: 11.sp),
-      ),
-    );
-  }
-
-  Widget _buildStepResultTile(DiagStep step) {
-    final isPassed = step.status == DiagStatus.passed;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6.h),
-      child: Row(
-        children: [
-          Icon(
-            isPassed ? Icons.check_circle_rounded : Icons.warning_rounded,
-            size: 18.r,
-            color: isPassed ? AppColors.pass : AppColors.warning,
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Text(
-              step.title,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.tradeInNavy,
-              ),
-            ),
-          ),
-          Text(
-            isPassed
-                ? LocaleKeys.diagnostic_result_status_good.trans()
-                : LocaleKeys.diagnostic_result_status_needs_attention.trans(),
-            style: AppTextStyles.caption.copyWith(
-              color: isPassed ? AppColors.pass : AppColors.warning,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Thanh cố định bên dưới (Sticky Bottom Bar)
-  Widget _buildStickyBottomBar(int topUpAmount) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(
-          top: BorderSide(color: AppColors.tradeInBorder, width: 1),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          child: Row(
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    LocaleKeys.diagnostic_result_sticky_topup_label.trans(
-                      namedArgs: {'name': selectedOption.name},
-                    ),
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.tradeInSlate,
-                      fontSize: 11.sp,
-                    ),
-                  ),
-                  Text(
-                    _formatPrice(topUpAmount),
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.passDark,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  SizedBox(width: 20.w),
                 ],
               ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: SizedBox(
-                  height: 48.h,
-                  child: FilledButton.icon(
-                    onPressed: () => _showUpgradeModal(topUpAmount),
-                    icon: Icon(
-                      Icons.rocket_launch_rounded,
-                      size: 18.r,
-                      color: AppColors.white,
-                    ),
-                    label: Text(
-                      LocaleKeys.diagnostic_result_upgrade_now_button.trans(),
-                      style: AppTextStyles.button.copyWith(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.white,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.pviRed,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+            ),
 
-  /// Modal xác nhận lên đời máy mới
-  void _showUpgradeModal(int topUpAmount) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.transparent,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(20.r),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.tradeInBorder,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Row(
-                children: [
-                  Icon(
-                    Icons.swap_horizontal_circle_rounded,
-                    color: AppColors.pviNavy,
-                    size: 24.r,
-                  ),
-                  SizedBox(width: 10.w),
-                  Text(
-                    LocaleKeys.diagnostic_result_modal_title.trans(),
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.pviNavy,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18.sp,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16.h),
-              Container(
-                padding: EdgeInsets.all(16.r),
+            // 2. Thẻ giá thu cũ
+            Transform.translate(
+              offset: Offset(0, -32.h),
+              child: Container(
+                // Bắt buộc có width: Container không đặt width sẽ co lại vừa
+                // bằng chữ số tiền, khiến thẻ hẹp lơ lửng giữa màn hình.
+                width: double.infinity,
+                margin: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
                 decoration: BoxDecoration(
-                  color: AppColors.tradeInSurfaceBg,
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(color: AppColors.tradeInBorder),
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.pviNavy.withValues(alpha: 0.10),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildModalRow(
-                      LocaleKeys.diagnostic_result_modal_old_device_label.trans(),
-                      '${controller.brand} ${controller.modelName}',
+                    Text(
+                      LocaleKeys.diagnostic_result_trade_in_price_label.trans(),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 8.h),
-                    _buildModalRow(
-                      LocaleKeys.diagnostic_result_modal_new_device_label.trans(),
-                      '${selectedOption.name} (${selectedOption.storage})',
-                    ),
-                    SizedBox(height: 8.h),
-                    _buildModalRow(
-                      LocaleKeys.diagnostic_result_modal_subsidy_label.trans(),
-                      '+ ${selectedOption.formattedSubsidy}',
-                      isGold: true,
-                    ),
-                    Divider(
-                      height: 16.h,
-                      color: AppColors.tradeInBorder,
-                    ),
-                    _buildModalRow(
-                      LocaleKeys.diagnostic_result_modal_total_topup_label.trans(),
-                      _formatPrice(topUpAmount),
-                      isTotal: true,
+                    isLoadingPrice
+                        ? SizedBox(
+                          height: 36.h,
+                          child: Center(
+                            child: SizedBox(
+                              width: 24.r,
+                              height: 24.r,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.successDark,
+                              ),
+                            ),
+                          ),
+                        )
+                        : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _formatPrice(baseTradeInValue),
+                            style: AppTextStyles.priceDisplay.copyWith(
+                              color: AppColors.successDark,
+                              fontSize: 32.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    SizedBox(height: 14.h),
+                    Divider(color: AppColors.borderSubtle, height: 1),
+                    SizedBox(height: 12.h),
+                    // Dòng điểm sức khỏe — đặt ở đây thay vì trong hero vì
+                    // cột chữ hero quá hẹp, chữ bị ngắt dòng xấu.
+                    Text(
+                      LocaleKeys.diagnostic_result_health_score_line.trans(
+                        namedArgs: {'score': controller.score.toString()},
+                      ),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 11.sp,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 16.h),
-              Text(
-                LocaleKeys.diagnostic_result_modal_delivery_method_label.trans(),
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.tradeInNavy,
-                ),
+            ),
+
+            // Không cần SizedBox: Transform.translate chỉ dịch lúc vẽ nên ô
+            // của thẻ giá vẫn chiếm chỗ cũ, tạo sẵn khoảng hở 32.h bên dưới.
+
+            // 3. Thẻ chi tiết hạng mục — dạng danh sách thay vì lưới 2x2 vì
+            // phần mô tả có độ dài rất khác nhau (câu trả lời khảo sát có thể
+            // dài cả dòng), lưới ô cố định sẽ tràn chữ.
+            Container(
+              width: double.infinity,
+              margin: EdgeInsets.symmetric(horizontal: 16.w),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: AppColors.borderSubtle),
               ),
-              SizedBox(height: 8.h),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.storefront_rounded,
-                  color: AppColors.pviNavy,
-                ),
-                title: Text(
-                  LocaleKeys.diagnostic_result_modal_delivery_title.trans(),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.tradeInNavy,
-                    fontWeight: FontWeight.bold,
+              child: Column(
+                children: [
+                  _buildSpecRow(
+                    icon: Icons.battery_full_rounded,
+                    iconColor: AppColors.success,
+                    label:
+                        LocaleKeys.diagnostic_result_category_battery_label
+                            .trans(),
+                    value: _getBatteryLabel(),
                   ),
-                ),
-                subtitle: Text(
-                  LocaleKeys.diagnostic_result_modal_delivery_subtitle.trans(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.neutralGreyDark,
+                  _buildSpecDivider(),
+                  _buildSpecRow(
+                    icon: Icons.smartphone_rounded,
+                    iconColor: AppColors.pviBlue,
+                    label:
+                        LocaleKeys.diagnostic_result_category_screen_label
+                            .trans(),
+                    value: _getScreenAnswerLabel(),
                   ),
-                ),
-                trailing: const Icon(
-                  Icons.radio_button_checked,
-                  color: AppColors.pviRed,
-                ),
+                  _buildSpecDivider(),
+                  _buildSpecRow(
+                    icon: Icons.touch_app_rounded,
+                    iconColor: AppColors.pviBlue,
+                    label:
+                        LocaleKeys.diagnostic_result_category_touch_label
+                            .trans(),
+                    value: _getTouchLabel(),
+                  ),
+                  _buildSpecDivider(),
+                  _buildSpecRow(
+                    icon: Icons.verified_rounded,
+                    iconColor: gradeColor,
+                    label:
+                        LocaleKeys
+                            .diagnostic_result_category_classification_label
+                            .trans(),
+                    value: gradeLabel,
+                  ),
+                ],
               ),
-              SizedBox(height: 16.h),
-              SizedBox(
+            ),
+
+            SizedBox(height: 28.h),
+
+            // 4. Hai nút hành động
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: SizedBox(
                 width: double.infinity,
-                height: 48.h,
-                child: FilledButton(
+                height: 52.h,
+                child: FilledButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
                     Get.snackbar(
-                      LocaleKeys.diagnostic_result_snackbar_success_title.trans(),
-                      LocaleKeys.diagnostic_result_snackbar_success_message.trans(
-                        namedArgs: {
-                          'orderId': '${DateTime.now().millisecondsSinceEpoch}',
-                        },
-                      ),
-                      backgroundColor: AppColors.pass,
-                      colorText: AppColors.white,
+                      LocaleKeys
+                          .diagnostic_result_snackbar_trade_confirmed_title
+                          .trans(),
+                      LocaleKeys
+                          .diagnostic_result_snackbar_trade_confirmed_message
+                          .trans(),
                       snackPosition: SnackPosition.TOP,
-                      duration: const Duration(seconds: 4),
+                      backgroundColor: AppColors.white,
+                      colorText: AppColors.pviNavy,
                     );
+                    Get.offAllNamed(AppRoutes.diagnosticsHome);
                   },
+                  icon: Icon(
+                    Icons.swap_horizontal_circle_rounded,
+                    color: AppColors.white,
+                    size: 20.r,
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.pviRed,
-                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                  ),
+                  label: Text(
+                    LocaleKeys.diagnostic_result_trade_button.trans(),
+                    style: AppTextStyles.button.copyWith(
+                      color: AppColors.white,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44.h,
+                child: TextButton(
+                  onPressed: () => Get.back(),
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
                   ),
                   child: Text(
-                    LocaleKeys.diagnostic_result_modal_confirm_button.trans(),
+                    LocaleKeys.diagnostic_result_no_trade_button.trans(),
                     style: AppTextStyles.button.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15.sp,
+                      color: AppColors.neutralGreyDark,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 10.h),
-            ],
-          ),
-        );
-      },
+            ),
+            SizedBox(height: 24.h),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildModalRow(
-    String label,
-    String value, {
-    bool isGold = false,
-    bool isTotal = false,
+  /// Một dòng hạng mục: icon tròn bên trái, tên hạng mục mờ ở trên và kết quả
+  /// đậm ở dưới. Cao tự co theo độ dài kết quả nên không bao giờ tràn.
+  Widget _buildSpecRow({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.neutralGreyDark,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36.r,
+            height: 36.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: iconColor.withValues(alpha: 0.12),
+            ),
+            child: Icon(icon, color: iconColor, size: 18.r),
           ),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color:
-                isTotal
-                    ? AppColors.passDark
-                    : isGold
-                    ? AppColors.tradeInGoldDark
-                    : AppColors.tradeInNavy,
-            fontSize: isTotal ? 16.sp : 14.sp,
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textMuted,
+                    fontSize: 11.sp,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  value,
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 13.sp,
+                    height: 1.35,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  void _showFullDiagnosticsDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              LocaleKeys.diagnostic_result_full_diagnostics_dialog_title.trans(),
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: controller.steps.length,
-                itemBuilder: (context, index) {
-                  final step = controller.steps[index];
-                  return _buildStepResultTile(step);
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(LocaleKeys.diagnostic_result_close_button.trans()),
-              ),
-            ],
-          ),
+  /// Vạch ngăn giữa các dòng hạng mục, thụt vào cho thẳng cột chữ.
+  Widget _buildSpecDivider() {
+    return Padding(
+      padding: EdgeInsets.only(left: 66.w, right: 16.w),
+      child: Divider(color: AppColors.borderSubtle, height: 1),
     );
   }
 
-  void _shareTradeInCertificate(int baseValue, int totalValuation, int topUp) {
+  String _getBatteryLabel() {
+    final level = controller.batteryLevel;
+    if (level != null) {
+      return LocaleKeys.diagnostic_result_battery_level_desc.trans(
+        namedArgs: {'level': level.toString()},
+      );
+    }
+    return LocaleKeys.diagnostic_result_no_data.trans();
+  }
+
+  String _getScreenAnswerLabel() {
+    if (Get.isRegistered<QuestionCheckController>()) {
+      final qc = Get.find<QuestionCheckController>();
+      final item = qc.applicableItems.firstWhereOrNull((i) => i.id == 'q3');
+      if (item != null) {
+        final ansValue = qc.answers['q3'];
+        if (ansValue != null) {
+          final choice = item.choices.firstWhereOrNull(
+            (c) => c.value == ansValue,
+          );
+          if (choice != null) return choice.label;
+        }
+      }
+    }
+    return LocaleKeys.diagnostic_result_no_data.trans();
+  }
+
+  String _getTouchLabel() {
+    final touchStep = controller.steps.firstWhereOrNull(
+      (s) => s.code == 'touch-screen',
+    );
+    if (touchStep != null) {
+      if (touchStep.status == DiagStatus.passed) {
+        return LocaleKeys.diagnostic_result_touch_ok_desc.trans();
+      } else if (touchStep.status == DiagStatus.failed) {
+        return (touchStep.note != null && touchStep.note!.isNotEmpty)
+            ? touchStep.note!
+            : LocaleKeys.diagnostic_result_touch_needs_attention_desc.trans();
+      }
+    }
+    return LocaleKeys.diagnostic_result_no_data.trans();
+  }
+
+  Color _getGradeColor(int gradeType) {
+    if (gradeType == 1) return AppColors.pass;
+    if (gradeType >= 4) return AppColors.fail;
+    return AppColors.warning;
+  }
+
+  void _shareTradeInCertificate(int baseValue) {
     final text = LocaleKeys.diagnostic_result_share_certificate_template.trans(
       namedArgs: {
         'brand': controller.brand,
         'model': controller.modelName,
         'tradeInPrice': _formatPrice(baseValue),
-        'subsidy': _formatPrice(selectedOption.subsidyAmount),
-        'totalDeduction': _formatPrice(totalValuation),
-        'optionName': selectedOption.name,
-        'topUp': _formatPrice(topUp),
       },
     );
     Clipboard.setData(ClipboardData(text: text));

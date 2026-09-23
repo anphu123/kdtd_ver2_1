@@ -5,11 +5,10 @@ import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/core/widgets/pvi_modernist/pvi_modernist.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
-import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostic_result/diagnostic_result_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
 
-/// Màn hình thông báo phân hạng thiết bị khi có lỗi phần cứng (Hạng C / Hạng D)
+/// Màn hình thông báo phân loại thiết bị khi có lỗi phần cứng.
 /// Giúp khách hàng yên tâm rằng máy vẫn được thu cũ và trợ giá lên đời mới.
 class FailedTestsWarningPage extends StatelessWidget {
   final List<DiagStep> failedSteps;
@@ -23,8 +22,12 @@ class FailedTestsWarningPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dùng chung ngưỡng xếp hạng với trang kết quả, tránh lệch hạng giữa 2 màn
-    final grade = DiagnosticGradeService.letterFromScore(score);
+    // Dùng chung finalDeviceType với trang kết quả (MAX giữa Function Check và
+    // Question Check), tránh lệch loại giữa 2 màn. Chỉ truyền SỐ thô vì các
+    // template dịch (eligible_description/subsidy_offer_title) đã tự ghép sẵn
+    // chữ "Loại {grade}" — ghép thêm chữ "Loại" ở đây sẽ bị lặp "Loại Loại 2".
+    final finalDeviceType = Get.find<DiagnosticsHomeController>().finalDeviceType;
+    final grade = '$finalDeviceType';
 
     return Scaffold(
       backgroundColor: AppColors.tradeInSurfaceBg,
@@ -72,10 +75,6 @@ class FailedTestsWarningPage extends StatelessWidget {
 
                   // 4. Nhóm thẻ lồng chi tiết các bài kiểm tra không đạt
                   _buildFailedTestsInsetGroup(),
-                  SizedBox(height: 16.h),
-
-                  // 5. Cam kết quyền lợi thu cũ đổi mới
-                  _buildReassuranceCard(),
                 ],
               ),
             ),
@@ -98,36 +97,8 @@ class FailedTestsWarningPage extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: AppColors.warningSurface,
-                  borderRadius: BorderRadius.circular(6.r),
-                  border: Border.all(color: AppColors.warningBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.stars_rounded,
-                      color: AppColors.warningDark,
-                      size: 13.sp,
-                    ),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'PVI ASSURANCE',
-                      style: AppTextStyles.badge.copyWith(
-                        color: AppColors.warningDark,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                 decoration: BoxDecoration(
@@ -348,74 +319,6 @@ class FailedTestsWarningPage extends StatelessWidget {
                 color: AppColors.warningDark,
                 fontSize: 10.5.sp,
                 fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReassuranceCard() {
-    return Container(
-      padding: EdgeInsets.all(14.r),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline_rounded,
-                color: AppColors.tradeInEmerald,
-                size: 18.sp,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                LocaleKeys.failed_tests_warning_benefits_title.trans(),
-                style: AppTextStyles.cardTitle.copyWith(
-                  color: AppColors.tradeInNavy,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.5.sp,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_1.trans()),
-          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_2.trans()),
-          _buildBulletPoint(LocaleKeys.failed_tests_warning_benefit_3.trans()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBulletPoint(String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 6.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: EdgeInsets.only(top: 5.h, right: 8.w),
-            width: 5.w,
-            height: 5.h,
-            decoration: const BoxDecoration(
-              color: AppColors.pviRed,
-              shape: BoxShape.circle,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.tradeInNavy,
-                fontSize: 11.5.sp,
-                height: 1.35,
               ),
             ),
           ),
