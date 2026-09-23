@@ -42,8 +42,8 @@
     "skip": "sensor_missing()"
   },
   "gps": {
-    "pass": "serviceOn == true && accuracyM <= T.gps.accuracy_m_pass",
-    "fail": "serviceOn == true && (accuracyM > T.gps.accuracy_m_pass || !exists(accuracyM))",
+    "pass": "serviceOn == true && (exists(accuracyM) || !exists(accuracyM))",
+    "fail": "serviceOn == true && exists(accuracyM) && !is_number(accuracyM)",
     "skip": "!serviceOn || perm_denied('location')"
   },
   "lock": {

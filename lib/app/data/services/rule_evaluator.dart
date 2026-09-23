@@ -487,7 +487,7 @@ class RuleEvaluator {
     if (acc == null) return serviceOn ? EvalResult.pass : EvalResult.skip;
     if (acc is! num) return EvalResult.fail;
 
-    if (acc > thresholds.gps.accuracyMPass) return EvalResult.fail;
+    // Chỉ cần xác định GPS có hoạt động (lấy được tọa độ), không đánh giá độ chính xác
     return EvalResult.pass;
   }
 
