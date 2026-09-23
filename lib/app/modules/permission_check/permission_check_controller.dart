@@ -98,16 +98,6 @@ class PermissionCheckController extends GetxController
     if (Platform.isAndroid) {
       list.addAll([
         PermissionCheckItem(
-          permission: Permission.phone,
-          icon: Icons.phone_in_talk_rounded,
-          name: 'Điện thoại & Khay SIM',
-          description:
-              'Kiểm tra khả năng nhận diện khay SIM vật lý và trạng thái sóng mạng viễn thông.',
-          isRequired: false,
-          accentColor: AppColors.pviBlue,
-          surfaceColor: AppColors.pviBlueSurface,
-        ),
-        PermissionCheckItem(
           permission: Permission.bluetoothScan,
           icon: Icons.bluetooth_searching_rounded,
           name: 'Quét Bluetooth',
@@ -211,20 +201,6 @@ class PermissionCheckController extends GetxController
 
   /// Người dùng bấm nút tiếp tục kiểm định
   Future<void> proceedToDiagnostics() async {
-    if (!allRequiredGranted) {
-      Get.snackbar(
-        'Cần Cấp Quyền Bắt Buộc',
-        'Vui lòng cấp quyền Camera và Micro để tiếp tục kiểm định các linh kiện phần cứng.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.tradeInNavy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-        icon: const Icon(Icons.warning_amber_rounded, color: AppColors.tradeInGold),
-      );
-      return;
-    }
-
     _logStatusResponse('PERMISSION_PROCEED_TO_DIAGNOSTICS');
 
     // Chuyển sang quét cấu hình & xác nhận
@@ -273,7 +249,7 @@ class PermissionCheckController extends GetxController
     };
 
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('[PermissionCheck] 📥 PERMISSION_STATUS_RESPONSE:\n${encoder.convert(response)}');
+    debugPrint('[PermissionCheck] PERMISSION_STATUS_RESPONSE:\n${encoder.convert(response)}');
   }
 
   void _showPermanentlyDeniedDialog(PermissionCheckItem item) {

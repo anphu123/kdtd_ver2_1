@@ -28,18 +28,18 @@ class DiagLogger {
   /// Log info cho một bước test
   static void info(String code, String message) {
     if (_debugMode) {
-      debugPrint('[DIAG][$code] ℹ️ $message');
+      debugPrint('[DIAG][$code] $message');
     }
   }
 
   /// Log success - luôn hiển thị
   static void success(String code, String message) {
-    debugPrint('[DIAG][$code] ✅ $message');
+    debugPrint('[DIAG][$code] $message');
   }
 
   /// Log error - luôn hiển thị
   static void error(String code, String message) {
-    debugPrint('[DIAG][$code] ❌ $message');
+    debugPrint('[DIAG][$code] $message');
   }
 
   /// Log skip (chỉ khi debug)
@@ -51,7 +51,7 @@ class DiagLogger {
 
   /// Log warning - luôn hiển thị
   static void warning(String code, String message) {
-    debugPrint('[DIAG][$code] ⚠️ $message');
+    debugPrint('[DIAG][$code] $message');
   }
 
   /// Log verbose (chỉ khi verbose mode)
@@ -76,7 +76,7 @@ class DiagLogger {
     int skipped,
   ) {
     if (_debugMode) {
-      debugPrint('━━━ $phaseName DONE: ✅$passed ❌$failed ⊝$skipped ━━━\n');
+      debugPrint('━━━ $phaseName DONE:$passed$failed ⊝$skipped ━━━\n');
     }
   }
 
@@ -101,12 +101,12 @@ class DiagLogger {
     debugPrint('║               KẾT QUẢ KIỂM ĐỊNH                            ║');
     debugPrint('╠════════════════════════════════════════════════════════════╣');
     debugPrint('${'║  Tổng số test:  $total'.padRight(60)}║');
-    debugPrint('${'║  ✅ Passed:     $passed'.padRight(60)}║');
-    debugPrint('${'║  ❌ Failed:     $failed'.padRight(60)}║');
+    debugPrint('${'║  Passed:     $passed'.padRight(60)}║');
+    debugPrint('${'║  Failed:     $failed'.padRight(60)}║');
     debugPrint('${'║  ⊝ Skipped:    $skipped'.padRight(60)}║');
-    debugPrint('${'║  📈 Điểm số:    $score/100'.padRight(60)}║');
-    debugPrint('${'║  🏆 Xếp loại:   $grade'.padRight(60)}║');
-    debugPrint('${'║  ⏱️ Thời gian:   ${totalDuration.inSeconds}s'.padRight(60)}║');
+    debugPrint('${'║  Điểm số:    $score/100'.padRight(60)}║');
+    debugPrint('${'║  Xếp loại:   $grade'.padRight(60)}║');
+    debugPrint('${'║  Thời gian:   ${totalDuration.inSeconds}s'.padRight(60)}║');
     debugPrint('╚════════════════════════════════════════════════════════════╝\n');
   }
 }

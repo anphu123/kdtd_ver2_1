@@ -187,6 +187,19 @@ class DeviceHardwareService {
 
   /// Quét Bluetooth
   static Future<Map<String, dynamic>> getBluetoothInfo() async {
+    if (Platform.isAndroid) {
+      final scanStatus = await Permission.bluetoothScan.status;
+      final connectStatus = await Permission.bluetoothConnect.status;
+      if (!scanStatus.isGranted || !connectStatus.isGranted) {
+        await [Permission.bluetoothScan, Permission.bluetoothConnect].request();
+      }
+    } else if (Platform.isIOS) {
+      final btStatus = await Permission.bluetooth.status;
+      if (!btStatus.isGranted) {
+        await Permission.bluetooth.request();
+      }
+    }
+
     var btState = FlutterBluePlus.adapterStateNow;
     if (btState != BluetoothAdapterState.on) {
       try {
@@ -198,12 +211,20 @@ class DeviceHardwareService {
     bool scanOk = false;
     if (btState == BluetoothAdapterState.on) {
       try {
-        await FlutterBluePlus.startScan(
-          timeout: DiagnosticsConstants.bluetoothScanDuration,
-        );
-        await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
-        await FlutterBluePlus.stopScan();
-        scanOk = true;
+        bool canScan = true;
+        if (Platform.isAndroid) {
+          canScan = await Permission.bluetoothScan.isGranted && await Permission.bluetoothConnect.isGranted;
+        } else if (Platform.isIOS) {
+          canScan = await Permission.bluetooth.isGranted;
+        }
+        if (canScan) {
+          await FlutterBluePlus.startScan(
+            timeout: DiagnosticsConstants.bluetoothScanDuration,
+          );
+          await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
+          await FlutterBluePlus.stopScan();
+          scanOk = true;
+        }
       } catch (_) {}
     }
     return {'enabled': btState == BluetoothAdapterState.on, 'scanOk': scanOk};
