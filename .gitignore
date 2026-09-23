@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Claude Code - cau hinh ca nhan tung may
+.claude/settings.local.json

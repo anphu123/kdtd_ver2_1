@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json; json.load\\(open\\('assets/translations/vi.json', encoding='utf-8'\\)\\); print\\('vi OK'\\)\")",
+      "Bash(python3 -c \"import json; json.load\\(open\\('assets/translations/en.json', encoding='utf-8'\\)\\); print\\('en OK'\\)\")",
+      "Bash(grep -v \"/\\\\.dart_tool/\\\\|/build/\")",
+      "Bash(python3 -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python3 -)"
+    ]
+  }
+}
