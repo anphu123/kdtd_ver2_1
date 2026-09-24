@@ -72,6 +72,8 @@
     "continue_manual": "Tiếp tục (Thủ công)",
     "finish": "Hoàn thành",
     "auto_capturing": "Đang tự động chụp...",
+    "countdown_hint": "Hướng camera vào vật cần chụp",
+    "countdown_seconds": "Tự chụp sau {seconds}s",
     "black_frame_detected": "Nghi ngờ camera bị che/hỏng (ảnh đen)"
   },
   "cosmetic_survey": {

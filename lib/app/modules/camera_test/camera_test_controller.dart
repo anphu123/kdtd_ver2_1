@@ -33,6 +33,9 @@ class CameraTestController extends GetxController {
 
   final cameraWarning = Rx<String?>(null);
   final isOriginal = true.obs;
+
+  /// Số giây còn lại trước khi tự chụp; 0 nghĩa là không đang đếm.
+  final captureCountdown = 0.obs;
   final capturedImagePath = Rx<String?>(null);
   bool _closed = false;
 
@@ -47,10 +50,14 @@ class CameraTestController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    debugPrint('[CameraTest] Khởi tạo bài test tự động với ${cameras.length} camera:');
+    debugPrint(
+      '[CameraTest] Khởi tạo bài test tự động với ${cameras.length} camera:',
+    );
     for (int i = 0; i < cameras.length; i++) {
       final c = cameras[i];
-      debugPrint('[CameraTest]  - Cam #$i: name=${c.name}, lens=${c.lensDirection}');
+      debugPrint(
+        '[CameraTest]  - Cam #$i: name=${c.name}, lens=${c.lensDirection}',
+      );
     }
     _verifyCameraConfiguration();
     if (cameras.isNotEmpty) {
@@ -70,7 +77,8 @@ class CameraTestController extends GetxController {
   void _verifyCameraConfiguration() {
     final total = cameras.length;
     if (total == 0) {
-      cameraWarning.value = LocaleKeys.camera_test_error_no_camera_detected.trans();
+      cameraWarning.value =
+          LocaleKeys.camera_test_error_no_camera_detected.trans();
       isOriginal.value = false;
     }
   }
@@ -83,6 +91,7 @@ class CameraTestController extends GetxController {
     // còn capturedImagePath đã bị null ở đây nên mất luôn đường dẫn để xoá.
     await _cleanupCapturedImage();
     isAutoCapturing.value = false;
+    captureCountdown.value = 0;
     await _disposeCameraSync();
 
     final cam = CameraController(
@@ -114,11 +123,15 @@ class CameraTestController extends GetxController {
       _runAutoTest();
     } catch (e) {
       isInitializing.value = false;
-      debugPrint('[CameraTest] Lỗi khởi tạo Camera #${currentCameraIndex.value}: $e');
+      debugPrint(
+        '[CameraTest] Lỗi khởi tạo Camera #${currentCameraIndex.value}: $e',
+      );
       cameraResults[currentCameraIndex.value] = false;
       Get.snackbar(
         LocaleKeys.camera_test_error_title.trans(),
-        LocaleKeys.camera_test_error_init_camera.trans(namedArgs: {'error': '$e'}),
+        LocaleKeys.camera_test_error_init_camera.trans(
+          namedArgs: {'error': '$e'},
+        ),
         snackPosition: SnackPosition.BOTTOM,
       );
       _scheduleNextCamera();
@@ -134,18 +147,31 @@ class CameraTestController extends GetxController {
     } catch (_) {}
 
     isAutoCapturing.value = true;
-    await Future.delayed(CameraTestConstants.autoCaptureDelay);
-    if (controller.value != cam) return; // Đã đổi camera hoặc thoát
+
+    // Đếm ngược từng giây thay vì chờ lặng: người dùng thấy được còn bao lâu
+    // để hướng máy đúng chỗ. Kiểm tra `controller.value != cam` sau MỖI giây
+    // để thoát ngay khi đổi camera hoặc đóng màn, không chụp nhầm.
+    for (var i = CameraTestConstants.autoCaptureCountdownSeconds; i > 0; i--) {
+      captureCountdown.value = i;
+      await Future.delayed(const Duration(seconds: 1));
+      if (controller.value != cam) {
+        captureCountdown.value = 0;
+        return;
+      }
+    }
+    captureCountdown.value = 0;
 
     bool passed = false;
     try {
       await _cleanupCapturedImage();
       final image = await cam.takePicture();
       capturedImagePath.value = image.path;
-      
+
       final isBlack = await _isImageBlack(image.path);
       if (isBlack) {
-        debugPrint('[CameraTest] Lỗi: Phát hiện ảnh đen ở Camera #${currentCameraIndex.value}');
+        debugPrint(
+          '[CameraTest] Lỗi: Phát hiện ảnh đen ở Camera #${currentCameraIndex.value}',
+        );
       }
       passed = !isBlack;
     } catch (e) {
@@ -154,6 +180,7 @@ class CameraTestController extends GetxController {
     }
 
     isAutoCapturing.value = false;
+    captureCountdown.value = 0;
     cameraResults[currentCameraIndex.value] = passed;
 
     await Future.delayed(CameraTestConstants.postCaptureDelay);
@@ -161,7 +188,7 @@ class CameraTestController extends GetxController {
 
     _scheduleNextCamera();
   }
-  
+
   void _scheduleNextCamera() {
     if (currentCameraIndex.value + 1 < cameras.length) {
       currentCameraIndex.value = currentCameraIndex.value + 1;
@@ -189,7 +216,9 @@ class CameraTestController extends GetxController {
       );
       final frame = await codec.getNextFrame();
       final image = frame.image;
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final byteData = await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
       if (byteData == null) return false;
 
       final data = byteData.buffer.asUint8List();

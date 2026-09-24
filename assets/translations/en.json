@@ -72,6 +72,8 @@
     "continue_manual": "Continue (Manual)",
     "finish": "Finish",
     "auto_capturing": "Automatically capturing...",
+    "countdown_hint": "Point the camera at your subject",
+    "countdown_seconds": "Capturing in {seconds}s",
     "black_frame_detected": "Suspected covered/broken camera (black frame)"
   },
   "cosmetic_survey": {

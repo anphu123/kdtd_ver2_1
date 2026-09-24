@@ -7,8 +7,10 @@ class CameraTestBinding extends Bindings {
   @override
   void dependencies() {
     Get.delete<CameraTestController>(force: true);
-    Get.put(CameraTestController(
-      cameras: (Get.arguments as List<CameraDescription>?) ?? [],
-    ));
+    Get.put(
+      CameraTestController(
+        cameras: (Get.arguments as List<CameraDescription>?) ?? [],
+      ),
+    );
   }
 }

@@ -72,6 +72,8 @@ abstract class  LocaleKeys {
   static const camera_test_continue_manual = 'camera_test.continue_manual';
   static const camera_test_finish = 'camera_test.finish';
   static const camera_test_auto_capturing = 'camera_test.auto_capturing';
+  static const camera_test_countdown_hint = 'camera_test.countdown_hint';
+  static const camera_test_countdown_seconds = 'camera_test.countdown_seconds';
   static const camera_test_black_frame_detected = 'camera_test.black_frame_detected';
   static const camera_test = 'camera_test';
   static const cosmetic_survey_body_pristine_label = 'cosmetic_survey.body_pristine_label';

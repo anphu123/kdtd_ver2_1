@@ -41,8 +41,14 @@ class CameraTestConstants {
   static const double gyroMagnitudeThreshold = 2.0;
 
   // ==================== NHỊP ĐỘ CÁC BƯỚC TEST ====================
-  /// Thời gian chờ trước khi tự động chụp ảnh.
-  static const Duration autoCaptureDelay = Duration(milliseconds: 1500);
+  /// Số giây đếm ngược trước khi tự động chụp.
+  ///
+  /// Trước đây chỉ chờ lặng 1,5 giây rồi chụp. Kỹ thuật viên hay đặt máy úp
+  /// trên bàn trong lúc chạy các bài test khác, không kịp nhấc lên — camera
+  /// sau chụp trúng mặt bàn, ra khung đen và bị chấm FAIL oan, kéo cả máy
+  /// xuống Loại 5. Đếm ngược ĐẾM THẤY ĐƯỢC cho họ thời gian và tín hiệu rõ
+  /// ràng là sắp chụp.
+  static const int autoCaptureCountdownSeconds = 5;
 
   /// Thời gian chờ sau initialize() trước khi gắn CameraPreview vào cây
   /// widget — né lỗi chớp màu (đỏ/hồng) ở vài khung hình đầu, một lỗi đã
