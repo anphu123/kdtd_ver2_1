@@ -623,16 +623,10 @@ class RuleEvaluator {
   }
 
   /// Đánh giá RAM
-  /// iOS: Có thể chỉ có estimated value → vẫn pass
+  /// iOS: không đọc được thì skip (không phải lỗi phần cứng)
   EvalResult _evalRam(Map<String, dynamic> p) {
     final source = p['source'] as String?;
     final total = p['totalBytes'];
-    final totalGB = p['totalGB'];
-
-    // iOS estimated: vẫn pass vì có ước tính
-    if (source == 'ios_estimated' && totalGB != null) {
-      return EvalResult.pass;
-    }
 
     // Android: cần có totalBytes
     if (total == null || total == 0) {

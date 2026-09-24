@@ -51,15 +51,12 @@ class _DeviceSpecsConfirmationPageState
   String get _unavailable =>
       LocaleKeys.device_specs_confirmation_value_unavailable.trans();
 
-  /// RAM/ROM lấy từ controller (đã làm tròn về mốc phổ biến, cùng nguồn với
+  /// RAM/ROM lấy từ controller (đã làm tròn lên mốc phổ biến, cùng nguồn với
   /// mã IT) để các màn không lệch nhau. Không đọc được → "Không xác định",
-  /// không bịa số mặc định. iOS không cho đọc RAM thật nên giá trị ước tính
-  /// được đánh dấu "~".
+  /// không bịa số mặc định.
   String _formatStorage(String key) {
     final gb = key == 'ram' ? controller.ramGbValue : controller.romGbValue;
-    if (gb == null) return _unavailable;
-    final estimated = controller.info[key]?['source'].toString().contains('estimated') == true;
-    return estimated ? '~$gb GB' : '$gb GB';
+    return gb == null ? _unavailable : '$gb GB';
   }
 
   String _formatBattery() {

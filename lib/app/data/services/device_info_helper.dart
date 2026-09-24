@@ -66,29 +66,18 @@ class DeviceInfoHelper {
   static Future<Map<String, dynamic>> _getIosRamInfo() async {
     try {
       final Map? raw = await _channel.invokeMethod<Map>('getRamInfo');
-      final native = raw?['totalBytes'];
-      if (native is num && native > 0) {
+      final total = raw?['totalBytes'];
+      if (total is num && total > 0) {
         return {
           'freeBytes': null, // iOS không cho phép đọc free RAM
-          'totalBytes': native,
+          'totalBytes': total,
           'source': 'ios_native',
         };
       }
-    } catch (_) {
-      // Rơi xuống ước tính theo model bên dưới.
-    }
-
-    try {
-      final iosInfo = await _deviceInfo.iosInfo;
-      final ramGB = _estimateIosRam(iosInfo.utsname.machine);
-      final totalBytes = (ramGB * 1024 * 1024 * 1024).toInt();
-
-      return {
-        'freeBytes': null, // iOS không cho phép đọc free RAM
-        'totalBytes': totalBytes,
-        'totalGB': ramGB,
-        'source': 'ios_estimated',
-        'model': iosInfo.utsname.machine,
+      return const {
+        'freeBytes': null,
+        'totalBytes': null,
+        'source': 'ios_unavailable',
       };
     } catch (e) {
       return {
@@ -98,51 +87,6 @@ class DeviceInfoHelper {
         'error': e.toString(),
       };
     }
-  }
-
-  /// Ước tính RAM dựa trên model iOS
-  /// Dữ liệu từ Apple specs
-  static int _estimateIosRam(String machine) {
-    // Dòng iPhone
-    if (machine.startsWith('iPhone')) {
-      final parts = machine.replaceAll('iPhone', '').split(',');
-      final major = int.tryParse(parts[0]) ?? 0;
-
-      // iPhone 15 Pro Max: iPhone16,2 -> 8GB
-      if (major >= 16) return 8;
-      // iPhone 14 Pro: iPhone15,3 -> 6GB
-      if (major >= 15) return 6;
-      // iPhone 13: iPhone14,x -> 4-6GB
-      if (major >= 14) return 4;
-      // iPhone 12: iPhone13,x -> 4GB
-      if (major >= 13) return 4;
-      // iPhone 11: iPhone12,x -> 4GB
-      if (major >= 12) return 4;
-      // iPhone X/XS: iPhone10,x/11,x -> 3-4GB
-      if (major >= 10) return 3;
-      // iPhone 7/8: iPhone9,x -> 2GB
-      if (major >= 9) return 2;
-      // Đời cũ hơn -> 1-2GB
-      return 2;
-    }
-
-    // Dòng iPad
-    if (machine.startsWith('iPad')) {
-      final parts = machine.replaceAll('iPad', '').split(',');
-      final major = int.tryParse(parts[0]) ?? 0;
-
-      // iPad Pro M2+: iPad14,x+ -> 8-16GB
-      if (major >= 14) return 8;
-      // iPad Air/Pro: iPad13,x -> 8GB
-      if (major >= 13) return 8;
-      // iPad: iPad12,x -> 4GB
-      if (major >= 12) return 4;
-      // Các đời cũ hơn
-      return 4;
-    }
-
-    // Mặc định
-    return 4;
   }
 
   // ==================== THÔNG TIN BỘ NHỚ TRONG ROM ====================
