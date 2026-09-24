@@ -131,12 +131,12 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20.h),
-                Reveal(
-                  parent: intro,
-                  start: 0.54,
-                  end: 1.0,
-                  child: const _TrustNote(),
-                ),
+                // Reveal(
+                //   parent: intro,
+                //   start: 0.54,
+                //   end: 1.0,
+                //   child: const _TrustNote(),
+                // ),
                 SizedBox(height: 24.h),
               ],
             ),
@@ -384,7 +384,7 @@ class _BottomBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(24.w, 14.h, 24.w, 14.h),
+          padding: EdgeInsets.fromLTRB(24.w, 14.h, 24.w, 10.h),
           child: Reveal(
             parent: intro,
             start: 0.60,
@@ -419,24 +419,24 @@ class _BottomBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 8.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.schedule_rounded,
-                      size: 14.r,
-                      color: AppColors.tradeInSlate,
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      LocaleKeys.welcome_duration_hint.trans(),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.tradeInSlate,
-                      ),
-                    ),
-                  ],
-                ),
+                // SizedBox(height: 8.h),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Icon(
+                //       Icons.schedule_rounded,
+                //       size: 14.r,
+                //       color: AppColors.tradeInSlate,
+                //     ),
+                //     SizedBox(width: 6.w),
+                //     Text(
+                //       LocaleKeys.welcome_duration_hint.trans(),
+                //       style: AppTextStyles.caption.copyWith(
+                //         color: AppColors.tradeInSlate,
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),

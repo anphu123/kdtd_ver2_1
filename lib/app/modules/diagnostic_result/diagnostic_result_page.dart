@@ -54,8 +54,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
     final score = controller.score;
     // Không đọc được thì dùng mốc chuẩn của bảng giá (không cộng/trừ tiền theo
     // RAM/ROM) thay vì bịa một cấu hình cụ thể.
-    final ramGb = controller.ramGbValue ?? PriceEstimationConstants.ramBaselineGb;
-    final romGb = controller.romGbValue ?? PriceEstimationConstants.romBaselineGb;
+    final ramGb =
+        controller.ramGbValue ?? PriceEstimationConstants.ramBaselineGb;
+    final romGb =
+        controller.romGbValue ?? PriceEstimationConstants.romBaselineGb;
 
     try {
       final estimate = await PriceEstimationService.estimatePrice(
@@ -285,7 +287,8 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
               ),
             ),
 
-            // 2. Thẻ giá thu cũ
+            // 2. Thẻ giá thu cũ — viền gradient 1.5px (xanh lục → navy) bọc
+            // ngoài thẻ trắng; số tiền đếm lên khi có giá.
             Transform.translate(
               offset: Offset(0, -32.h),
               child: Container(
@@ -293,10 +296,14 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                 // bằng chữ số tiền, khiến thẻ hẹp lơ lửng giữa màn hình.
                 width: double.infinity,
                 margin: EdgeInsets.symmetric(horizontal: 16.w),
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+                padding: EdgeInsets.all(1.5.r),
                 decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(20.r),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.success, AppColors.pviNavy],
+                  ),
+                  borderRadius: BorderRadius.circular(21.r),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.pviNavy.withValues(alpha: 0.10),
@@ -305,62 +312,97 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      LocaleKeys.diagnostic_result_trade_in_price_label.trans(),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 20.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(19.5.r),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        LocaleKeys.diagnostic_result_trade_in_price_label
+                            .trans(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 8.h),
-                    isLoadingPrice
-                        ? SizedBox(
-                          height: 36.h,
-                          child: Center(
-                            child: SizedBox(
-                              width: 24.r,
-                              height: 24.r,
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.successDark,
-                              ),
-                            ),
-                          ),
-                        )
-                        : FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            _formatPrice(baseTradeInValue),
-                            style: AppTextStyles.priceDisplay.copyWith(
-                              color: AppColors.successDark,
-                              fontSize: 32.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      SizedBox(height: 8.h),
+                      SizedBox(
+                        height: 44.h,
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child:
+                                isLoadingPrice
+                                    ? SizedBox(
+                                      key: const ValueKey('loading'),
+                                      width: 24.r,
+                                      height: 24.r,
+                                      child: const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.successDark,
+                                      ),
+                                    )
+                                    : TweenAnimationBuilder<int>(
+                                      key: const ValueKey('price'),
+                                      tween: IntTween(
+                                        begin: 0,
+                                        end: baseTradeInValue,
+                                      ),
+                                      duration: const Duration(
+                                        milliseconds: 900,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                      builder:
+                                          (_, value, __) => FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              _formatPrice(value),
+                                              style: AppTextStyles.priceDisplay
+                                                  .copyWith(
+                                                    color:
+                                                        AppColors.successDark,
+                                                    fontSize: 36.sp,
+                                                    fontWeight: FontWeight.w800,
+                                                    letterSpacing: -0.5,
+                                                    fontFeatures: const [
+                                                      FontFeature.tabularFigures(),
+                                                    ],
+                                                  ),
+                                            ),
+                                          ),
+                                    ),
                           ),
                         ),
-                    SizedBox(height: 14.h),
-                    Divider(color: AppColors.borderSubtle, height: 1),
-                    SizedBox(height: 12.h),
-                    // Dòng điểm sức khỏe — đặt ở đây thay vì trong hero vì
-                    // cột chữ hero quá hẹp, chữ bị ngắt dòng xấu.
-                    Text(
-                      LocaleKeys.diagnostic_result_health_score_line.trans(
-                        namedArgs: {'score': controller.score.toString()},
                       ),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textMuted,
-                        fontSize: 11.sp,
+                      SizedBox(height: 14.h),
+                      Divider(color: AppColors.borderSubtle, height: 1),
+                      SizedBox(height: 12.h),
+                      // Dòng điểm sức khỏe — đặt ở đây thay vì trong hero vì
+                      // cột chữ hero quá hẹp, chữ bị ngắt dòng xấu.
+                      Text(
+                        LocaleKeys.diagnostic_result_health_score_line.trans(
+                          namedArgs: {'score': controller.score.toString()},
+                        ),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 11.sp,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -423,58 +465,32 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
 
             SizedBox(height: 28.h),
 
-            // 4. Hai nút hành động
+            // 4. Hai nút hành động (kiểu dáng lấy từ AppTheme)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: SizedBox(
                 width: double.infinity,
-                height: 52.h,
                 child: FilledButton.icon(
-                  onPressed: () {
-                    Get.toNamed(AppRoutes.employeeCode);
-                  },
-                  icon: Icon(
-                    Icons.swap_horizontal_circle_rounded,
-                    color: AppColors.white,
-                    size: 20.r,
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.pviRed,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
-                    ),
-                  ),
+                  onPressed: () => Get.toNamed(AppRoutes.employeeCode),
+                  icon: Icon(Icons.swap_horizontal_circle_rounded, size: 20.r),
                   label: Text(
                     LocaleKeys.diagnostic_result_trade_button.trans(),
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: SizedBox(
-                width: double.infinity,
-                height: 44.h,
-                child: TextButton(
-                  onPressed: () => Get.back(),
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
-                    ),
-                  ),
-                  child: Text(
-                    LocaleKeys.diagnostic_result_no_trade_button.trans(),
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.neutralGreyDark,
-                      fontSize: 14.sp,
-                    ),
-                  ),
+              child: TextButton(
+                onPressed: () => Get.back(),
+                style: TextButton.styleFrom(
+                  minimumSize: Size(double.infinity, 48.h),
+                  foregroundColor: AppColors.textMuted,
+                ),
+                child: Text(
+                  LocaleKeys.diagnostic_result_no_trade_button.trans(),
+                  style: AppTextStyles.button,
                 ),
               ),
             ),

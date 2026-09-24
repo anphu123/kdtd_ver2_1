@@ -1,5 +1,5 @@
 // Xuất (export) toàn bộ các widget phục vụ import tiện lợi
-export 'progress_indicator_section.dart';
+export 'test_summary_hero.dart';
 export 'phase_header.dart';
 export 'animated_test_item.dart';
 export 'manual_test_item.dart';

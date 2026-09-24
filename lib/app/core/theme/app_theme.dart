@@ -70,6 +70,94 @@ class AppTheme {
         ),
       ),
 
+      // Nút chính dạng Filled: bo 14, cao tối thiểu 52 (đủ vùng chạm cho
+      // kỹ thuật viên đeo găng), chữ đậm; trạng thái vô hiệu là xám phẳng.
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          elevation: 0,
+          minimumSize: const Size(64, 52),
+          backgroundColor: AppColors.pviRed,
+          foregroundColor: AppColors.textOnDark,
+          disabledBackgroundColor: AppColors.surfaceSubtle,
+          disabledForegroundColor: AppColors.textDisabled,
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+
+      // Nút phụ dạng viền
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(64, 52),
+          foregroundColor: AppColors.pviNavy,
+          side: const BorderSide(color: AppColors.borderStrong, width: 1),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+
+      // Segmented button (chọn 1 trong nhiều) — chọn = navy đặc
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: AppColors.border),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected)
+                    ? AppColors.pviNavy
+                    : AppColors.surface,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) =>
+                states.contains(WidgetState.selected)
+                    ? AppColors.textOnDark
+                    : AppColors.textSecondary,
+          ),
+        ),
+      ),
+
+      // Thanh tiến trình: track xám nhạt, không có hiệu ứng "stop indicator"
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.pviNavy,
+        linearTrackColor: AppColors.surfaceSubtle,
+        circularTrackColor: AppColors.surfaceSubtle,
+        linearMinHeight: 6,
+      ),
+
+      // Dialog / bottom sheet / snackbar cùng ngôn ngữ bo góc 20
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: AppColors.transparent,
+        showDragHandle: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.pviNavyDark,
+        contentTextStyle: const TextStyle(
+          color: AppColors.textOnDark,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+
       // Giao diện nút hành động nổi (FAB không độ nổi/shadow)
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 0,
@@ -130,7 +218,10 @@ class AppTheme {
         fillColor: AppColors.pviNavy,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.pviNavyBorder, width: 1),
+          borderSide: const BorderSide(
+            color: AppColors.pviNavyBorder,
+            width: 1,
+          ),
         ),
       ),
 

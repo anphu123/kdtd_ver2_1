@@ -28,9 +28,10 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
   @override
   void initState() {
     super.initState();
-    controller = Get.isRegistered<TestRunnerController>()
-        ? Get.find<TestRunnerController>()
-        : Get.put(TestRunnerController());
+    controller =
+        Get.isRegistered<TestRunnerController>()
+            ? Get.find<TestRunnerController>()
+            : Get.put(TestRunnerController());
     _scrollController = ScrollController();
 
     for (final step in controller.steps) {
@@ -157,9 +158,10 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
                     ),
                     step: currentSteps[i],
                     onTap: () => _handleTestTap(currentSteps[i]),
-                    onRetry: controller.isRunning.value
-                        ? null
-                        : () => controller.restartStep(currentSteps[i]),
+                    onRetry:
+                        controller.isRunning.value
+                            ? null
+                            : () => controller.restartStep(currentSteps[i]),
                   ),
                   if (i < currentSteps.length - 1) SizedBox(height: 8.h),
                 ],
@@ -223,25 +225,13 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
       ),
       body: Column(
         children: [
-          // 1. Top Minimalist Stepper: Bước 2 (Kiểm định) active
-          // Obx(() {
-          //   final completed = controller.completed;
-          //   final total = controller.steps.length;
-          //   final isAllDone = completed == total && total > 0;
-
-          //   return PviModernistStepper(
-          //     currentStep: 2,
-          //     completedSteps: isAllDone ? const {1, 2} : const {1},
-          //   );
-          // }),
-            SizedBox(height: 15.h),
           // 2. Nội dung danh sách bài test có thể cuộn
           Expanded(
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
                 // Progress indicator (có Obx nội bộ)
-                const SliverToBoxAdapter(child: ProgressIndicatorSection()),
+                const SliverToBoxAdapter(child: TestSummaryHero()),
 
                 // Danh sách Sliver các bài test theo nhóm
                 ..._buildGroupedList(),
@@ -274,12 +264,10 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
       }
 
       return Container(
-        padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
+        padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 8.h),
         decoration: const BoxDecoration(
           color: AppColors.white,
-          border: Border(
-            top: BorderSide(color: AppColors.border, width: 1),
-          ),
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: SafeArea(
           top: false,
@@ -288,49 +276,33 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
             children: [
               SizedBox(
                 width: double.infinity,
-                height: 40.h,
-                child: showContinue
-                    ? FilledButton(
-                        // Chỉ bấm được khi TOÀN BỘ step đã có kết quả cuối
-                        // (đạt/lỗi/bỏ qua đều được) — còn step nào pending
-                        // (vd chưa bấm "Cảm ứng màn hình"/"Sinh trắc học")
-                        // thì nút vẫn hiện nhưng bị khoá.
-                        onPressed: allDone ? controller.continueToNextStep : null,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.tradeInBlue,
-                          disabledBackgroundColor: AppColors.neutralGreyLighter,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.r),
+                // Chỉ bấm được khi TOÀN BỘ step đã có kết quả cuối (đạt/lỗi/
+                // bỏ qua đều được) — còn step nào pending (vd chưa bấm "Cảm
+                // ứng màn hình") thì nút vẫn hiện nhưng bị khoá.
+                child:
+                    showContinue
+                        ? FilledButton(
+                          onPressed:
+                              allDone ? controller.continueToNextStep : null,
+                          child: Text(
+                            LocaleKeys.diagnostics_home_continue_diagnostics
+                                .trans(),
+                          ),
+                        )
+                        : OutlinedButton(
+                          onPressed:
+                              isRunning
+                                  ? null
+                                  : controller.startWithPermissionCheck,
+                          child: Text(
+                            isRunning
+                                ? LocaleKeys
+                                    .diagnostics_home_running_diagnostics
+                                    .trans()
+                                : LocaleKeys.diagnostics_home_start_diagnostics
+                                    .trans(),
                           ),
                         ),
-                        child: Text(
-                          LocaleKeys.diagnostics_home_continue_diagnostics.trans(),
-                          style: AppTextStyles.button.copyWith(
-                            color: allDone ? AppColors.white : AppColors.textDisabled,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                      )
-                    : OutlinedButton(
-                        onPressed: isRunning ? null : controller.startWithPermissionCheck,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.border),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                        child: Text(
-                          isRunning
-                              ? LocaleKeys.diagnostics_home_running_diagnostics.trans()
-                              : LocaleKeys.diagnostics_home_start_diagnostics.trans(),
-                          style: AppTextStyles.button.copyWith(
-                            color: AppColors.tradeInSlate,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                      ),
               ),
             ],
           ),
@@ -339,4 +311,3 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
     });
   }
 }
-
