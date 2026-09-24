@@ -19,6 +19,9 @@ abstract class AppRoutes {
   static const String preTestGuide = '/diagnostics/pre-test-guide';
   static const String testRunner = '/diagnostics/test-runner';
 
+  // Tuyến đường chương trình nâng cấp
+  static const String employeeCode = '/upgrade/employee-code';
+
   // Tuyến đường các bài test riêng lẻ
   static const String testCamera = '/test/camera';
   static const String testSpeaker = '/test/speaker';

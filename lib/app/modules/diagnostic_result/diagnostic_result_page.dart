@@ -12,6 +12,7 @@ import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_contro
 import 'package:kdtd_ver2_1/app/modules/question_check/question_check_controller.dart';
 import 'package:kdtd_ver2_1/app/core/constants/upgrade_program_constants.dart';
 import 'package:kdtd_ver2_1/app/core/widgets/upgrade_program_dialogs.dart';
+import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 
 /// Trang kết quả thẩm định (Trade-In) — KHÔNG còn phần lên đời máy mới,
 /// chỉ hiển thị chứng nhận thẩm định + định giá thu cũ + chi tiết kiểm định.
@@ -427,7 +428,7 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
                 height: 52.h,
                 child: FilledButton.icon(
                   onPressed: () {
-                    UpgradeProgramDialogs.showEmployeeCodeDialog();
+                    Get.toNamed(AppRoutes.employeeCode);
                   },
                   icon: Icon(
                     Icons.swap_horizontal_circle_rounded,

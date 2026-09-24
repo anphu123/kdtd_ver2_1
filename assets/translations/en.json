@@ -696,6 +696,7 @@
     "device_not_eligible_desc": "Current device ({grade}) is not eligible for the upgrade program. Only Type 1 and Type 2 are applicable.",
     "device_not_eligible_got_it_btn": "Got it",
     "employee_code_title": "Employee Code",
+    "employee_code_description": "Enter your employee code to confirm the trade-in for this customer.",
     "employee_code_hint": "Enter employee code",
     "employee_code_confirm_btn": "Confirm",
     "employee_code_cancel_btn": "Cancel",

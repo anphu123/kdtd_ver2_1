@@ -676,6 +676,7 @@ abstract class  LocaleKeys {
   static const upgrade_program_device_not_eligible_desc = 'upgrade_program.device_not_eligible_desc';
   static const upgrade_program_device_not_eligible_got_it_btn = 'upgrade_program.device_not_eligible_got_it_btn';
   static const upgrade_program_employee_code_title = 'upgrade_program.employee_code_title';
+  static const upgrade_program_employee_code_description = 'upgrade_program.employee_code_description';
   static const upgrade_program_employee_code_hint = 'upgrade_program.employee_code_hint';
   static const upgrade_program_employee_code_confirm_btn = 'upgrade_program.employee_code_confirm_btn';
   static const upgrade_program_employee_code_cancel_btn = 'upgrade_program.employee_code_cancel_btn';

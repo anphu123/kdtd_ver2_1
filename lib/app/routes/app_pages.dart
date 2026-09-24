@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import 'package:kdtd_ver2_1/app/modules/device_specs_confirmation/device_specs_confirmation_page.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_page.dart';
+import 'package:kdtd_ver2_1/app/modules/employee_code/employee_code_binding.dart';
+import 'package:kdtd_ver2_1/app/modules/employee_code/employee_code_page.dart';
 import 'package:kdtd_ver2_1/app/modules/permission_check/permission_check_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/permission_check/permission_check_page.dart';
 import 'package:kdtd_ver2_1/app/modules/pre_test_guide/pre_test_guide_page.dart';
@@ -60,6 +62,14 @@ class AppPages {
       name: AppRoutes.testRunner,
       page: () => const TestRunnerPage(),
       binding: TestRunnerBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Màn nhập mã số nhân viên để chốt đổi máy
+    GetPage(
+      name: AppRoutes.employeeCode,
+      page: () => const EmployeeCodePage(),
+      binding: EmployeeCodeBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

@@ -696,6 +696,7 @@
     "device_not_eligible_desc": "Thiết bị hiện tại ({grade}) không đủ điều kiện tham gia chương trình nâng cấp. Chỉ áp dụng cho máy Loại 1 và Loại 2.",
     "device_not_eligible_got_it_btn": "Đã hiểu",
     "employee_code_title": "Mã số nhân viên",
+    "employee_code_description": "Nhập mã số nhân viên để xác nhận chốt đổi máy cho khách.",
     "employee_code_hint": "Nhập mã số nhân viên",
     "employee_code_confirm_btn": "Xác nhận",
     "employee_code_cancel_btn": "Huỷ",
