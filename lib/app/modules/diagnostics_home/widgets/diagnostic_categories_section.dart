@@ -33,27 +33,36 @@ class DiagnosticCategoriesSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 3.5.w,
-                    height: 16.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.pviRed,
-                      borderRadius: BorderRadius.circular(2.r),
+              // Expanded + Flexible: tiêu đề và badge đều là chuỗi dịch, độ dài
+              // thay đổi theo ngôn ngữ nên KHÔNG được để Row tự co theo nội
+              // dung — ở khổ máy hẹp (hoặc khi bật cỡ chữ lớn) sẽ tràn ngang.
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 3.5.w,
+                      height: 16.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.pviRed,
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    LocaleKeys.diagnostics_home_categories_title.trans(),
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.tradeInNavy,
+                    SizedBox(width: 8.w),
+                    Flexible(
+                      child: Text(
+                        LocaleKeys.diagnostics_home_categories_title.trans(),
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.titleMedium.copyWith(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.tradeInNavy,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              SizedBox(width: 8.w),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.5.h),
                 decoration: BoxDecoration(
