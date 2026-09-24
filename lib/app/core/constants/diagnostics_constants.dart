@@ -45,9 +45,11 @@ class DiagnosticsConstants {
   ];
 
   /// Thời gian chờ trạng thái adapter Bluetooth cập nhật.
-  static const Duration bluetoothAdapterStateTimeout = Duration(
-    milliseconds: 500,
-  );
+  ///
+  /// CoreBluetooth trên iOS thường mất 1-2 giây mới báo `poweredOn` lần đầu
+  /// sau khi khởi tạo CBCentralManager — 500ms trước đây hết giờ trước cả khi
+  /// hệ thống kịp trả lời, khiến bài test luôn fail ở lần chạy đầu.
+  static const Duration bluetoothAdapterStateTimeout = Duration(seconds: 4);
 
   /// Thời lượng quét thiết bị Bluetooth lân cận.
   static const Duration bluetoothScanDuration = Duration(seconds: 2);

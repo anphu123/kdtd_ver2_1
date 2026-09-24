@@ -187,47 +187,61 @@ class DeviceHardwareService {
 
   /// Quét Bluetooth
   static Future<Map<String, dynamic>> getBluetoothInfo() async {
+    // Bài test chỉ QUÉT thiết bị lân cận, không kết nối tới cái nào. Trên
+    // Android 12+ việc đó chỉ cần BLUETOOTH_SCAN; BLUETOOTH_CONNECT là quyền
+    // để kết nối / đọc tên & danh sách thiết bị đã ghép đôi nên không xin ở
+    // đây (xin thừa chỉ tổ hiện thêm một hộp thoại cho kỹ thuật viên bấm).
     if (Platform.isAndroid) {
-      final scanStatus = await Permission.bluetoothScan.status;
-      final connectStatus = await Permission.bluetoothConnect.status;
-      if (!scanStatus.isGranted || !connectStatus.isGranted) {
-        await [Permission.bluetoothScan, Permission.bluetoothConnect].request();
+      if (!await Permission.bluetoothScan.isGranted) {
+        await Permission.bluetoothScan.request();
       }
     } else if (Platform.isIOS) {
-      final btStatus = await Permission.bluetooth.status;
-      if (!btStatus.isGranted) {
+      if (!await Permission.bluetooth.isGranted) {
         await Permission.bluetooth.request();
       }
     }
 
-    var btState = FlutterBluePlus.adapterStateNow;
-    if (btState != BluetoothAdapterState.on) {
-      try {
-        btState = await FlutterBluePlus.adapterState.first.timeout(
-          DiagnosticsConstants.bluetoothAdapterStateTimeout,
-        );
-      } catch (_) {}
-    }
+    final btState = await _resolveAdapterState();
+
     bool scanOk = false;
     if (btState == BluetoothAdapterState.on) {
       try {
-        bool canScan = true;
-        if (Platform.isAndroid) {
-          canScan = await Permission.bluetoothScan.isGranted && await Permission.bluetoothConnect.isGranted;
-        } else if (Platform.isIOS) {
-          canScan = await Permission.bluetooth.isGranted;
-        }
-        if (canScan) {
-          await FlutterBluePlus.startScan(
-            timeout: DiagnosticsConstants.bluetoothScanDuration,
-          );
-          await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
-          await FlutterBluePlus.stopScan();
-          scanOk = true;
-        }
-      } catch (_) {}
+        await FlutterBluePlus.startScan(
+          timeout: DiagnosticsConstants.bluetoothScanDuration,
+        );
+        await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
+        await FlutterBluePlus.stopScan();
+        scanOk = true;
+      } catch (_) {
+        // Thiếu quyền hoặc adapter bận — quét hỏng nhưng adapter vẫn có thể
+        // đang bật, nên để `enabled` tự quyết định pass/fail.
+      }
     }
-    return {'enabled': btState == BluetoothAdapterState.on, 'scanOk': scanOk};
+
+    return {
+      'enabled': btState == BluetoothAdapterState.on,
+      'scanOk': scanOk,
+      'state': btState.name,
+    };
+  }
+
+  /// Đọc trạng thái adapter Bluetooth, chờ qua giai đoạn `unknown`.
+  ///
+  /// `adapterState.first` KHÔNG dùng được: flutter_blue_plus luôn phát
+  /// `unknown` ngay khi có listener, trước lúc CoreBluetooth (iOS) hay
+  /// BluetoothAdapter (Android) kịp báo trạng thái thật. Lấy giá trị đầu tiên
+  /// là lấy trúng `unknown` đó, nên bài test luôn fail dù Bluetooth đang bật.
+  static Future<BluetoothAdapterState> _resolveAdapterState() async {
+    final now = FlutterBluePlus.adapterStateNow;
+    if (now != BluetoothAdapterState.unknown) return now;
+
+    try {
+      return await FlutterBluePlus.adapterState
+          .firstWhere((s) => s != BluetoothAdapterState.unknown)
+          .timeout(DiagnosticsConstants.bluetoothAdapterStateTimeout);
+    } catch (_) {
+      return FlutterBluePlus.adapterStateNow;
+    }
   }
 
   /// Trạng thái NFC
