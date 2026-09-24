@@ -2,6 +2,20 @@
   "common": {
     "app_title": "Device Diagnostics"
   },
+  "welcome": {
+    "brand_tagline": "PVI Insurance",
+    "title": "Upgrade your iPhone\nwith PVI Insurance",
+    "subtitle": "Customers with a PVI device insurance policy can trade in their old phone for a new one at a preferential rate, right at the counter.",
+    "step_1_title": "Check eligibility",
+    "step_1_desc": "Enter the device serial to see whether it is covered by the programme.",
+    "step_2_title": "Run diagnostics",
+    "step_2_desc": "The device is graded automatically across 20+ hardware tests, from Grade 1 to Grade 5.",
+    "step_3_title": "Confirm the trade-in",
+    "step_3_desc": "Devices graded 1 or 2 qualify for the upgrade. A staff member confirms and you are done.",
+    "note": "Every result is scored by the app, not by the inspector's judgement.",
+    "start_btn": "Start diagnostics",
+    "duration_hint": "Takes about 5 minutes"
+  },
   "auto_screen_burnin_test": {
     "color_black_name": "Black",
     "color_black_desc": "Abnormal bright pixels",

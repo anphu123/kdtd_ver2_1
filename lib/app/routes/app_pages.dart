@@ -11,6 +11,7 @@ import 'package:kdtd_ver2_1/app/modules/serial_check/serial_check_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/serial_check/serial_check_page.dart';
 import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_binding.dart';
 import 'package:kdtd_ver2_1/app/modules/test_runner/test_runner_page.dart';
+import 'package:kdtd_ver2_1/app/modules/welcome/welcome_page.dart';
 
 import 'app_routes.dart';
 
@@ -18,11 +19,18 @@ import 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  /// Tuyến đường khởi tạo ban đầu
-  static const String initial = AppRoutes.diagnosticsHome;
+  /// Tuyến đường khởi tạo ban đầu — màn giới thiệu chương trình.
+  static const String initial = AppRoutes.welcome;
 
   /// Danh sách tất cả các trang/tuyến đường trong ứng dụng
   static final List<GetPage> routes = [
+    // Màn mở đầu giới thiệu chương trình nâng cấp
+    GetPage(
+      name: AppRoutes.welcome,
+      page: () => const WelcomePage(),
+      transition: Transition.fadeIn,
+    ),
+
     // Màn hình tổng quan kiểm định (Home Dashboard)
     GetPage(
       name: AppRoutes.diagnosticsHome,

@@ -2,6 +2,20 @@
   "common": {
     "app_title": "Kiểm định thiết bị"
   },
+  "welcome": {
+    "brand_tagline": "PVI Insurance",
+    "title": "Nâng cấp iPhone\ncùng bảo hiểm PVI",
+    "subtitle": "Khách hàng mua bảo hiểm thiết bị PVI được đổi máy cũ lấy máy mới với mức bù giá ưu đãi, ngay tại quầy.",
+    "step_1_title": "Kiểm tra điều kiện",
+    "step_1_desc": "Nhập serial máy để xem có nằm trong chương trình bảo hiểm hay không.",
+    "step_2_title": "Kiểm định thiết bị",
+    "step_2_desc": "Máy được chấm tự động qua hơn 20 bài kiểm tra phần cứng, phân loại từ Loại 1 đến Loại 5.",
+    "step_3_title": "Chốt đổi máy",
+    "step_3_desc": "Máy đạt Loại 1 hoặc Loại 2 đủ điều kiện nâng cấp. Nhân viên xác nhận là xong.",
+    "note": "Toàn bộ kết quả do máy tự chấm, không phụ thuộc cảm tính người kiểm.",
+    "start_btn": "Bắt đầu kiểm định",
+    "duration_hint": "Mất khoảng 5 phút"
+  },
   "auto_screen_burnin_test": {
     "color_black_name": "Đen",
     "color_black_desc": "Pixel sáng bất thường",

@@ -8,6 +8,9 @@ abstract class AppRoutes {
   static const String initial = '/';
   static const String home = '/home';
 
+  /// Màn mở đầu giới thiệu chương trình nâng cấp.
+  static const String welcome = '/welcome';
+
   // Tuyến đường kiểm định (Diagnostics)
   static const String diagnosticsHome = '/diagnostics/home';
   static const String serialCheck = '/diagnostics/serial-check';

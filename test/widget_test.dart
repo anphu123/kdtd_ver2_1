@@ -24,7 +24,8 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('App khởi động và hiện màn hình Kiểm Định Thiết Bị', (tester) async {
+  testWidgets('App mở ra màn Welcome rồi vào được Kiểm Định Thiết Bị',
+      (tester) async {
     // Khung test mặc định là 800x600 (ngang, cỡ tablet) trong khi app thiết kế
     // cho điện thoại dọc (ScreenUtil designSize 375x812) — để nguyên thì layout
     // tràn và bài test fail vì lý do không liên quan tới thứ đang kiểm tra.
@@ -49,6 +50,15 @@ void main() {
     // Đọc thẳng từ file dịch thay vì hard-code chuỗi: assertion cũ tìm
     // "Thu Cũ Đổi Mới" (key `appbar_title`) trong khi màn hình đã đổi sang
     // dùng `header_title` từ lâu, nên bài test fail mà không ai để ý.
+
+    // 1. Màn mở đầu là Welcome.
+    expect(find.text(LocaleKeys.welcome_title.trans()), findsOneWidget);
+
+    // 2. Bấm "Bắt đầu kiểm định" thì sang được trang chủ kiểm định —
+    // bắt luôn lỗi thiếu binding/route, thứ mà chỉ dựng widget không lộ ra.
+    await tester.tap(find.text(LocaleKeys.welcome_start_btn.trans()));
+    await tester.pumpAndSettle();
+
     expect(
       find.text(LocaleKeys.diagnostics_home_header_title.trans()),
       findsOneWidget,

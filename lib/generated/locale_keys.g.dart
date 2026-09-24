@@ -5,6 +5,19 @@
 abstract class  LocaleKeys {
   static const common_app_title = 'common.app_title';
   static const common = 'common';
+  static const welcome_brand_tagline = 'welcome.brand_tagline';
+  static const welcome_title = 'welcome.title';
+  static const welcome_subtitle = 'welcome.subtitle';
+  static const welcome_step_1_title = 'welcome.step_1_title';
+  static const welcome_step_1_desc = 'welcome.step_1_desc';
+  static const welcome_step_2_title = 'welcome.step_2_title';
+  static const welcome_step_2_desc = 'welcome.step_2_desc';
+  static const welcome_step_3_title = 'welcome.step_3_title';
+  static const welcome_step_3_desc = 'welcome.step_3_desc';
+  static const welcome_note = 'welcome.note';
+  static const welcome_start_btn = 'welcome.start_btn';
+  static const welcome_duration_hint = 'welcome.duration_hint';
+  static const welcome = 'welcome';
   static const auto_screen_burnin_test_color_black_name = 'auto_screen_burnin_test.color_black_name';
   static const auto_screen_burnin_test_color_black_desc = 'auto_screen_burnin_test.color_black_desc';
   static const auto_screen_burnin_test_color_white_name = 'auto_screen_burnin_test.color_white_name';
