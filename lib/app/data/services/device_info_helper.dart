@@ -12,9 +12,11 @@
 /// ============================================================
 library;
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 const _channel = MethodChannel('com.fidobox/diagnostics');
 
@@ -293,7 +295,17 @@ class DeviceInfoHelper {
     if (Platform.isIOS) {
       try {
         final iosInfo = await _deviceInfo.iosInfo;
-        return _mapIosModelName(iosInfo.utsname.machine);
+        final machine = iosInfo.utsname.machine;
+        final mapped = _mapIosModelName(machine);
+        if (mapped != null) return mapped;
+
+        // Máy đời mới chưa kịp cập nhật vào bảng tĩnh ở trên -> tra online.
+        final online = await _fetchIosModelNameOnline(machine);
+        if (online != null) return online;
+
+        if (machine.startsWith('iPhone')) return 'iPhone ($machine)';
+        if (machine.startsWith('iPad')) return 'iPad ($machine)';
+        return machine;
       } catch (_) {
         return 'iPhone';
       }
@@ -307,10 +319,37 @@ class DeviceInfoHelper {
     }
   }
 
-  /// Map iOS machine identifier sang tên marketing
-  static String _mapIosModelName(String machine) {
+  /// Tra tên marketing từ API công khai ipsw.me khi mã máy chưa có trong
+  /// bảng tĩnh (thiết bị đời mới). Trả về `null` nếu không có mạng hoặc
+  /// API không có dữ liệu — khi đó [getModel] sẽ fallback về hiển thị mã máy.
+  static Future<String?> _fetchIosModelNameOnline(String machine) async {
+    try {
+      final uri = Uri.parse('https://api.ipsw.me/v4/device/$machine');
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (res.statusCode != 200) return null;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final name = data['name'] as String?;
+      return (name != null && name.isNotEmpty) ? name : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Map iOS machine identifier sang tên marketing dùng bảng tĩnh.
+  /// Trả về `null` nếu mã máy chưa có trong bảng (máy đời mới).
+  static String? _mapIosModelName(String machine) {
     // Bảng ánh xạ mã máy iPhone
     final iphoneMap = {
+      'iPhone18,5': 'iPhone 17e',
+      'iPhone18,4': 'iPhone Air',
+      'iPhone18,3': 'iPhone 17',
+      'iPhone18,2': 'iPhone 17 Pro Max',
+      'iPhone18,1': 'iPhone 17 Pro',
+      'iPhone17,5': 'iPhone 16e',
+      'iPhone17,4': 'iPhone 16 Plus',
+      'iPhone17,3': 'iPhone 16',
+      'iPhone17,2': 'iPhone 16 Pro Max',
+      'iPhone17,1': 'iPhone 16 Pro',
       'iPhone16,2': 'iPhone 15 Pro Max',
       'iPhone16,1': 'iPhone 15 Pro',
       'iPhone15,5': 'iPhone 15 Plus',
@@ -344,19 +383,7 @@ class DeviceInfoHelper {
       'iPhone10,1': 'iPhone 8',
     };
 
-    if (iphoneMap.containsKey(machine)) {
-      return iphoneMap[machine]!;
-    }
-
-    // Fallback: Extract từ machine
-    if (machine.startsWith('iPhone')) {
-      return 'iPhone ($machine)';
-    }
-    if (machine.startsWith('iPad')) {
-      return 'iPad ($machine)';
-    }
-
-    return machine;
+    return iphoneMap[machine];
   }
 
   // ==================== KIỂM TRA NỀN TẢNG (HỆ ĐIỀU HÀNH) ====================

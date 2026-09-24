@@ -255,16 +255,16 @@ class RuleEvaluator {
 
       case 'bluetooth':
       case 'bt':
-        if (result == EvalResult.skip) {
+        if (result == EvalResult.fail) {
           if (environment.isPermDenied('bluetoothScan')) {
             return LocaleKeys.rule_evaluator_bt_missing_permission.trans();
           }
           if (environment.isMiui && !environment.locationServiceOn) {
             return LocaleKeys.rule_evaluator_bt_miui_location_required.trans();
           }
-          return LocaleKeys.rule_evaluator_bt_disabled.trans();
-        }
-        if (result == EvalResult.fail) {
+          if (payload['enabled'] != true) {
+            return LocaleKeys.rule_evaluator_bt_disabled.trans();
+          }
           return LocaleKeys.rule_evaluator_bt_scan_failed.trans();
         }
         return LocaleKeys.rule_evaluator_bt_working.trans();
@@ -280,17 +280,17 @@ class RuleEvaluator {
 
       case 'location':
       case 'gps':
-        if (result == EvalResult.skip) {
+        final acc = payload['accuracyM'];
+        if (result == EvalResult.fail) {
           if (!environment.locationServiceOn) {
             return LocaleKeys.rule_evaluator_gps_location_service_off.trans();
           }
           if (environment.isPermDenied('location')) {
             return LocaleKeys.rule_evaluator_gps_missing_permission.trans();
           }
-          return LocaleKeys.rule_evaluator_gps_disabled.trans();
-        }
-        final acc = payload['accuracyM'];
-        if (result == EvalResult.fail) {
+          if (payload['serviceOn'] != true || acc == null) {
+            return LocaleKeys.rule_evaluator_gps_disabled.trans();
+          }
           return LocaleKeys.rule_evaluator_gps_poor_accuracy.trans(
             namedArgs: {'acc': '$acc'},
           );
@@ -429,13 +429,14 @@ class RuleEvaluator {
   }
 
   EvalResult _evalBluetooth(Map<String, dynamic> p) {
-    if (environment.isPermDenied('bluetoothScan')) return EvalResult.skip;
+    // Bluetooth là bài bắt buộc: thiếu quyền/tắt Bluetooth -> fail, không skip
+    if (environment.isPermDenied('bluetoothScan')) return EvalResult.fail;
     if (environment.isMiui && !environment.locationServiceOn) {
-      return EvalResult.skip;
+      return EvalResult.fail;
     }
 
     final enabled = p['enabled'] == true;
-    if (!enabled) return EvalResult.skip;
+    if (!enabled) return EvalResult.fail;
 
     final scanOk = p['scanOk'] == true;
     return scanOk ? EvalResult.pass : EvalResult.fail;
@@ -477,14 +478,15 @@ class RuleEvaluator {
   }
 
   EvalResult _evalGps(Map<String, dynamic> p) {
-    if (!environment.locationServiceOn) return EvalResult.skip;
-    if (environment.isPermDenied('location')) return EvalResult.skip;
+    // GPS là bài bắt buộc: tắt dịch vụ/thiếu quyền/không lấy được tọa độ -> fail, không skip
+    if (!environment.locationServiceOn) return EvalResult.fail;
+    if (environment.isPermDenied('location')) return EvalResult.fail;
 
     final serviceOn = p['serviceOn'] == true;
-    if (!serviceOn) return EvalResult.skip;
+    if (!serviceOn) return EvalResult.fail;
 
     final acc = p['accuracyM'];
-    if (acc == null) return serviceOn ? EvalResult.pass : EvalResult.skip;
+    if (acc == null) return EvalResult.fail;
     if (acc is! num) return EvalResult.fail;
 
     // Chỉ cần xác định GPS có hoạt động (lấy được tọa độ), không đánh giá độ chính xác
