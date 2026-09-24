@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:get/get.dart' hide Trans;
 
+import 'core/constants/build_flags.dart';
 import 'core/extensions/string_extensions.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_pages.dart';
 
@@ -20,7 +22,10 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           title: LocaleKeys.common_app_title.trans(),
-          debugShowCheckedModeBanner: true,
+          // Tắt băng DEBUG mặc định của Flutter để khỏi chồng lên băng
+          // "THỬ NGHIỆM" bên dưới (cả hai đều nằm ở góc trên phải).
+          debugShowCheckedModeBanner: false,
+          builder: _wrapWithTestBanner,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeMode.light,
@@ -31,6 +36,22 @@ class MyApp extends StatelessWidget {
           getPages: AppPages.routes,
         );
       },
+    );
+  }
+
+  /// Dán dải băng "THỬ NGHIỆM" lên mọi màn hình khi đang build bản nội bộ.
+  ///
+  /// Dùng widget `Banner` tự đặt chứ không phải `debugShowCheckedModeBanner`,
+  /// vì cái đó chỉ tồn tại ở chế độ debug — xem [BuildFlags.showTestBanner].
+  static Widget _wrapWithTestBanner(BuildContext context, Widget? child) {
+    final content = child ?? const SizedBox.shrink();
+    if (!BuildFlags.showTestBanner) return content;
+
+    return Banner(
+      message: 'THỬ NGHIỆM',
+      location: BannerLocation.topEnd,
+      color: AppColors.pviRed,
+      child: content,
     );
   }
 }
