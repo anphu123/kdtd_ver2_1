@@ -5,6 +5,8 @@ import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 
+import 'widgets/reveal.dart';
+
 /// Màn mở đầu: giới thiệu chương trình nâng cấp iPhone dành cho khách mua
 /// bảo hiểm thiết bị PVI.
 ///
@@ -12,8 +14,45 @@ import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 /// quầy, không phải kỹ thuật viên — nên màn này giải thích ba bước của quy
 /// trình trước, rồi mới mời bắt đầu, thay vì ném thẳng vào bảng kiểm định
 /// đầy thông số như trước.
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _intro;
+
+  @override
+  void initState() {
+    super.initState();
+    _intro = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1150),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Tôn trọng "Giảm chuyển động" của hệ thống: người bật cài đặt đó thường
+    // vì chuyển động gây chóng mặt hoặc mất tập trung — nhảy thẳng tới trạng
+    // thái cuối thay vì cố chạy hiệu ứng nhẹ hơn.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      _intro.value = 1;
+    } else if (!_intro.isAnimating && _intro.value == 0) {
+      _intro.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _intro.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +60,8 @@ class WelcomePage extends StatelessWidget {
       backgroundColor: AppColors.tradeInSurfaceBg,
       body: Column(
         children: [
-          const Expanded(child: _Hero()),
-          _BottomBar(),
+          Expanded(child: _Hero(intro: _intro)),
+          _BottomBar(intro: _intro),
         ],
       ),
     );
@@ -32,7 +71,9 @@ class WelcomePage extends StatelessWidget {
 // ==================== PHẦN TRÊN: THƯƠNG HIỆU + 3 BƯỚC ====================
 
 class _Hero extends StatelessWidget {
-  const _Hero();
+  const _Hero({required this.intro});
+
+  final Animation<double> intro;
 
   @override
   Widget build(BuildContext context) {
@@ -41,39 +82,59 @@ class _Hero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _BrandHeader(),
+          _BrandHeader(intro: intro),
           Padding(
             padding: EdgeInsets.fromLTRB(24.w, 28.h, 24.w, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _StepTile(
-                  index: 1,
-                  accent: AppColors.pviBlue,
-                  surface: AppColors.pviBlueSurface,
-                  icon: Icons.qr_code_scanner_rounded,
-                  title: LocaleKeys.welcome_step_1_title.trans(),
-                  description: LocaleKeys.welcome_step_1_desc.trans(),
+                Reveal(
+                  parent: intro,
+                  start: 0.34,
+                  end: 0.70,
+                  child: _StepTile(
+                    index: 1,
+                    accent: AppColors.pviBlue,
+                    surface: AppColors.pviBlueSurface,
+                    icon: Icons.qr_code_scanner_rounded,
+                    title: LocaleKeys.welcome_step_1_title.trans(),
+                    description: LocaleKeys.welcome_step_1_desc.trans(),
+                  ),
                 ),
-                _StepTile(
-                  index: 2,
-                  accent: AppColors.pviNavy,
-                  surface: AppColors.pviNavySurface,
-                  icon: Icons.fact_check_rounded,
-                  title: LocaleKeys.welcome_step_2_title.trans(),
-                  description: LocaleKeys.welcome_step_2_desc.trans(),
+                Reveal(
+                  parent: intro,
+                  start: 0.42,
+                  end: 0.78,
+                  child: _StepTile(
+                    index: 2,
+                    accent: AppColors.pviNavy,
+                    surface: AppColors.pviNavySurface,
+                    icon: Icons.fact_check_rounded,
+                    title: LocaleKeys.welcome_step_2_title.trans(),
+                    description: LocaleKeys.welcome_step_2_desc.trans(),
+                  ),
                 ),
-                _StepTile(
-                  index: 3,
-                  accent: AppColors.tradeInEmerald,
-                  surface: AppColors.successSurface,
-                  icon: Icons.swap_horizontal_circle_rounded,
-                  title: LocaleKeys.welcome_step_3_title.trans(),
-                  description: LocaleKeys.welcome_step_3_desc.trans(),
-                  isLast: true,
+                Reveal(
+                  parent: intro,
+                  start: 0.50,
+                  end: 0.86,
+                  child: _StepTile(
+                    index: 3,
+                    accent: AppColors.tradeInEmerald,
+                    surface: AppColors.successSurface,
+                    icon: Icons.swap_horizontal_circle_rounded,
+                    title: LocaleKeys.welcome_step_3_title.trans(),
+                    description: LocaleKeys.welcome_step_3_desc.trans(),
+                    isLast: true,
+                  ),
                 ),
                 SizedBox(height: 20.h),
-                const _TrustNote(),
+                Reveal(
+                  parent: intro,
+                  start: 0.62,
+                  end: 0.95,
+                  child: const _TrustNote(),
+                ),
                 SizedBox(height: 24.h),
               ],
             ),
@@ -86,7 +147,9 @@ class _Hero extends StatelessWidget {
 
 /// Dải đầu trang màu navy mang nhận diện PVI.
 class _BrandHeader extends StatelessWidget {
-  const _BrandHeader();
+  const _BrandHeader({required this.intro});
+
+  final Animation<double> intro;
 
   @override
   Widget build(BuildContext context) {
@@ -108,44 +171,54 @@ class _BrandHeader extends StatelessWidget {
           children: [
             SizedBox(height: 24.h),
             // Nhãn thương hiệu: vạch đỏ PVI + tên, nhất quán với tiêu đề
-            // hạng mục ở trang chủ.
+            // hạng mục ở trang chủ. Vạch đỏ tự kéo dài ra thay vì mờ dần —
+            // chuyển động nhỏ này neo mắt vào đúng chỗ bắt đầu đọc.
             Row(
               children: [
-                Container(
-                  width: 3.5.w,
-                  height: 14.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.pviRed,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
+                _GrowingAccentBar(intro: intro),
                 SizedBox(width: 8.w),
-                Text(
-                  LocaleKeys.welcome_brand_tagline.trans().toUpperCase(),
-                  style: AppTextStyles.overline.copyWith(
-                    color: AppColors.white,
-                    letterSpacing: 1.4,
-                    fontWeight: FontWeight.w700,
+                Reveal(
+                  parent: intro,
+                  start: 0.08,
+                  end: 0.40,
+                  offset: const Offset(-0.25, 0),
+                  child: Text(
+                    LocaleKeys.welcome_brand_tagline.trans().toUpperCase(),
+                    style: AppTextStyles.overline.copyWith(
+                      color: AppColors.white,
+                      letterSpacing: 1.4,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 18.h),
-            Text(
-              LocaleKeys.welcome_title.trans(),
-              style: AppTextStyles.heroTitle.copyWith(
-                color: AppColors.white,
-                fontSize: 27.sp,
-                height: 1.28,
-                fontWeight: FontWeight.w700,
+            Reveal(
+              parent: intro,
+              start: 0.12,
+              end: 0.52,
+              child: Text(
+                LocaleKeys.welcome_title.trans(),
+                style: AppTextStyles.heroTitle.copyWith(
+                  color: AppColors.white,
+                  fontSize: 27.sp,
+                  height: 1.28,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             SizedBox(height: 14.h),
-            Text(
-              LocaleKeys.welcome_subtitle.trans(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.white70,
-                height: 1.55,
+            Reveal(
+              parent: intro,
+              start: 0.22,
+              end: 0.62,
+              child: Text(
+                LocaleKeys.welcome_subtitle.trans(),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.white70,
+                  height: 1.55,
+                ),
               ),
             ),
           ],
@@ -267,7 +340,11 @@ class _TrustNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.verified_user_rounded, size: 18.r, color: AppColors.pviNavy),
+          Icon(
+            Icons.verified_user_rounded,
+            size: 18.r,
+            color: AppColors.pviNavy,
+          ),
           SizedBox(width: 10.w),
           Expanded(
             child: Text(
@@ -291,6 +368,10 @@ class _TrustNote extends StatelessWidget {
 /// Ghim cố định chứ không để cuộn theo nội dung: đây là hành động duy nhất
 /// của màn này, khách không phải cuộn xuống mới tìm thấy.
 class _BottomBar extends StatelessWidget {
+  const _BottomBar({required this.intro});
+
+  final Animation<double> intro;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -302,48 +383,97 @@ class _BottomBar extends StatelessWidget {
         top: false,
         child: Padding(
           padding: EdgeInsets.fromLTRB(24.w, 14.h, 24.w, 14.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 52.h,
-                child: FilledButton.icon(
-                  onPressed: () => Get.toNamed(AppRoutes.diagnosticsHome),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.pviRed,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r),
+          child: Reveal(
+            parent: intro,
+            start: 0.70,
+            end: 1.0,
+            offset: const Offset(0, 0.5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 52.h,
+                  child: FilledButton.icon(
+                    onPressed: () => Get.toNamed(AppRoutes.diagnosticsHome),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.pviRed,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
                     ),
-                  ),
-                  icon: Icon(Icons.arrow_forward_rounded,
-                      size: 20.r, color: AppColors.white),
-                  label: Text(
-                    LocaleKeys.welcome_start_btn.trans(),
-                    style: AppTextStyles.button.copyWith(
+                    icon: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 20.r,
                       color: AppColors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.bold,
+                    ),
+                    label: Text(
+                      LocaleKeys.welcome_start_btn.trans(),
+                      style: AppTextStyles.button.copyWith(
+                        color: AppColors.white,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 8.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.schedule_rounded,
-                      size: 14.r, color: AppColors.tradeInSlate),
-                  SizedBox(width: 6.w),
-                  Text(
-                    LocaleKeys.welcome_duration_hint.trans(),
-                    style: AppTextStyles.caption.copyWith(
+                SizedBox(height: 8.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 14.r,
                       color: AppColors.tradeInSlate,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 6.w),
+                    Text(
+                      LocaleKeys.welcome_duration_hint.trans(),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.tradeInSlate,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Vạch đỏ nhận diện PVI, tự kéo dài từ 0 lên chiều cao đầy đủ.
+class _GrowingAccentBar extends StatelessWidget {
+  const _GrowingAccentBar({required this.intro});
+
+  final Animation<double> intro;
+
+  @override
+  Widget build(BuildContext context) {
+    final grow = CurvedAnimation(
+      parent: intro,
+      curve: const Interval(0, 0.32, curve: Curves.easeOutBack),
+    );
+
+    return SizedBox(
+      width: 3.5.w,
+      height: 14.h,
+      child: AnimatedBuilder(
+        animation: grow,
+        builder:
+            (context, child) => Align(
+              alignment: Alignment.topCenter,
+              child: FractionallySizedBox(
+                heightFactor: grow.value.clamp(0.0, 1.0),
+                child: child,
               ),
-            ],
+            ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.pviRed,
+            borderRadius: BorderRadius.circular(2.r),
           ),
         ),
       ),
