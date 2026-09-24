@@ -50,6 +50,19 @@ class CameraTestConstants {
   /// ràng là sắp chụp.
   static const int autoCaptureCountdownSeconds = 5;
 
+  /// Nhịp nghỉ sau khi đóng một màn camera, trước khi mở màn camera kế.
+  ///
+  /// `dispose()` phía Dart trả về xong không có nghĩa iOS đã tháo hẳn
+  /// AVCaptureSession — phần việc đó còn chạy tiếp một nhịp ở tầng native.
+  static const Duration sessionReleaseDelay = Duration(milliseconds: 600);
+
+  /// Hạn chờ `CameraController.initialize()`.
+  ///
+  /// iOS KHÔNG báo lỗi khi mở camera lúc một AVCaptureSession khác chưa
+  /// đóng xong — nó treo vô hạn. Không có hạn chờ thì màn hình đứng im mãi
+  /// và kỹ thuật viên chỉ còn cách thoát app.
+  static const Duration initializeTimeout = Duration(seconds: 8);
+
   /// Thời gian chờ sau initialize() trước khi gắn CameraPreview vào cây
   /// widget — né lỗi chớp màu (đỏ/hồng) ở vài khung hình đầu, một lỗi đã
   /// biết của camera_android_camerax khi Texture mới khởi tạo.

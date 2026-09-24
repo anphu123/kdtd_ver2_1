@@ -109,7 +109,15 @@ class CameraTestController extends GetxController {
     );
 
     try {
-      await cam.initialize();
+      await cam.initialize().timeout(
+        CameraTestConstants.initializeTimeout,
+        onTimeout:
+            () =>
+                throw TimeoutException(
+                  'initialize() quá ${CameraTestConstants.initializeTimeout.inSeconds}s '
+                  'không phản hồi — nhiều khả năng AVCaptureSession trước chưa đóng xong',
+                ),
+      );
       if (_closed) {
         await cam.dispose();
         return;
@@ -261,11 +269,15 @@ class CameraTestController extends GetxController {
     }
   }
 
-  void finish(bool passed) {
+  Future<void> finish(bool passed) async {
     // Timer tự động và nút đóng có thể cùng kích hoạt.
     if (_finished) return;
     _finished = true;
-    _disposeCameraSync();
+
+    // PHẢI await: pop ngay khi session cũ còn đang tháo thì bài camera kế
+    // tiếp gọi initialize() lúc iOS vẫn giữ AVCaptureSession trước đó —
+    // iOS không báo lỗi mà treo luôn, màn hình đứng im ở vòng xoay.
+    await _disposeCameraSync();
     Get.back(result: passed);
   }
 

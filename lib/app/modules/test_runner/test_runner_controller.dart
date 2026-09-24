@@ -13,6 +13,7 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibration/vibration.dart';
 
+import 'package:kdtd_ver2_1/app/core/constants/camera_test_constants.dart';
 import 'package:kdtd_ver2_1/app/core/constants/diagnostics_constants.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/data/model/device_profile.dart';
@@ -333,7 +334,8 @@ class TestRunnerController extends GetxController {
   Future<bool> _snapWifi() async {
     info['wifi'] = await DeviceHardwareService.getWifiInfo();
     final wifiInfo = info['wifi'] as Map<String, dynamic>;
-    final ok = (wifiInfo['enabled'] as bool? ?? false) ||
+    final ok =
+        (wifiInfo['enabled'] as bool? ?? false) ||
         (wifiInfo['connected'] as bool? ?? false);
     debugPrint('[TestRunner] Kết quả Wi-Fi: $ok ($wifiInfo)');
     return ok;
@@ -388,7 +390,9 @@ class TestRunnerController extends GetxController {
       PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.location_off_rounded, color: AppColors.tradeInBlue),
@@ -462,16 +466,19 @@ class TestRunnerController extends GetxController {
     try {
       final bioInfo = await DeviceHardwareService.checkBiometrics();
       if (bioInfo['canCheck'] != true && bioInfo['supported'] != true) {
-        debugPrint('[TestRunner] Thiết bị không hỗ trợ hoặc chưa đăng ký sinh trắc học');
+        debugPrint(
+          '[TestRunner] Thiết bị không hỗ trợ hoặc chưa đăng ký sinh trắc học',
+        );
         return true;
       }
       final la = LocalAuthentication();
       // Nhắn đúng loại sinh trắc học theo nền tảng: iOS dùng Face ID (hoặc
       // Touch ID trên máy còn nút Home), Android dùng vân tay — tránh nhắn
       // chung chung "vân tay / Face ID" không khớp với máy đang cầm.
-      final reason = Platform.isIOS
-          ? 'Xác thực Face ID để kiểm tra cảm biến sinh trắc học'
-          : 'Xác thực vân tay để kiểm tra cảm biến sinh trắc học';
+      final reason =
+          Platform.isIOS
+              ? 'Xác thực Face ID để kiểm tra cảm biến sinh trắc học'
+              : 'Xác thực vân tay để kiểm tra cảm biến sinh trắc học';
       final authenticated = await la.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
@@ -488,11 +495,16 @@ class TestRunnerController extends GetxController {
       // PHẦN CỨNG nên không được tính là fail (coi như không áp dụng, giống
       // nhánh "không hỗ trợ" ở trên) — nếu không sẽ hard-fail oan cả bài
       // Function Check dù cảm biến vân tay vẫn hoạt động tốt.
-      if (e.code == auth_error.notEnrolled || e.code == auth_error.notAvailable) {
-        debugPrint('[TestRunner] Sinh trắc học chưa đăng ký/không khả dụng (${e.code}) — coi như không áp dụng.');
+      if (e.code == auth_error.notEnrolled ||
+          e.code == auth_error.notAvailable) {
+        debugPrint(
+          '[TestRunner] Sinh trắc học chưa đăng ký/không khả dụng (${e.code}) — coi như không áp dụng.',
+        );
         return true;
       }
-      debugPrint('[TestRunner] Lỗi kiểm tra sinh trắc học: ${e.code} - ${e.message}');
+      debugPrint(
+        '[TestRunner] Lỗi kiểm tra sinh trắc học: ${e.code} - ${e.message}',
+      );
       return false;
     } catch (e) {
       debugPrint('[TestRunner] Lỗi kiểm tra sinh trắc học: $e');
@@ -505,10 +517,12 @@ class TestRunnerController extends GetxController {
     Get.isRegistered<MicTestController>()
         ? Get.find<MicTestController>()
         : Get.put(MicTestController());
-    final result = (await Get.dialog<bool>(
-      const MicTestPage(),
-      barrierDismissible: false,
-    )) == true;
+    final result =
+        (await Get.dialog<bool>(
+          const MicTestPage(),
+          barrierDismissible: false,
+        )) ==
+        true;
     if (Get.isRegistered<MicTestController>()) Get.delete<MicTestController>();
     debugPrint('[TestRunner] Kết quả kiểm tra Microphone: $result');
     return result;
@@ -516,15 +530,18 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _openVolumeUpTest() async {
     debugPrint('[TestRunner] Bắt đầu kiểm tra phím Tăng âm lượng (+)...');
-    final keysController = Get.isRegistered<KeysTestController>()
-        ? Get.find<KeysTestController>()
-        : Get.put(KeysTestController());
+    final keysController =
+        Get.isRegistered<KeysTestController>()
+            ? Get.find<KeysTestController>()
+            : Get.put(KeysTestController());
 
     Get.dialog<void>(
       PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.volume_up_rounded, color: AppColors.tradeInBlue),
@@ -553,7 +570,9 @@ class TestRunnerController extends GetxController {
 
     // Gỡ controller để native ngừng quan sát âm lượng (trên iOS bộ quan sát
     // liên tục kéo âm lượng hệ thống về mức neo chừng nào còn listener).
-    if (Get.isRegistered<KeysTestController>()) Get.delete<KeysTestController>();
+    if (Get.isRegistered<KeysTestController>()) {
+      Get.delete<KeysTestController>();
+    }
 
     debugPrint('[TestRunner] Kết quả nút Tăng âm lượng: $pressed');
     return pressed;
@@ -561,15 +580,18 @@ class TestRunnerController extends GetxController {
 
   Future<bool> _openVolumeDownTest() async {
     debugPrint('[TestRunner] Bắt đầu kiểm tra phím Giảm âm lượng (-)...');
-    final keysController = Get.isRegistered<KeysTestController>()
-        ? Get.find<KeysTestController>()
-        : Get.put(KeysTestController());
+    final keysController =
+        Get.isRegistered<KeysTestController>()
+            ? Get.find<KeysTestController>()
+            : Get.put(KeysTestController());
 
     Get.dialog<void>(
       PopScope(
         canPop: false,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.volume_down_rounded, color: AppColors.tradeInBlue),
@@ -596,7 +618,9 @@ class TestRunnerController extends GetxController {
     final pressed = await keysController.waitForKey(25, seconds: 6);
     if (Get.isDialogOpen == true) Get.back();
 
-    if (Get.isRegistered<KeysTestController>()) Get.delete<KeysTestController>();
+    if (Get.isRegistered<KeysTestController>()) {
+      Get.delete<KeysTestController>();
+    }
 
     debugPrint('[TestRunner] Kết quả nút Giảm âm lượng: $pressed');
     return pressed;
@@ -615,17 +639,26 @@ class TestRunnerController extends GetxController {
       if (_cams.isEmpty) {
         _cams = await availableCameras();
       }
-      final frontCams = _cams
-          .where((c) => c.lensDirection == CameraLensDirection.front)
-          .toList();
+      final frontCams =
+          _cams
+              .where((c) => c.lensDirection == CameraLensDirection.front)
+              .toList();
       final targetCams = frontCams.isNotEmpty ? frontCams : _cams;
 
-      debugPrint('[TestRunner] Mở màn hình kiểm tra Camera trước (${targetCams.length} cam)...');
+      debugPrint(
+        '[TestRunner] Mở màn hình kiểm tra Camera trước (${targetCams.length} cam)...',
+      );
       final ok = await Get.to<bool>(
         () => const CameraTestPage(),
         binding: CameraTestBinding(),
         arguments: targetCams,
       );
+      // Nhịp nghỉ cho iOS giải phóng AVCaptureSession ở tầng native. Dart
+      // đã await dispose() xong, nhưng phía native việc tháo session vẫn
+      // chạy tiếp một nhịp — mở camera kế tiếp quá sớm thì iOS treo
+      // initialize() thay vì báo lỗi.
+      await Future.delayed(CameraTestConstants.sessionReleaseDelay);
+
       debugPrint('[TestRunner] Kết quả kiểm tra Camera trước: $ok');
       return ok == true;
     } catch (e) {
@@ -648,17 +681,22 @@ class TestRunnerController extends GetxController {
         _cams = await availableCameras();
       }
       // Kiểm tra tất cả các cam sau hiện có trên máy (chính, góc rộng, tele, v.v.)
-      final backCams = _cams
-          .where((c) => c.lensDirection != CameraLensDirection.front)
-          .toList();
+      final backCams =
+          _cams
+              .where((c) => c.lensDirection != CameraLensDirection.front)
+              .toList();
       final targetCams = backCams.isNotEmpty ? backCams : _cams;
 
-      debugPrint('[TestRunner] Mở màn hình kiểm tra TOÀN BỘ Camera sau (${targetCams.length} cam)...');
+      debugPrint(
+        '[TestRunner] Mở màn hình kiểm tra TOÀN BỘ Camera sau (${targetCams.length} cam)...',
+      );
       final ok = await Get.to<bool>(
         () => const CameraTestPage(),
         binding: CameraTestBinding(),
         arguments: targetCams,
       );
+      await Future.delayed(CameraTestConstants.sessionReleaseDelay);
+
       debugPrint('[TestRunner] Kết quả kiểm tra Camera sau: $ok');
       return ok == true;
     } catch (e) {
@@ -668,29 +706,41 @@ class TestRunnerController extends GetxController {
   }
 
   Future<bool> _openSpeakerTest() async {
-    debugPrint('[TestRunner] Mở màn hình kiểm tra loa ngoài [SpeakerTestPage]...');
+    debugPrint(
+      '[TestRunner] Mở màn hình kiểm tra loa ngoài [SpeakerTestPage]...',
+    );
     Get.isRegistered<SpeakerTestController>()
         ? Get.find<SpeakerTestController>()
         : Get.put(SpeakerTestController());
-    final result = (await Get.dialog<bool>(
-      const SpeakerTestPage(),
-      barrierDismissible: false,
-    )) == true;
-    if (Get.isRegistered<SpeakerTestController>()) Get.delete<SpeakerTestController>();
+    final result =
+        (await Get.dialog<bool>(
+          const SpeakerTestPage(),
+          barrierDismissible: false,
+        )) ==
+        true;
+    if (Get.isRegistered<SpeakerTestController>()) {
+      Get.delete<SpeakerTestController>();
+    }
     debugPrint('[TestRunner] Kết quả kiểm tra loa ngoài: $result');
     return result;
   }
 
   Future<bool> _openEarpieceTest() async {
-    debugPrint('[TestRunner] Mở màn hình kiểm tra loa trong/cảm biến tiệm cận [EarpieceTestPage]...');
+    debugPrint(
+      '[TestRunner] Mở màn hình kiểm tra loa trong/cảm biến tiệm cận [EarpieceTestPage]...',
+    );
     Get.isRegistered<EarpieceTestController>()
         ? Get.find<EarpieceTestController>()
         : Get.put(EarpieceTestController());
-    final result = (await Get.dialog<bool>(
-      const EarpieceTestPage(),
-      barrierDismissible: false,
-    )) == true;
-    if (Get.isRegistered<EarpieceTestController>()) Get.delete<EarpieceTestController>();
+    final result =
+        (await Get.dialog<bool>(
+          const EarpieceTestPage(),
+          barrierDismissible: false,
+        )) ==
+        true;
+    if (Get.isRegistered<EarpieceTestController>()) {
+      Get.delete<EarpieceTestController>();
+    }
     debugPrint('[TestRunner] Kết quả kiểm tra loa trong: $result');
     return result;
   }
@@ -704,11 +754,13 @@ class TestRunnerController extends GetxController {
     // khiến `Dialog.fullscreen` bị co lại, chừa trống dải tai thỏ/status bar
     // và home indicator. Bài test cảm ứng phải phủ ĐÚNG 100% màn hình mới
     // phát hiện được vùng chết ở sát mép trên/dưới.
-    final result = (await Get.dialog<bool>(
-      const TouchGridTestPage(),
-      barrierDismissible: false,
-      useSafeArea: false,
-    )) == true;
+    final result =
+        (await Get.dialog<bool>(
+          const TouchGridTestPage(),
+          barrierDismissible: false,
+          useSafeArea: false,
+        )) ==
+        true;
     if (Get.isRegistered<TouchGridTestController>()) {
       Get.delete<TouchGridTestController>();
     }
@@ -720,8 +772,12 @@ class TestRunnerController extends GetxController {
   Future<void> startFunctionalDiagnostics() async {
     if (isRunning.value) return;
 
-    debugPrint('\n============================================================');
-    debugPrint('[TestRunner] Bắt đầu thực thi kiểm định chức năng (${steps.length} bài test)');
+    debugPrint(
+      '\n============================================================',
+    );
+    debugPrint(
+      '[TestRunner] Bắt đầu thực thi kiểm định chức năng (${steps.length} bài test)',
+    );
     debugPrint('============================================================');
 
     passedCount.value = 0;
@@ -774,7 +830,9 @@ class TestRunnerController extends GetxController {
       (s) => s.phase == DiagPhase.screen,
     );
     if (screenStep != null && screenStep.status == DiagStatus.pending) {
-      debugPrint('[TestRunner] 12 bước tự động đã xong — chờ người dùng tự bấm "Cảm ứng màn hình"...');
+      debugPrint(
+        '[TestRunner] 12 bước tự động đã xong — chờ người dùng tự bấm "Cảm ứng màn hình"...',
+      );
       return;
     }
 
@@ -789,7 +847,9 @@ class TestRunnerController extends GetxController {
     if (step.status != DiagStatus.pending) return;
 
     isRunning.value = true;
-    debugPrint('[TestRunner] Người dùng tự kích hoạt bước: [${step.code}] ${step.title}');
+    debugPrint(
+      '[TestRunner] Người dùng tự kích hoạt bước: [${step.code}] ${step.title}',
+    );
     step.status = DiagStatus.running;
     step.note = _getRunningNote(step.code);
     steps.refresh();
@@ -799,7 +859,9 @@ class TestRunnerController extends GetxController {
     stopwatch.stop();
 
     _evaluateStep(step, result);
-    debugPrint('[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)');
+    debugPrint(
+      '[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)',
+    );
     steps.refresh();
     isRunning.value = false;
 
@@ -814,11 +876,19 @@ class TestRunnerController extends GetxController {
       _startTime ?? DateTime.now(),
     );
 
-    debugPrint('\n============================================================');
+    debugPrint(
+      '\n============================================================',
+    );
     debugPrint('[TestRunner] HOÀN TẤT KIỂM ĐỊNH CHỨC NĂNG');
-    debugPrint('[TestRunner] Passed: ${passedCount.value} | Failed: ${failedCount.value} | Skipped: ${skippedCount.value}');
-    debugPrint('[TestRunner] Điểm số: $score/100 | Xếp loại: $grade | Thời gian: ${totalDuration.inSeconds}s');
-    debugPrint('============================================================\n');
+    debugPrint(
+      '[TestRunner] Passed: ${passedCount.value} | Failed: ${failedCount.value} | Skipped: ${skippedCount.value}',
+    );
+    debugPrint(
+      '[TestRunner] Điểm số: $score/100 | Xếp loại: $grade | Thời gian: ${totalDuration.inSeconds}s',
+    );
+    debugPrint(
+      '============================================================\n',
+    );
 
     DiagLogger.summary(
       total: total,
@@ -848,19 +918,27 @@ class TestRunnerController extends GetxController {
         'duration_seconds':
             DateTime.now().difference(_startTime ?? DateTime.now()).inSeconds,
       },
-      'steps': steps.map((step) => {
-        'code': step.code,
-        'attribute': step.functionAttribute?.dbCode ?? step.code,
-        'title': step.title,
-        'status': step.status.name,
-        if (step.note != null && step.note!.isNotEmpty) 'note': step.note,
-        if (step.executionTime != null)
-          'elapsed_ms': step.executionTime!.inMilliseconds,
-      }).toList(),
+      'steps':
+          steps
+              .map(
+                (step) => {
+                  'code': step.code,
+                  'attribute': step.functionAttribute?.dbCode ?? step.code,
+                  'title': step.title,
+                  'status': step.status.name,
+                  if (step.note != null && step.note!.isNotEmpty)
+                    'note': step.note,
+                  if (step.executionTime != null)
+                    'elapsed_ms': step.executionTime!.inMilliseconds,
+                },
+              )
+              .toList(),
     };
 
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('[TestRunner] TEST_RESULTS_RESPONSE:\n${encoder.convert(response)}');
+    debugPrint(
+      '[TestRunner] TEST_RESULTS_RESPONSE:\n${encoder.convert(response)}',
+    );
   }
 
   Future<void> startWithPermissionCheck() async {
@@ -870,7 +948,9 @@ class TestRunnerController extends GetxController {
   }
 
   void _navigateToResult() {
-    debugPrint('[TestRunner] Hoàn tất kiểm định chức năng -> QuestionCheckPage');
+    debugPrint(
+      '[TestRunner] Hoàn tất kiểm định chức năng -> QuestionCheckPage',
+    );
     Get.off(() => const QuestionCheckPage());
   }
 
@@ -884,7 +964,10 @@ class TestRunnerController extends GetxController {
   Future<void> _runPhase(DiagPhase phase) async {
     // Bỏ qua step đã có kết quả từ trước (vd: biometrics bị precheck phần
     // cứng đánh fail sớm) — tránh chạy lại đè lên kết quả đã có.
-    final phaseSteps = steps.where((s) => s.phase == phase && s.status == DiagStatus.pending).toList();
+    final phaseSteps =
+        steps
+            .where((s) => s.phase == phase && s.status == DiagStatus.pending)
+            .toList();
     if (phaseSteps.isEmpty) return;
 
     currentPhase.value = phase;
@@ -892,7 +975,9 @@ class TestRunnerController extends GetxController {
     phaseTotal.value = phaseSteps.length;
 
     final name = _phaseName(phase);
-    debugPrint('\n[TestRunner] >>> [BẮT ĐẦU PHASE] $name (${phaseSteps.length} bài test)');
+    debugPrint(
+      '\n[TestRunner] >>> [BẮT ĐẦU PHASE] $name (${phaseSteps.length} bài test)',
+    );
     DiagLogger.phaseStart(name, phaseSteps.length);
 
     for (final step in phaseSteps) {
@@ -912,7 +997,9 @@ class TestRunnerController extends GetxController {
       }
 
       _evaluateStep(step, result);
-      debugPrint('[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)');
+      debugPrint(
+        '[TestRunner] Kết quả [${step.code}]: status=${step.status.name}, note=${step.note ?? "OK"} (${stopwatch.elapsedMilliseconds}ms)',
+      );
       phaseProgress.value++;
       steps.refresh();
 
