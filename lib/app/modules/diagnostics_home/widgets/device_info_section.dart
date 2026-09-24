@@ -15,8 +15,8 @@ class DeviceInfoSection extends StatelessWidget {
     required this.progress,
     required this.completed,
     required this.total,
-    this.ramInfo,
-    this.romInfo,
+    required this.ramLabel,
+    required this.romLabel,
     this.marketingName,
     this.deviceId,
     this.batteryLevel,
@@ -29,38 +29,21 @@ class DeviceInfoSection extends StatelessWidget {
   final double progress;
   final int completed;
   final int total;
-  final Map<String, dynamic>? ramInfo;
-  final Map<String, dynamic>? romInfo;
+  /// Nhãn RAM/ROM đã định dạng sẵn bởi `DiagnosticsHomeController`.
+  ///
+  /// KHÔNG tự tính lại từ `totalBytes` ở đây: trước kia widget có bản sao
+  /// riêng của logic làm tròn, lại làm tròn về mốc GẦN NHẤT trong khi
+  /// controller làm tròn LÊN theo một danh sách mốc khác — cùng một máy
+  /// ~12GiB hiện "12 GB" ở màn chủ nhưng "16 GB" ở màn xác nhận và trong mã
+  /// IT. Một nguồn duy nhất thì không lệch được nữa.
+  final String ramLabel;
+  final String romLabel;
   final String? marketingName;
   final String? deviceId;
   final int? batteryLevel;
 
-  int? _toGiB(dynamic v) {
-    if (v is! num || v <= 0) return null;
-    const giB = 1024 * 1024 * 1024;
-    final gb = v.toDouble() / giB;
-
-    const standardSizes = [2, 3, 4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 512, 1024];
-
-    int closest = standardSizes[0];
-    double minDiff = (gb - closest).abs();
-
-    for (final size in standardSizes) {
-      final diff = (gb - size).abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = size;
-      }
-    }
-
-    return closest;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ramTotal = _toGiB(ramInfo?['totalBytes']);
-    final romTotal = _toGiB(romInfo?['totalBytes']);
-
     final displayName =
         marketingName != null &&
                 marketingName!.isNotEmpty &&
@@ -152,7 +135,7 @@ class DeviceInfoSection extends StatelessWidget {
                     icon: Icons.memory_rounded,
                     iconColor: AppColors.pviBlue,
                     category: 'RAM',
-                    value: ramTotal != null ? '$ramTotal GB' : '8 GB',
+                    value: ramLabel,
                     subtitle: 'Bộ nhớ đệm',
                   ),
                 ),
@@ -162,7 +145,7 @@ class DeviceInfoSection extends StatelessWidget {
                     icon: Icons.sd_storage_rounded,
                     iconColor: AppColors.pviNavy,
                     category: 'BỘ NHỚ TRONG',
-                    value: romTotal != null ? '$romTotal GB' : '128 GB',
+                    value: romLabel,
                     subtitle: 'Dung lượng lưu trữ',
                   ),
                 ),
