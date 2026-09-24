@@ -10,6 +10,7 @@ import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/price_estimation_service.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
 import 'package:kdtd_ver2_1/app/modules/question_check/question_check_controller.dart';
+import 'package:kdtd_ver2_1/app/core/constants/price_estimation_constants.dart';
 import 'package:kdtd_ver2_1/app/core/constants/upgrade_program_constants.dart';
 import 'package:kdtd_ver2_1/app/core/widgets/upgrade_program_dialogs.dart';
 import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
@@ -51,8 +52,10 @@ class _DiagnosticResultPageState extends State<DiagnosticResultPage> {
   Future<void> _fetchPriceEstimate() async {
     // Dùng chung điểm số từ controller, tránh tính lại (dễ lệch với các màn khác)
     final score = controller.score;
-    final ramGb = controller.info['ram']?['totalGb'] as int? ?? 4;
-    final romGb = controller.info['rom']?['totalGb'] as int? ?? 64;
+    // Không đọc được thì dùng mốc chuẩn của bảng giá (không cộng/trừ tiền theo
+    // RAM/ROM) thay vì bịa một cấu hình cụ thể.
+    final ramGb = controller.ramGbValue ?? PriceEstimationConstants.ramBaselineGb;
+    final romGb = controller.romGbValue ?? PriceEstimationConstants.romBaselineGb;
 
     try {
       final estimate = await PriceEstimationService.estimatePrice(

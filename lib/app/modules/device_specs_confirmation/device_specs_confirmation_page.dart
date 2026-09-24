@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:get/get.dart' hide Trans;
-import 'package:kdtd_ver2_1/app/core/constants/device_specs_confirmation_constants.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/core/widgets/pvi_modernist/pvi_modernist.dart';
@@ -49,35 +48,23 @@ class _DeviceSpecsConfirmationPageState
     Get.to(() => const PreTestPreparationGuidePage());
   }
 
-  String _formatRam() {
-    final ramInfo = controller.info['ram'] as Map<String, dynamic>?;
-    final total = ramInfo?['totalBytes'];
-    if (total is num) {
-      final gb =
-          (total / DeviceSpecsConfirmationConstants.bytesPerGibibyte).round();
-      return '$gb GB';
-    }
-    return DeviceSpecsConfirmationConstants.defaultRamLabel;
-  }
+  String get _unavailable =>
+      LocaleKeys.device_specs_confirmation_value_unavailable.trans();
 
-  String _formatRom() {
-    final romInfo = controller.info['rom'] as Map<String, dynamic>?;
-    final total = romInfo?['totalBytes'];
-    if (total is num) {
-      final gb =
-          (total / DeviceSpecsConfirmationConstants.bytesPerGibibyte).round();
-      return '$gb GB';
-    }
-    return DeviceSpecsConfirmationConstants.defaultRomLabel;
+  /// RAM/ROM lấy từ controller (đã làm tròn về mốc phổ biến, cùng nguồn với
+  /// mã IT) để các màn không lệch nhau. Không đọc được → "Không xác định",
+  /// không bịa số mặc định. iOS không cho đọc RAM thật nên giá trị ước tính
+  /// được đánh dấu "~".
+  String _formatStorage(String key) {
+    final gb = key == 'ram' ? controller.ramGbValue : controller.romGbValue;
+    if (gb == null) return _unavailable;
+    final estimated = controller.info[key]?['source'].toString().contains('estimated') == true;
+    return estimated ? '~$gb GB' : '$gb GB';
   }
 
   String _formatBattery() {
-    final batteryInfo = controller.info['battery'] as Map<String, dynamic>?;
-    final level = batteryInfo?['level'];
-    if (level != null) {
-      return '$level%';
-    }
-    return LocaleKeys.device_specs_confirmation_default_battery.trans();
+    final level = (controller.info['battery'] as Map<String, dynamic>?)?['level'];
+    return level != null ? '$level%' : _unavailable;
   }
 
   @override
@@ -317,14 +304,14 @@ class _DeviceSpecsConfirmationPageState
                 child: _buildSpecItem(
                   Icons.memory_rounded,
                   LocaleKeys.device_specs_confirmation_spec_ram_label.trans(),
-                  _formatRam(),
+                  _formatStorage('ram'),
                 ),
               ),
               Expanded(
                 child: _buildSpecItem(
                   Icons.storage_rounded,
                   LocaleKeys.device_specs_confirmation_spec_rom_label.trans(),
-                  _formatRom(),
+                  _formatStorage('rom'),
                 ),
               ),
             ],

@@ -65,6 +65,20 @@ class DeviceInfoHelper {
 
   static Future<Map<String, dynamic>> _getIosRamInfo() async {
     try {
+      final Map? raw = await _channel.invokeMethod<Map>('getRamInfo');
+      final native = raw?['totalBytes'];
+      if (native is num && native > 0) {
+        return {
+          'freeBytes': null, // iOS không cho phép đọc free RAM
+          'totalBytes': native,
+          'source': 'ios_native',
+        };
+      }
+    } catch (_) {
+      // Rơi xuống ước tính theo model bên dưới.
+    }
+
+    try {
       final iosInfo = await _deviceInfo.iosInfo;
       final ramGB = _estimateIosRam(iosInfo.utsname.machine);
       final totalBytes = (ramGB * 1024 * 1024 * 1024).toInt();
@@ -171,6 +185,20 @@ class DeviceInfoHelper {
   }
 
   static Future<Map<String, dynamic>> _getIosRomInfo() async {
+    try {
+      final Map? raw = await _channel.invokeMethod<Map>('getRomInfo');
+      final native = raw?['totalBytes'];
+      if (native is num && native > 0) {
+        return {
+          'freeBytes': raw?['freeBytes'],
+          'totalBytes': native,
+          'source': 'ios_native',
+        };
+      }
+    } catch (_) {
+      // Rơi xuống nhánh "không đọc được" bên dưới.
+    }
+
     try {
       final iosInfo = await _deviceInfo.iosInfo;
 

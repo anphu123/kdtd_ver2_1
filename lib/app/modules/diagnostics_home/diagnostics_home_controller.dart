@@ -37,8 +37,13 @@ class DiagnosticsHomeController extends GetxController {
   String get modelName => (_osModel?['model'] as String?) ?? '';
   String get marketingName => (_osModel?['marketingName'] as String?) ?? '';
   String get deviceId => (_osModel?['deviceId'] as String?) ?? '';
-  String get ramGb => _formatBytesToGb(info['ram']?['totalBytes']);
-  String get romGb => _formatBytesToGb(info['rom']?['totalBytes']);
+  /// RAM/ROM làm tròn LÊN mốc phổ biến (GB), null nếu không đọc được.
+  int? get ramGbValue =>
+      roundUpToStandardGb(info['ram']?['totalBytes'], standardRamGb);
+  int? get romGbValue =>
+      roundUpToStandardGb(info['rom']?['totalBytes'], standardRomGb);
+  String get ramGb => _gbLabel(ramGbValue);
+  String get romGb => _gbLabel(romGbValue);
   String get itCode {
     final model = modelName.trim();
     final ram = ramGb.replaceAll(' ', '');
@@ -76,24 +81,21 @@ class DiagnosticsHomeController extends GetxController {
       );
       info['osmodel'] = osInfo;
 
-      try {
-        final results = await Future.wait<Map<String, dynamic>>([
-          DeviceHardwareService.getBatteryInfo(),
-          DeviceHardwareService.getWifiInfo(),
-          DeviceHardwareService.getRamInfo(),
-          DeviceHardwareService.getRomInfo(),
-        ]);
-        info['battery'] = results[0];
-        info['wifi'] = results[1];
-        info['ram'] = results[2];
-        info['rom'] = results[3];
-        info['it_code'] = itCode;
-
-        _logDeviceSummary();
-      } catch (e) {
-        debugPrint('[DiagnosticsHome] Cảnh báo lỗi thu thập thông tin phụ: $e');
-        DiagLogger.warning('init', 'Lỗi thu thập thông tin phụ: $e');
+      // Mỗi nguồn tự bắt lỗi riêng: pin/Wi-Fi lỗi (vd simulator không có pin)
+      // không được kéo theo mất RAM/ROM như khi gom chung một Future.wait.
+      final results = await Future.wait([
+        _collect('battery', DeviceHardwareService.getBatteryInfo),
+        _collect('wifi', DeviceHardwareService.getWifiInfo),
+        _collect('ram', DeviceHardwareService.getRamInfo),
+        _collect('rom', DeviceHardwareService.getRomInfo),
+      ]);
+      for (final (i, key) in ['battery', 'wifi', 'ram', 'rom'].indexed) {
+        final value = results[i];
+        if (value != null) info[key] = value;
       }
+      info['it_code'] = itCode;
+
+      _logDeviceSummary();
     } catch (e, stack) {
       debugPrint('[DiagnosticsHome] Lỗi nghiêm trọng khi quét thiết bị: $e');
       DiagLogger.error(
@@ -104,10 +106,20 @@ class DiagnosticsHomeController extends GetxController {
     }
   }
 
-  void _logDeviceSummary() {
-    final ramGb = _formatBytesToGb(info['ram']?['totalBytes']);
-    final romGb = _formatBytesToGb(info['rom']?['totalBytes']);
+  Future<Map<String, dynamic>?> _collect(
+    String label,
+    Future<Map<String, dynamic>> Function() read,
+  ) async {
+    try {
+      return await read();
+    } catch (e) {
+      debugPrint('[DiagnosticsHome] Không đọc được $label: $e');
+      DiagLogger.warning('init', 'Không đọc được $label: $e');
+      return null;
+    }
+  }
 
+  void _logDeviceSummary() {
     final response = {
       'status': 'success',
       'device_id': deviceId,
@@ -131,22 +143,21 @@ class DiagnosticsHomeController extends GetxController {
     debugPrint('[DiagnosticsHome] DEVICE_INFO_RESPONSE:\n${encoder.convert(response)}');
   }
 
-  String _formatBytesToGb(dynamic bytes) {
-    if (bytes is! num || bytes <= 0) return 'N/A';
+  // Hệ điều hành báo thấp hơn dung lượng ghi trên hộp (máy 8GB → ~7.4 GiB,
+  // ROM 128GB → ~110 GiB vì phân vùng /data) nên làm tròn LÊN mốc gần nhất.
+  // RAM và ROM có bộ mốc riêng: dùng chung sẽ ra "24 GB" cho máy ROM 32GB.
+  static const standardRamGb = [1, 2, 3, 4, 6, 8, 10, 12, 16, 18, 24, 32];
+  static const standardRomGb = [8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+
+  @visibleForTesting
+  static int? roundUpToStandardGb(dynamic bytes, List<int> sizes) {
+    if (bytes is! num || bytes <= 0) return null;
     const giB = 1024 * 1024 * 1024;
-    final gb = bytes.toDouble() / giB;
-    const standardSizes = [2, 3, 4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 512, 1024];
-    int closest = standardSizes[0];
-    double minDiff = (gb - closest).abs();
-    for (final size in standardSizes) {
-      final diff = (gb - size).abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = size;
-      }
-    }
-    return '$closest GB';
+    final gb = bytes / giB;
+    return sizes.firstWhere((s) => s >= gb, orElse: () => gb.ceil());
   }
+
+  String _gbLabel(int? gb) => gb == null ? 'N/A' : '$gb GB';
 
   // ==================== QUY TRÌNH HÀNH ĐỘNG KIỂM ĐỊNH ====================
 

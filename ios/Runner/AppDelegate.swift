@@ -46,14 +46,20 @@ import UIKit
 
   // Các case tương ứng với những method mà bản Android (MainActivity.kt) hỗ trợ
   // và có public API iOS tương đương. Những method còn lại (getChargingSource,
-  // isScreenLocked, getSignalStrengthDbm, getSimSlotCount/States, getRamInfo,
-  // getRomInfo, isWifiEnabled, getDeviceId, waitForKeyEvent) không có API công
-  // khai trên iOS — phía Dart (device_info_helper.dart) đã tự xử lý fallback
-  // riêng cho iOS nên không gọi tới channel này.
+  // isScreenLocked, getSignalStrengthDbm, getSimSlotCount/States,
+  // isWifiEnabled, getDeviceId) không có API công khai trên iOS — phía Dart
+  // (device_info_helper.dart) đã tự xử lý fallback riêng cho iOS. RAM/ROM thì
+  // đọc được thật (physicalMemory, volumeTotalCapacity) nên xử lý ở đây.
   private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "isWiredHeadsetPlugged":
       result(isWiredHeadsetPlugged())
+
+    case "getRamInfo":
+      result(getRamInfo())
+
+    case "getRomInfo":
+      result(getRomInfo())
 
     case "getMobileRadioType":
       result(getMobileRadioType())
@@ -84,6 +90,22 @@ import UIKit
   private func isWiredHeadsetPlugged() -> Bool {
     let outputs = AVAudioSession.sharedInstance().currentRoute.outputs
     return outputs.contains { $0.portType == .headphones }
+  }
+
+  private func getRamInfo() -> [String: Any?] {
+    // iOS không cho đọc RAM trống một cách đáng tin cậy, chỉ có tổng.
+    return ["freeBytes": nil, "totalBytes": ProcessInfo.processInfo.physicalMemory]
+  }
+
+  private func getRomInfo() -> [String: Any?] {
+    let url = URL(fileURLWithPath: NSHomeDirectory())
+    let values = try? url.resourceValues(forKeys: [
+      .volumeTotalCapacityKey, .volumeAvailableCapacityKey,
+    ])
+    return [
+      "freeBytes": values?.volumeAvailableCapacity,
+      "totalBytes": values?.volumeTotalCapacity,
+    ]
   }
 
   private func getMobileRadioType() -> String {

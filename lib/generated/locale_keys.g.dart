@@ -89,7 +89,7 @@ abstract class  LocaleKeys {
   static const device_specs_confirmation_scan_success_badge = 'device_specs_confirmation.scan_success_badge';
   static const device_specs_confirmation_default_device_name = 'device_specs_confirmation.default_device_name';
   static const device_specs_confirmation_default_brand = 'device_specs_confirmation.default_brand';
-  static const device_specs_confirmation_default_battery = 'device_specs_confirmation.default_battery';
+  static const device_specs_confirmation_value_unavailable = 'device_specs_confirmation.value_unavailable';
   static const device_specs_confirmation_spec_ram_label = 'device_specs_confirmation.spec_ram_label';
   static const device_specs_confirmation_spec_rom_label = 'device_specs_confirmation.spec_rom_label';
   static const device_specs_confirmation_spec_battery_label = 'device_specs_confirmation.spec_battery_label';
