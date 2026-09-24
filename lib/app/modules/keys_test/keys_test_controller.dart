@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -30,6 +31,16 @@ class KeysTestController extends GetxController {
   StreamSubscription<Map<dynamic, dynamic>>? _keySub;
   Timer? _countdownTimer;
 
+  /// Bộ phát lại sự kiện phím cho [waitForKey].
+  ///
+  /// CHỈ được phép `listen` EventChannel đúng MỘT lần trong suốt vòng đời
+  /// controller: native chỉ giữ một `eventSink`, nên listen lần hai sẽ chiếm
+  /// sink của lần một, và khi lần hai `cancel` thì native chạy `onCancel` —
+  /// tắt luôn bộ quan sát âm lượng, khiến các lần chờ phím sau đó không bao
+  /// giờ nhận được sự kiện nữa. Vì vậy [waitForKey] nghe qua stream nội bộ
+  /// này thay vì mở subscription riêng tới channel.
+  final _keyEvents = StreamController<Map<dynamic, dynamic>>.broadcast();
+
   @override
   void onInit() {
     super.onInit();
@@ -40,6 +51,8 @@ class KeysTestController extends GetxController {
           .receiveBroadcastStream()
           .map<Map<dynamic, dynamic>>((event) => (event as Map).cast<dynamic, dynamic>())
           .listen((m) {
+        debugPrint('[KeysTest] Sự kiện phím từ native: $m');
+        if (!_keyEvents.isClosed) _keyEvents.add(m);
         try {
           final keyCode = m['keyCode'] as int?;
           final action = m['action'] as String?;
@@ -75,6 +88,7 @@ class KeysTestController extends GetxController {
     } catch (_) {
       // Bỏ qua lỗi khi hủy subscription
     }
+    _keyEvents.close();
     super.onClose();
   }
 
@@ -157,10 +171,7 @@ class KeysTestController extends GetxController {
       completer.complete(value);
     }
 
-    sub = _keyEventChannel
-        .receiveBroadcastStream()
-        .map<Map<dynamic, dynamic>>((event) => (event as Map).cast<dynamic, dynamic>())
-        .listen((m) {
+    sub = _keyEvents.stream.listen((m) {
       try {
         final keyCode = m['keyCode'] as int?;
         final action = m['action'] as String?;

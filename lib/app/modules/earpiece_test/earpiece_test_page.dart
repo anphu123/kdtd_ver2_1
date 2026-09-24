@@ -58,6 +58,7 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
       final hasDetectedNear = controller.hasDetectedNear.value;
       final isPlaying = controller.isPlaying.value;
       final nearCount = controller.nearCount.value;
+      final errorMessage = controller.errorMessage.value;
 
       return Dialog(
         backgroundColor: AppColors.black,
@@ -84,6 +85,40 @@ class _EarpieceTestViewState extends State<_EarpieceTestView>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Lỗi phát âm thanh (nếu có) — hiển thị tại chỗ thay
+                        // cho snackbar, vì dialog không có Overlay riêng.
+                        if (errorMessage.isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(12.r),
+                            decoration: BoxDecoration(
+                              color: AppColors.white10,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(color: AppColors.fail),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: AppColors.fail,
+                                  size: 20.r,
+                                ),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: Text(
+                                    errorMessage,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.fail,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                        ],
+
                         // Chỉ báo trạng thái
                         Container(
                           padding: EdgeInsets.all(16.r),

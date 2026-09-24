@@ -27,6 +27,17 @@ class EarpieceTestController extends GetxController {
   final isPlaying = false.obs;
   final nearCount = 0.obs;
 
+  /// Lỗi phát âm thanh (nếu có) — hiển thị ngay trong dialog.
+  ///
+  /// KHÔNG dùng `Get.snackbar` ở đây: dialog test được mở bằng `Get.dialog`,
+  /// snackbar bắn ra lúc này không tìm thấy `Overlay` và làm hỏng luôn
+  /// `SnackbarController` nội bộ của GetX, khiến mọi `Get.back()` sau đó ném
+  /// `LateInitializationError` và dialog không bao giờ đóng được.
+  final errorMessage = ''.obs;
+
+  /// Chặn `finish()` chạy nhiều lần (bấm nút liên tục / timer trùng pop).
+  bool _finished = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -44,20 +55,29 @@ class EarpieceTestController extends GetxController {
 
   Future<void> _start() async {
     try {
+      // iOS mặc định dùng category `playback` — luôn phát ra LOA NGOÀI. Phải
+      // chuyển sang `playAndRecord` (và KHÔNG bật defaultToSpeaker) thì âm mới
+      // đi ra loa trong (receiver), đúng mục đích bài test.
+      await _player.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playAndRecord,
+            options: const {},
+          ),
+        ),
+      );
+
       // Thiết lập trình phát âm thanh (Audio Player)
       await _player.setVolume(AudioTestConstants.earpieceVolume);
       await _player.setReleaseMode(ReleaseMode.loop);
 
       // Phát sóng sine qua loa trong
-      await _player.play(
-        BytesSource(
-          WavToneGenerator.sineWave(
-            seconds: AudioTestConstants.earpieceToneSeconds,
-            freqHz: AudioTestConstants.earpieceToneFreqHz,
-            amplitude: AudioTestConstants.earpieceToneAmplitude,
-          ),
-        ),
+      final tone = await WavToneGenerator.sineWaveFile(
+        seconds: AudioTestConstants.earpieceToneSeconds,
+        freqHz: AudioTestConstants.earpieceToneFreqHz,
+        amplitude: AudioTestConstants.earpieceToneAmplitude,
       );
+      await _player.play(DeviceFileSource(tone.path));
 
       isPlaying.value = true;
 
@@ -75,11 +95,9 @@ class EarpieceTestController extends GetxController {
         }
       });
     } catch (e) {
-      Get.snackbar(
-        LocaleKeys.earpiece_test_error_title.trans(),
-        '$e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      isPlaying.value = false;
+      errorMessage.value =
+          '${LocaleKeys.earpiece_test_error_title.trans()}: $e';
     }
   }
 
@@ -94,7 +112,15 @@ class EarpieceTestController extends GetxController {
 
   /// Kết thúc bài test — dừng phát âm thanh rồi pop kết quả về màn hình trước.
   Future<void> finish(bool passed) async {
+    if (_finished) return;
+    _finished = true;
+
+    _autoPassTimer?.cancel();
+    await _proximitySub?.cancel();
+    _proximitySub = null;
+    isPlaying.value = false;
     await _player.stop();
-    Get.back(result: passed);
+
+    if (Get.isDialogOpen ?? false) Get.back(result: passed);
   }
 }

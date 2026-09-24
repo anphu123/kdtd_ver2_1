@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
+import 'package:path_provider/path_provider.dart';
 
 /// Sinh dữ liệu WAV (PCM 16-bit mono) chứa 1 tông sóng sine — dùng để phát
 /// tiếng test qua loa ngoài/loa trong mà không cần file âm thanh đính kèm.
@@ -43,5 +46,40 @@ class WavToneGenerator {
     }
 
     return data.buffer.asUint8List();
+  }
+
+  /// Ghi dữ liệu WAV ra file tạm **có đuôi `.wav`** và trả về nguồn phát.
+  ///
+  /// `BytesSource` không dùng được trên iOS/macOS: audioplayers ghi bytes ra
+  /// file tạm KHÔNG có phần mở rộng, AVPlayer không đoán được định dạng nên
+  /// luôn báo `AVPlayerItem.Status.failed on setSourceUrl`. Tự ghi file kèm
+  /// đuôi `.wav` là cách duy nhất để AVPlayer nhận diện được.
+  ///
+  /// File được đặt tên theo tham số nên chỉ ghi một lần rồi tái sử dụng.
+  static Future<File> sineWaveFile({
+    int sampleRate = 44100,
+    int seconds = 1,
+    double freqHz = 880,
+    double amplitude = 0.5,
+  }) async {
+    final dir = await getTemporaryDirectory();
+    final name =
+        'tone_${sampleRate}_${seconds}_${freqHz.toStringAsFixed(0)}_'
+        '${(amplitude * 1000).round()}.wav';
+    final file = File('${dir.path}/$name');
+
+    if (!file.existsSync()) {
+      await file.writeAsBytes(
+        sineWave(
+          sampleRate: sampleRate,
+          seconds: seconds,
+          freqHz: freqHz,
+          amplitude: amplitude,
+        ),
+        flush: true,
+      );
+    }
+
+    return file;
   }
 }

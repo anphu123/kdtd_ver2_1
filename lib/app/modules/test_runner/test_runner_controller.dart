@@ -158,12 +158,16 @@ class TestRunnerController extends GetxController {
     final deniedPerms = <String>{};
     final grantedPerms = <String>{};
 
+    // Permission.bluetoothScan/phone chỉ tồn tại trên Android — trên iOS chúng
+    // luôn trả về denied, khiến các bài test tương ứng bị đánh trượt oan. Giữ
+    // nguyên key để rule evaluator dùng chung, nhưng ánh xạ sang quyền iOS.
     final permsToCheck = {
       'location': Permission.location,
       'camera': Permission.camera,
       'microphone': Permission.microphone,
-      'phone_state': Permission.phone,
-      'bluetoothScan': Permission.bluetoothScan,
+      if (Platform.isAndroid) 'phone_state': Permission.phone,
+      'bluetoothScan':
+          Platform.isIOS ? Permission.bluetooth : Permission.bluetoothScan,
     };
 
     for (final entry in permsToCheck.entries) {
@@ -544,6 +548,10 @@ class TestRunnerController extends GetxController {
     final pressed = await keysController.waitForKey(24, seconds: 6);
     if (Get.isDialogOpen == true) Get.back();
 
+    // Gỡ controller để native ngừng quan sát âm lượng (trên iOS bộ quan sát
+    // liên tục kéo âm lượng hệ thống về mức neo chừng nào còn listener).
+    if (Get.isRegistered<KeysTestController>()) Get.delete<KeysTestController>();
+
     debugPrint('[TestRunner] Kết quả nút Tăng âm lượng: $pressed');
     return pressed;
   }
@@ -584,6 +592,8 @@ class TestRunnerController extends GetxController {
     // waitForKey (tự trả về false khi hết 6s không bắt được phím).
     final pressed = await keysController.waitForKey(25, seconds: 6);
     if (Get.isDialogOpen == true) Get.back();
+
+    if (Get.isRegistered<KeysTestController>()) Get.delete<KeysTestController>();
 
     debugPrint('[TestRunner] Kết quả nút Giảm âm lượng: $pressed');
     return pressed;
@@ -683,9 +693,14 @@ class TestRunnerController extends GetxController {
     Get.isRegistered<TouchGridTestController>()
         ? Get.find<TouchGridTestController>()
         : Get.put(TouchGridTestController());
+    // useSafeArea: false — mặc định `Get.dialog` bọc child trong `SafeArea`,
+    // khiến `Dialog.fullscreen` bị co lại, chừa trống dải tai thỏ/status bar
+    // và home indicator. Bài test cảm ứng phải phủ ĐÚNG 100% màn hình mới
+    // phát hiện được vùng chết ở sát mép trên/dưới.
     final result = (await Get.dialog<bool>(
       const TouchGridTestPage(),
       barrierDismissible: false,
+      useSafeArea: false,
     )) == true;
     if (Get.isRegistered<TouchGridTestController>()) {
       Get.delete<TouchGridTestController>();
@@ -976,8 +991,9 @@ class TestRunnerController extends GetxController {
       step.note = null;
       passedCount.value++;
     } else if (step.note?.contains('Timeout') == true) {
-      step.status = DiagStatus.skipped;
-      skippedCount.value++;
+      // Hết thời gian chờ ở bài test bắt buộc -> tính là THẤT BẠI, không bỏ qua
+      step.status = DiagStatus.failed;
+      failedCount.value++;
     } else {
       // Không có RuleEvaluator lý giải cụ thể (VD: biometrics chỉ trả về
       // true/false) — ghi đè note "đang chạy" còn sót lại bằng lý do THẤT

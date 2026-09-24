@@ -16,6 +16,9 @@ class SpeakerTestController extends GetxController {
   // ==================== TRẠNG THÁI PHẢN ỨNG ====================
   final playing = false.obs;
 
+  /// Chặn `finish()` chạy nhiều lần (người dùng bấm nút liên tục).
+  bool _finished = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -31,17 +34,25 @@ class SpeakerTestController extends GetxController {
 
   Future<void> _playBeepLoop() async {
     await _player.setReleaseMode(ReleaseMode.loop);
-    await _player.play(
-      BytesSource(
-        WavToneGenerator.sineWave(
-          seconds: AudioTestConstants.speakerToneSeconds,
-          freqHz: AudioTestConstants.speakerToneFreqHz,
-        ),
-      ),
+
+    // Dùng file `.wav` thay cho `BytesSource`: trên iOS/macOS audioplayers ghi
+    // bytes ra file tạm không có phần mở rộng nên AVPlayer không nhận diện
+    // được định dạng và luôn báo `AVPlayerItem.Status.failed`.
+    final tone = await WavToneGenerator.sineWaveFile(
+      seconds: AudioTestConstants.speakerToneSeconds,
+      freqHz: AudioTestConstants.speakerToneFreqHz,
     );
+    await _player.play(DeviceFileSource(tone.path));
     playing.value = true;
   }
 
   /// Kết thúc bài test — pop kết quả về màn hình trước.
-  void finish(bool passed) => Get.back(result: passed);
+  void finish(bool passed) {
+    if (_finished) return;
+    _finished = true;
+
+    playing.value = false;
+    _player.stop();
+    if (Get.isDialogOpen ?? false) Get.back(result: passed);
+  }
 }

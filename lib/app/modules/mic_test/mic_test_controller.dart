@@ -35,6 +35,9 @@ class MicTestController extends GetxController {
   final amplitudeHistory = <double>[].obs;
   final countdown = 5.obs;
 
+  /// Chặn `finish()` chạy nhiều lần (countdown trùng với thao tác thủ công).
+  bool _finished = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -192,7 +195,13 @@ class MicTestController extends GetxController {
   }
 
   /// Kết thúc bài test — pop kết quả về màn hình trước.
-  void finish(bool passed) => Get.back(result: passed);
+  void finish(bool passed) {
+    if (_finished) return;
+    _finished = true;
+
+    _countdownTimer?.cancel();
+    if (Get.isDialogOpen ?? false) Get.back(result: passed);
+  }
 
   /// Mức âm lượng đã chuẩn hoá (0.0 - 1.0) để hiển thị animation.
   double get level =>
