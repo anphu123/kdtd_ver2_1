@@ -129,7 +129,9 @@ class CameraTestController extends GetxController {
       isInitializing.value = false;
       cameraError.value = null;
       debugPrint(
-        '[CameraTest] Mở thành công Camera #${currentCameraIndex.value} (${camera.name}, ${camera.lensDirection})',
+        '[CameraTest] Mở thành công Camera #${currentCameraIndex.value} '
+        '(${camera.name}, ${camera.lensDirection}) '
+        'previewSize=${cam.value.previewSize}',
       );
 
       _runAutoTest();
@@ -178,12 +180,19 @@ class CameraTestController extends GetxController {
       final image = await cam.takePicture();
       capturedImagePath.value = image.path;
 
-      final isBlack = await _isImageBlack(image.path);
-      if (isBlack) {
-        debugPrint(
-          '[CameraTest] Lỗi: Phát hiện ảnh đen ở Camera #${currentCameraIndex.value}',
-        );
-      }
+      final luminance = await _meanLuminance(image.path);
+      final fileSize = await File(image.path).length();
+      final isBlack =
+          luminance == null ||
+          luminance < CameraTestConstants.blackFrameLuminanceThreshold;
+
+      debugPrint(
+        '[CameraTest] Cam #${currentCameraIndex.value} chụp xong: '
+        'độ sáng=${luminance?.toStringAsFixed(1) ?? "không decode được"}/255 '
+        '(ngưỡng ${CameraTestConstants.blackFrameLuminanceThreshold}), '
+        'file=${(fileSize / 1024).toStringAsFixed(0)}KB, '
+        'kết luận=${isBlack ? "ĐEN -> FAIL" : "OK"}',
+      );
       passed = !isBlack;
     } catch (e) {
       debugPrint('[CameraTest] Lỗi chụp ảnh tự động: $e');
@@ -216,7 +225,12 @@ class CameraTestController extends GetxController {
     }
   }
 
-  Future<bool> _isImageBlack(String imagePath) async {
+  /// Độ sáng trung bình (0-255) của ảnh, `null` nếu không decode được.
+  ///
+  /// Trả về SỐ ĐO thay vì bool: log có con số mới phân biệt được ảnh đen
+  /// tuyệt đối (camera không mở được, ~0) với ảnh tối (phòng thiếu sáng,
+  /// 10-20) — hai nguyên nhân khác hẳn nhau nhưng cùng rơi dưới ngưỡng.
+  Future<double?> _meanLuminance(String imagePath) async {
     try {
       final file = File(imagePath);
       final bytes = await file.readAsBytes();
@@ -230,7 +244,7 @@ class CameraTestController extends GetxController {
       final byteData = await image.toByteData(
         format: ui.ImageByteFormat.rawRgba,
       );
-      if (byteData == null) return false;
+      if (byteData == null) return null;
 
       final data = byteData.buffer.asUint8List();
       int totalLuminance = 0;
@@ -240,11 +254,10 @@ class CameraTestController extends GetxController {
         final b = data[i + 2];
         totalLuminance += ((r * 299) + (g * 587) + (b * 114)) ~/ 1000;
       }
-      final meanLuminance = totalLuminance / (data.length / 4);
-      return meanLuminance < CameraTestConstants.blackFrameLuminanceThreshold;
+      return totalLuminance / (data.length / 4);
     } catch (e) {
       debugPrint('[CameraTest] Lỗi phân tích ảnh: $e');
-      return true; // Coi là lỗi nếu không thể decode
+      return null;
     }
   }
 
