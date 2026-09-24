@@ -30,7 +30,9 @@ class _WelcomePageState extends State<WelcomePage>
     super.initState();
     _intro = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1150),
+      // Dài hơn một chút so với cảm giác "vừa đủ": chuyển động chậm mà êm
+      // đọc ra sang trọng, chuyển động nhanh mà giật đọc ra rẻ tiền.
+      duration: const Duration(milliseconds: 1500),
     );
   }
 
@@ -90,8 +92,8 @@ class _Hero extends StatelessWidget {
               children: [
                 Reveal(
                   parent: intro,
-                  start: 0.34,
-                  end: 0.70,
+                  start: 0.28,
+                  end: 0.78,
                   child: _StepTile(
                     index: 1,
                     accent: AppColors.pviBlue,
@@ -103,8 +105,8 @@ class _Hero extends StatelessWidget {
                 ),
                 Reveal(
                   parent: intro,
-                  start: 0.42,
-                  end: 0.78,
+                  start: 0.36,
+                  end: 0.86,
                   child: _StepTile(
                     index: 2,
                     accent: AppColors.pviNavy,
@@ -116,8 +118,8 @@ class _Hero extends StatelessWidget {
                 ),
                 Reveal(
                   parent: intro,
-                  start: 0.50,
-                  end: 0.86,
+                  start: 0.44,
+                  end: 0.94,
                   child: _StepTile(
                     index: 3,
                     accent: AppColors.tradeInEmerald,
@@ -131,8 +133,8 @@ class _Hero extends StatelessWidget {
                 SizedBox(height: 20.h),
                 Reveal(
                   parent: intro,
-                  start: 0.62,
-                  end: 0.95,
+                  start: 0.54,
+                  end: 1.0,
                   child: const _TrustNote(),
                 ),
                 SizedBox(height: 24.h),
@@ -179,8 +181,8 @@ class _BrandHeader extends StatelessWidget {
                 SizedBox(width: 8.w),
                 Reveal(
                   parent: intro,
-                  start: 0.08,
-                  end: 0.40,
+                  start: 0.06,
+                  end: 0.46,
                   offset: const Offset(-0.25, 0),
                   child: Text(
                     LocaleKeys.welcome_brand_tagline.trans().toUpperCase(),
@@ -196,8 +198,8 @@ class _BrandHeader extends StatelessWidget {
             SizedBox(height: 18.h),
             Reveal(
               parent: intro,
-              start: 0.12,
-              end: 0.52,
+              start: 0.10,
+              end: 0.58,
               child: Text(
                 LocaleKeys.welcome_title.trans(),
                 style: AppTextStyles.heroTitle.copyWith(
@@ -211,8 +213,8 @@ class _BrandHeader extends StatelessWidget {
             SizedBox(height: 14.h),
             Reveal(
               parent: intro,
-              start: 0.22,
-              end: 0.62,
+              start: 0.18,
+              end: 0.68,
               child: Text(
                 LocaleKeys.welcome_subtitle.trans(),
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -385,9 +387,9 @@ class _BottomBar extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(24.w, 14.h, 24.w, 14.h),
           child: Reveal(
             parent: intro,
-            start: 0.70,
+            start: 0.60,
             end: 1.0,
-            offset: const Offset(0, 0.5),
+            offset: const Offset(0, 0.28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -454,7 +456,9 @@ class _GrowingAccentBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final grow = CurvedAnimation(
       parent: intro,
-      curve: const Interval(0, 0.32, curve: Curves.easeOutBack),
+      // Cùng đường cong với mọi phần tử khác: easeOutBack nảy ngược lại một
+      // nhịp, lạc điệu giữa một trang toàn chuyển động một chiều.
+      curve: const Interval(0, 0.38, curve: kRevealCurve),
     );
 
     return SizedBox(
