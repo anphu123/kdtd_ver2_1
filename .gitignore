@@ -46,3 +46,6 @@ app.*.map.json
 
 # Claude Code - cau hinh ca nhan tung may
 .claude/settings.local.json
+
+# App Store Connect API key - TUYỆT ĐỐI không commit
+*.p8

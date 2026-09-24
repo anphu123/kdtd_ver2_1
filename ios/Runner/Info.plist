@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,7 +24,46 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Ứng dụng cần quyền Bluetooth để kiểm tra chức năng bật/tắt và quét thiết bị Bluetooth.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập thiết bị ngoại vi Bluetooth.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần sử dụng camera để kiểm tra chức năng chụp ảnh trước và sau.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Ứng dụng cần quyền Face ID để kiểm tra chức năng xác thực sinh trắc học.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền vị trí để kiểm tra trạng thái GPS và lấy tên mạng WiFi. Vị trí chỉ được dùng trong lúc bạn đang mở ứng dụng để chạy bài kiểm tra.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền vị trí để kiểm tra trạng thái GPS và lấy tên mạng WiFi.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần sử dụng microphone để kiểm tra chức năng thu âm.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -41,21 +82,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-
-    <!-- Quyền truy cập cho Diagnostics Module -->
-    <key>NSCameraUsageDescription</key>
-    <string>Ứng dụng cần sử dụng camera để kiểm tra chức năng chụp ảnh trước và sau.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Ứng dụng cần sử dụng microphone để kiểm tra chức năng thu âm.</string>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Ứng dụng cần quyền vị trí để kiểm tra trạng thái GPS và lấy tên mạng WiFi.</string>
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Ứng dụng cần quyền Bluetooth để kiểm tra chức năng bật/tắt và quét thiết bị Bluetooth.</string>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>Ứng dụng cần quyền truy cập thiết bị ngoại vi Bluetooth.</string>
 </dict>
 </plist>

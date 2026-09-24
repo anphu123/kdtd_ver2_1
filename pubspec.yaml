@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: ^3.7.2
@@ -35,6 +35,8 @@ dependencies:
   http:
 
 dev_dependencies:
+  # Dùng trong test: mock storage cho easy_localization (SharedPreferences.setMockInitialValues)
+  shared_preferences: ^2.3.2
   flutter_test:
     sdk: flutter
 

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Cấu hình xuất IPA để nộp lên App Store Connect / TestFlight.
+	     Dùng bởi scripts/testflight.sh qua `flutter build ipa`. -->
+
+	<key>method</key>
+	<string>app-store-connect</string>
+
+	<!-- Team ID phải khớp DEVELOPMENT_TEAM trong Runner.xcodeproj.
+	     99C7YYT558 = Rentino Joint Stock Company.
+	     CẢNH BÁO: AWJ2P935D5 / 74GAQ5K774 xuất hiện trong tên chứng chỉ là mã
+	     CÁ NHÂN của developer, KHÔNG phải Team ID — dán nhầm nó vào đây sẽ ra
+	     lỗi "No Account for Team". Team ID nằm ở trường OU của chứng chỉ. -->
+	<key>teamID</key>
+	<string>99C7YYT558</string>
+
+	<!-- Xcode tự tạo/chọn provisioning profile phân phối. Nếu dùng profile
+	     thủ công thì đổi sang <false/> và khai báo provisioningProfiles. -->
+	<key>signingStyle</key>
+	<string>automatic</string>
+
+	<!-- Tải symbol lên để crash report trên App Store Connect đọc được. -->
+	<key>uploadSymbols</key>
+	<true/>
+
+	<!-- Không để Apple thay ta quản lý khoá ký. -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+
+	<key>destination</key>
+	<string>export</string>
+</dict>
+</plist>
