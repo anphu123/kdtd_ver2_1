@@ -34,6 +34,20 @@ class MyApp extends StatelessWidget {
           locale: context.locale,
           initialRoute: AppPages.initial,
           getPages: AppPages.routes,
+
+          // Nhịp chuyển màn cho các lần điều hướng KHÔNG qua bảng route
+          // (`Get.to`/`Get.off` truyền thẳng widget) — không đặt ở đây thì
+          // chúng rơi về mặc định của GetX và lệch nhịp với các route đã
+          // khai báo trong AppPages.
+          defaultTransition: AppPages.forward,
+          transitionDuration: AppPages.transitionDuration,
+          onInit: () {
+            // GetMaterialApp không có tham số cho đường cong mặc định, mà
+            // mặc định của GetX là easeOutQuad — khác fastOutSlowIn dùng cho
+            // các route. Gán thẳng vào root controller cho đồng bộ.
+            Get.rootController.defaultTransitionCurve =
+                AppPages.transitionCurve;
+          },
         );
       },
     );
