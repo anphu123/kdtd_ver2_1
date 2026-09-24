@@ -39,7 +39,7 @@
 
 
     <application
-        android:label="DiagPro - Device Inspector"
+        android:label="PVI Check"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
