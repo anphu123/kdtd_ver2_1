@@ -28,7 +28,7 @@ class DeviceInfoHelper {
 
   /// Lấy thông tin RAM
   /// - Android: Sử dụng MethodChannel
-  /// - iOS: Ước tính dựa trên model
+  /// - iOS: Đọc thật qua MethodChannel (ProcessInfo.physicalMemory)
   static Future<Map<String, dynamic>> getRamInfo() async {
     if (Platform.isAndroid) {
       return _getAndroidRamInfo();
@@ -93,7 +93,7 @@ class DeviceInfoHelper {
 
   /// Lấy thông tin ROM (Storage)
   /// - Android: Sử dụng MethodChannel
-  /// - iOS: Ước tính dựa trên model hoặc không chính xác
+  /// - iOS: Đọc thật qua MethodChannel (volumeTotalCapacity)
   static Future<Map<String, dynamic>> getRomInfo() async {
     if (Platform.isAndroid) {
       return _getAndroidRomInfo();
@@ -146,8 +146,8 @@ class DeviceInfoHelper {
     try {
       final iosInfo = await _deviceInfo.iosInfo;
 
-      // iOS không cho phép đọc chính xác storage
-      // Chúng ta có thể estimate dựa trên các mức phổ biến
+      // Native không trả về được (trường hợp hiếm) — trả null chứ KHÔNG
+      // ước tính theo model, vì số bịa còn tệ hơn là không có số.
       return {
         'freeBytes': null,
         'totalBytes': null,
