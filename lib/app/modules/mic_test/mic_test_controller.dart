@@ -5,6 +5,7 @@ import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/constants/audio_test_constants.dart';
+import 'package:kdtd_ver2_1/app/data/services/permission_gate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
@@ -77,8 +78,11 @@ class MicTestController extends GetxController {
     countdown.value = AudioTestConstants.micRecordingSeconds;
 
     try {
-      final mic = await Permission.microphone.request();
-      if (!mic.isGranted) {
+      final micGranted = await PermissionGate.ensure(
+        Permission.microphone,
+        name: LocaleKeys.permission_microphone_name.trans(),
+      );
+      if (!micGranted) {
         error.value = LocaleKeys.mic_test_error_no_permission.trans();
         return;
       }

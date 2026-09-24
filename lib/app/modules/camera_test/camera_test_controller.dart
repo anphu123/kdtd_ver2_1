@@ -32,12 +32,17 @@ class CameraTestController extends GetxController {
   final cameraResults = <int, bool>{}.obs;
 
   final cameraWarning = Rx<String?>(null);
+
+  /// Lỗi khởi tạo/chụp của camera hiện tại, hiện ngay trong màn thay vì
+  /// snackbar (snackbar trong dialog làm kẹt mọi `Get.back()` sau đó).
+  final cameraError = Rx<String?>(null);
   final isOriginal = true.obs;
 
   /// Số giây còn lại trước khi tự chụp; 0 nghĩa là không đang đếm.
   final captureCountdown = 0.obs;
   final capturedImagePath = Rx<String?>(null);
   bool _closed = false;
+  bool _finished = false;
 
   CameraDescription? get currentCamera =>
       (cameras.isNotEmpty && currentCameraIndex.value < cameras.length)
@@ -92,7 +97,9 @@ class CameraTestController extends GetxController {
     await _cleanupCapturedImage();
     isAutoCapturing.value = false;
     captureCountdown.value = 0;
+    cameraError.value = null;
     await _disposeCameraSync();
+    if (_closed) return;
 
     final cam = CameraController(
       camera,
@@ -103,6 +110,10 @@ class CameraTestController extends GetxController {
 
     try {
       await cam.initialize();
+      if (_closed) {
+        await cam.dispose();
+        return;
+      }
 
       // Đợi ổn định trước khi gắn CameraPreview vào cây widget — vài khung
       // hình đầu tiên từ Texture mới khởi tạo có thể bị chớp màu (đỏ/hồng),
@@ -116,6 +127,7 @@ class CameraTestController extends GetxController {
 
       controller.value = cam;
       isInitializing.value = false;
+      cameraError.value = null;
       debugPrint(
         '[CameraTest] Mở thành công Camera #${currentCameraIndex.value} (${camera.name}, ${camera.lensDirection})',
       );
@@ -127,13 +139,12 @@ class CameraTestController extends GetxController {
         '[CameraTest] Lỗi khởi tạo Camera #${currentCameraIndex.value}: $e',
       );
       cameraResults[currentCameraIndex.value] = false;
-      Get.snackbar(
-        LocaleKeys.camera_test_error_title.trans(),
-        LocaleKeys.camera_test_error_init_camera.trans(
-          namedArgs: {'error': '$e'},
-        ),
-        snackPosition: SnackPosition.BOTTOM,
+      cameraError.value = LocaleKeys.camera_test_error_init_camera.trans(
+        namedArgs: {'error': '$e'},
       );
+      // Giữ lỗi hiện trên màn một lúc để kỹ thuật viên kịp đọc.
+      await Future.delayed(CameraTestConstants.postCaptureDelay);
+      if (_closed) return;
       _scheduleNextCamera();
     }
   }
@@ -238,6 +249,9 @@ class CameraTestController extends GetxController {
   }
 
   void finish(bool passed) {
+    // Timer tự động và nút đóng có thể cùng kích hoạt.
+    if (_finished) return;
+    _finished = true;
     _disposeCameraSync();
     Get.back(result: passed);
   }

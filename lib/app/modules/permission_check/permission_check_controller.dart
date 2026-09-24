@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get/get.dart' hide Trans;
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/modules/diagnostics_home/diagnostics_home_controller.dart';
@@ -100,9 +101,9 @@ class PermissionCheckController extends GetxController
         PermissionCheckItem(
           permission: Permission.bluetoothScan,
           icon: Icons.bluetooth_searching_rounded,
-          name: 'Quét Bluetooth',
+          name: LocaleKeys.permission_bluetooth_name.trans(),
           description:
-              'Kiểm tra khả năng quét và nhận diện các thiết bị Bluetooth xung quanh.',
+              LocaleKeys.permission_bluetooth_description.trans(),
           isRequired: false,
           accentColor: AppColors.success,
           surfaceColor: AppColors.successSurface,
@@ -110,9 +111,9 @@ class PermissionCheckController extends GetxController
         PermissionCheckItem(
           permission: Permission.bluetoothConnect,
           icon: Icons.bluetooth_connected_rounded,
-          name: 'Kết nối Bluetooth',
+          name: LocaleKeys.permission_bluetooth_connect_name.trans(),
           description:
-              'Kiểm tra chip Bluetooth nội bộ và giao thức kết nối phụ kiện.',
+              LocaleKeys.permission_bluetooth_connect_description.trans(),
           isRequired: false,
           accentColor: AppColors.success,
           surfaceColor: AppColors.successSurface,
@@ -123,9 +124,8 @@ class PermissionCheckController extends GetxController
         PermissionCheckItem(
           permission: Permission.bluetooth,
           icon: Icons.bluetooth_rounded,
-          name: 'Bluetooth',
-          description:
-              'Kiểm tra chip Bluetooth nội bộ và khả năng tương tác phụ kiện.',
+          name: LocaleKeys.permission_bluetooth_name.trans(),
+          description: LocaleKeys.permission_bluetooth_ios_description.trans(),
           isRequired: false,
           accentColor: AppColors.success,
           surfaceColor: AppColors.successSurface,

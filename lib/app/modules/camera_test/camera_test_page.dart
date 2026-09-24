@@ -70,7 +70,9 @@ class CameraTestPage extends GetView<CameraTestController> {
                     ),
                     SizedBox(height: 12.h),
                     Text(
-                      LocaleKeys.camera_test_camera_unavailable.trans(),
+                      controller.cameraError.value ??
+                          LocaleKeys.camera_test_camera_unavailable.trans(),
+                      textAlign: TextAlign.center,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.white,
                       ),

@@ -19,7 +19,7 @@ enum EvalResult { pass, fail, skip }
 class RuleEvaluator {
   final DiagThresholds thresholds;
   final DeviceProfile profile;
-  final DiagEnvironment environment;
+  DiagEnvironment environment;
   final Map<String, dynamic> _rules = {};
 
   RuleEvaluator({
@@ -207,10 +207,11 @@ class RuleEvaluator {
         );
 
       case 'mobile':
+        if (payload['error'] == 'permission_denied' ||
+            environment.isPermDenied('phone_state')) {
+          return LocaleKeys.rule_evaluator_mobile_missing_permission.trans();
+        }
         if (result == EvalResult.skip) {
-          if (environment.isPermDenied('phone_state')) {
-            return LocaleKeys.rule_evaluator_mobile_missing_permission.trans();
-          }
           return LocaleKeys.rule_evaluator_mobile_not_connected.trans();
         }
         final dbm = payload['dbm'];
@@ -233,6 +234,9 @@ class RuleEvaluator {
       case 'wifi':
         final enabled = payload['enabled'] == true;
         final connected = payload['connected'] == true;
+        if (payload['permissionDenied'] == true) {
+          return LocaleKeys.rule_evaluator_gps_missing_permission.trans();
+        }
         if (result == EvalResult.fail || result == EvalResult.skip) {
           if (!enabled) {
             return LocaleKeys.rule_evaluator_wifi_cannot_enable.trans();
@@ -333,7 +337,7 @@ class RuleEvaluator {
       case 'front-camera':
       case 'rear-camera':
       case 'camera':
-        if (result == EvalResult.skip) {
+        if (environment.isPermDenied('camera')) {
           return LocaleKeys.rule_evaluator_camera_missing_permission.trans();
         }
         final photos = payload['photos'] as List?;
@@ -397,8 +401,12 @@ class RuleEvaluator {
 
   EvalResult _evalMobile(Map<String, dynamic> p) {
     final connected = p['connected'] == true;
+    // Bị từ chối quyền → trượt, không bỏ qua.
+    if (p['error'] == 'permission_denied' ||
+        environment.isPermDenied('phone_state')) {
+      return EvalResult.fail;
+    }
     if (!connected) return EvalResult.skip;
-    if (environment.isPermDenied('phone_state')) return EvalResult.skip;
 
     final dbm = p['dbm'];
     // iOS (và một số thiết bị Android) trả về null signal strength
@@ -420,6 +428,9 @@ class RuleEvaluator {
   EvalResult _evalWifi(Map<String, dynamic> p) {
     final enabled = p['enabled'] == true;
     final connected = p['connected'] == true;
+
+    // Từ chối quyền vị trí (cần để đọc SSID) → trượt
+    if (p['permissionDenied'] == true) return EvalResult.fail;
 
     // Nếu không bật được ăng-ten Wi-Fi → Không đạt
     if (!enabled && !connected) return EvalResult.fail;
@@ -452,7 +463,7 @@ class RuleEvaluator {
   }
 
   EvalResult _evalSim(Map<String, dynamic> p) {
-    if (environment.isPermDenied('phone_state')) return EvalResult.skip;
+    if (environment.isPermDenied('phone_state')) return EvalResult.fail;
     // Có thể bổ sung kiểm tra nếu bản ROM chặn API tại đây
 
     final slotCount = p['slotCount'] ?? 0;
@@ -589,7 +600,7 @@ class RuleEvaluator {
   }
 
   EvalResult _evalCamera(Map<String, dynamic> p) {
-    if (environment.isPermDenied('camera')) return EvalResult.skip;
+    if (environment.isPermDenied('camera')) return EvalResult.fail;
 
     final photos = p['photos'] as List?;
     final confirm = p['userConfirm'] == true;
@@ -610,7 +621,7 @@ class RuleEvaluator {
   }
 
   EvalResult _evalMic(Map<String, dynamic> p) {
-    if (environment.isPermDenied('microphone')) return EvalResult.skip;
+    if (environment.isPermDenied('microphone')) return EvalResult.fail;
 
     final confirm = p['userConfirm'] == true;
     if (!confirm) return EvalResult.fail;

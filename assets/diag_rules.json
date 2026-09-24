@@ -13,8 +13,8 @@
   },
   "mobile": {
     "pass": "connected == true && dbm >= T.mobile.dbm_min && dbm <= T.mobile.dbm_max",
-    "fail": "connected == true && (dbm < T.mobile.dbm_min || dbm > T.mobile.dbm_max || !exists(dbm))",
-    "skip": "!connected || perm_denied('phone_state')"
+    "fail": "perm_denied('phone_state') || (connected == true && (dbm < T.mobile.dbm_min || dbm > T.mobile.dbm_max || !exists(dbm)))",
+    "skip": "!connected"
   },
   "wifi": {
     "pass": "connected == true && exists(ssid) && ssid != ''",
@@ -23,8 +23,7 @@
   },
   "bt": {
     "pass": "enabled == true && scanOk == true",
-    "fail": "enabled == true && scanOk == false",
-    "skip": "perm_denied('bluetoothScan') || (is_miui() && !location_service_on())"
+    "fail": "perm_denied('bluetoothScan') || enabled == false || scanOk == false || (is_miui() && !location_service_on())"
   },
   "nfc": {
     "pass": "available == true",
@@ -33,8 +32,8 @@
   },
   "sim": {
     "pass": "slotCount >= 1 && exists(states)",
-    "fail": "slotCount == 0 && expected_slots() > 0",
-    "skip": "perm_denied('phone_state') || rom_blocks_api()"
+    "fail": "perm_denied('phone_state') || (slotCount == 0 && expected_slots() > 0)",
+    "skip": "rom_blocks_api()"
   },
   "sensors": {
     "pass": "accelerometer == true && gyroscope == true",
@@ -44,7 +43,7 @@
   "gps": {
     "pass": "serviceOn == true && (exists(accuracyM) || !exists(accuracyM))",
     "fail": "serviceOn == true && exists(accuracyM) && !is_number(accuracyM)",
-    "skip": "!serviceOn || perm_denied('location')"
+    "skip": "!serviceOn"
   },
   "lock": {
     "pass": "required_by_profile('secure_lock') ? secure == true : true",
@@ -79,8 +78,7 @@
   },
   "camera": {
     "pass": "len(photos) >= 1 && userConfirm == true",
-    "fail": "len(photos) == 0 || userConfirm == false",
-    "skip": "perm_denied('camera')"
+    "fail": "perm_denied('camera') || len(photos) == 0 || userConfirm == false"
   },
   "speaker": {
     "pass": "userConfirm == true",
@@ -92,8 +90,7 @@
   },
   "mic": {
     "pass": "userConfirm == true && (rms == null || rms >= T.audio.mic_rms_min)",
-    "fail": "userConfirm == false || (rms != null && rms < T.audio.mic_rms_min)",
-    "skip": "perm_denied('microphone')"
+    "fail": "perm_denied('microphone') || userConfirm == false || (rms != null && rms < T.audio.mic_rms_min)"
   },
   "ram": {
     "pass": "exists(totalBytes) && totalBytes > 0",

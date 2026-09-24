@@ -15,6 +15,9 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:kdtd_ver2_1/app/core/constants/diagnostics_constants.dart';
 import 'package:kdtd_ver2_1/app/data/services/device_info_helper.dart';
 import 'package:kdtd_ver2_1/app/data/services/diag_logger.dart';
+import 'package:kdtd_ver2_1/app/data/services/permission_gate.dart';
+import 'package:kdtd_ver2_1/app/core/extensions/string_extensions.dart';
+import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
 import 'package:kdtd_ver2_1/app/data/services/phone_info_service.dart';
 
 /// Dịch vụ đọc thông số phần cứng, kết nối mạng và cảm biến native của thiết bị.
@@ -142,10 +145,16 @@ class DeviceHardwareService {
         conn.contains(ConnectivityResult.wifi) ||
         conn.contains(ConnectivityResult.ethernet);
     String? ssid;
+    var permissionDenied = false;
     if (onWifi) {
       try {
-        if (await Permission.locationWhenInUse.request().isGranted) {
+        if (await PermissionGate.ensure(
+          Permission.locationWhenInUse,
+          name: LocaleKeys.permission_location_name.trans(),
+        )) {
           ssid = await NetworkInfo().getWifiName();
+        } else {
+          permissionDenied = true;
         }
       } catch (_) {}
     }
@@ -153,19 +162,18 @@ class DeviceHardwareService {
       'enabled': wifiEnabled ?? onWifi,
       'connected': onWifi,
       'ssid': ssid,
+      'permissionDenied': permissionDenied,
     };
   }
 
   /// Trạng thái Mạng di động (sóng, radio 3G/4G/5G)
   static Future<Map<String, dynamic>> getMobileNetworkInfo() async {
-    final phonePermission = await Permission.phone.status;
-    if (!phonePermission.isGranted) {
-      final result = await Permission.phone.request();
-      if (!result.isGranted) {
-        if (result.isPermanentlyDenied) await openAppSettings();
-        DiagLogger.warning('mobile', 'Không có quyền READ_PHONE_STATE');
-        return {'connected': false, 'error': 'permission_denied'};
-      }
+    if (!await PermissionGate.ensure(
+      Permission.phone,
+      name: LocaleKeys.permission_phone_name.trans(),
+    )) {
+      DiagLogger.warning('mobile', 'Không có quyền READ_PHONE_STATE');
+      return {'connected': false, 'error': 'permission_denied'};
     }
 
     final conn = await Connectivity().checkConnectivity();
@@ -191,24 +199,19 @@ class DeviceHardwareService {
     // Android 12+ việc đó chỉ cần BLUETOOTH_SCAN; BLUETOOTH_CONNECT là quyền
     // để kết nối / đọc tên & danh sách thiết bị đã ghép đôi nên không xin ở
     // đây (xin thừa chỉ tổ hiện thêm một hộp thoại cho kỹ thuật viên bấm).
-    if (Platform.isAndroid) {
-      if (!await Permission.bluetoothScan.isGranted) {
-        await Permission.bluetoothScan.request();
-      }
-    } else if (Platform.isIOS) {
-      if (!await Permission.bluetooth.isGranted) {
-        await Permission.bluetooth.request();
-      }
-    }
+    final permGranted = await PermissionGate.ensure(
+      Platform.isIOS ? Permission.bluetooth : Permission.bluetoothScan,
+      name: LocaleKeys.permission_bluetooth_name.trans(),
+    );
 
     final btState = await _resolveAdapterState();
 
     bool scanOk = false;
     if (btState == BluetoothAdapterState.on) {
       try {
-        await FlutterBluePlus.startScan(
-          timeout: DiagnosticsConstants.bluetoothScanDuration,
-        );
+        // Không truyền `timeout` cho startScan: tự dừng sau đúng một lần chờ,
+        // tránh chờ gấp đôi.
+        await FlutterBluePlus.startScan();
         await Future.delayed(DiagnosticsConstants.bluetoothScanDuration);
         await FlutterBluePlus.stopScan();
         scanOk = true;
@@ -221,6 +224,7 @@ class DeviceHardwareService {
     return {
       'enabled': btState == BluetoothAdapterState.on,
       'scanOk': scanOk,
+      'permissionGranted': permGranted,
       'state': btState.name,
     };
   }
@@ -273,11 +277,11 @@ class DeviceHardwareService {
 
   /// Độ chính xác GPS
   static Future<Map<String, dynamic>> getLocationAccuracy() async {
-    var perm = await Geolocator.checkPermission();
-    if (perm == LocationPermission.denied ||
-        perm == LocationPermission.deniedForever) {
-      perm = await Geolocator.requestPermission();
-    }
+    await PermissionGate.ensure(
+      Permission.location,
+      name: LocaleKeys.permission_location_name.trans(),
+    );
+    final perm = await Geolocator.checkPermission();
     final svc = await Geolocator.isLocationServiceEnabled();
     double? accuracy;
     if (svc &&

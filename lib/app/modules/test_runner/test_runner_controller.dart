@@ -17,6 +17,7 @@ import 'package:kdtd_ver2_1/app/core/constants/diagnostics_constants.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
 import 'package:kdtd_ver2_1/app/data/model/device_profile.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_environment.dart';
+import 'package:kdtd_ver2_1/app/data/services/permission_gate.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
 import 'package:kdtd_ver2_1/app/data/model/function_attribute.dart';
 import 'package:kdtd_ver2_1/app/data/services/device_hardware_service.dart';
@@ -198,6 +199,8 @@ class TestRunnerController extends GetxController {
         'gyroscope': sensorInfo['gyroscope'] == true,
       },
     );
+    // Quyền có thể vừa được cấp giữa chừng (qua hộp thoại hoặc Cài đặt).
+    _evaluator?.environment = _environment;
   }
 
   // ==================== ĐỊNH NGHĨA CÁC BƯỚC TEST (LUỒNG 3) ====================
@@ -339,7 +342,7 @@ class TestRunnerController extends GetxController {
   Future<bool> _checkBluetooth() async {
     info['bluetooth'] = await DeviceHardwareService.getBluetoothInfo();
     final btInfo = info['bluetooth'] as Map<String, dynamic>;
-    final ok = btInfo['enabled'] == true;
+    final ok = btInfo['enabled'] == true && btInfo['scanOk'] == true;
     debugPrint('[TestRunner] Kết quả Bluetooth: $ok ($btInfo)');
     return ok;
   }
@@ -602,8 +605,10 @@ class TestRunnerController extends GetxController {
   Future<bool> _openFrontCameraTest() async {
     try {
       debugPrint('[TestRunner] Yêu cầu quyền camera trước...');
-      final st = await [Permission.camera].request();
-      if (st[Permission.camera] != PermissionStatus.granted) {
+      if (!await PermissionGate.ensure(
+        Permission.camera,
+        name: LocaleKeys.permission_camera_name.trans(),
+      )) {
         debugPrint('[TestRunner] Không được cấp quyền camera');
         return false;
       }
@@ -632,8 +637,10 @@ class TestRunnerController extends GetxController {
   Future<bool> _openRearCameraTest() async {
     try {
       debugPrint('[TestRunner] Yêu cầu quyền camera sau...');
-      final st = await [Permission.camera].request();
-      if (st[Permission.camera] != PermissionStatus.granted) {
+      if (!await PermissionGate.ensure(
+        Permission.camera,
+        name: LocaleKeys.permission_camera_name.trans(),
+      )) {
         debugPrint('[TestRunner] Không được cấp quyền camera');
         return false;
       }
@@ -956,6 +963,7 @@ class TestRunnerController extends GetxController {
       return false;
     } finally {
       stopwatch.stop();
+      await _updateEnvironment();
     }
   }
 

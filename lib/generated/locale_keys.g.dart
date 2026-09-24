@@ -462,6 +462,9 @@ abstract class  LocaleKeys {
   static const permission_bluetooth_connect_name = 'permission.bluetooth_connect_name';
   static const permission_bluetooth_connect_description = 'permission.bluetooth_connect_description';
   static const permission_bluetooth_ios_description = 'permission.bluetooth_ios_description';
+  static const permission_gate_title = 'permission.gate_title';
+  static const permission_gate_message = 'permission.gate_message';
+  static const permission_gate_open_settings = 'permission.gate_open_settings';
   static const permission_grant_dialog_title = 'permission.grant_dialog_title';
   static const permission_grant_dialog_intro = 'permission.grant_dialog_intro';
   static const permission_required_badge = 'permission.required_badge';
