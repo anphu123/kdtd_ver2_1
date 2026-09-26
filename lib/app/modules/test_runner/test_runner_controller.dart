@@ -805,7 +805,7 @@ class TestRunnerController extends GetxController {
         if (bioStep != null) {
           bioStep.status = DiagStatus.failed;
           bioStep.note = LocaleKeys.rule_evaluator_default_fail.trans();
-          failedCount.value++;
+          _recount();
         }
       }
     } catch (_) {}
@@ -1068,27 +1068,22 @@ class TestRunnerController extends GetxController {
         case EvalResult.pass:
           step.status = DiagStatus.passed;
           step.note = reason;
-          passedCount.value++;
           break;
         case EvalResult.fail:
           step.status = DiagStatus.failed;
           step.note = reason;
-          failedCount.value++;
           break;
         case EvalResult.skip:
           step.status = DiagStatus.skipped;
           step.note = reason;
-          skippedCount.value++;
           break;
       }
     } else if (runSuccess) {
       step.status = DiagStatus.passed;
       step.note = null;
-      passedCount.value++;
     } else if (step.note?.contains('Timeout') == true) {
       // Hết thời gian chờ ở bài test bắt buộc -> tính là THẤT BẠI, không bỏ qua
       step.status = DiagStatus.failed;
-      failedCount.value++;
     } else {
       // Không có RuleEvaluator lý giải cụ thể (VD: biometrics chỉ trả về
       // true/false) — ghi đè note "đang chạy" còn sót lại bằng lý do THẤT
@@ -1096,8 +1091,39 @@ class TestRunnerController extends GetxController {
       // một bước đã kết thúc.
       step.status = DiagStatus.failed;
       step.note = LocaleKeys.rule_evaluator_default_fail.trans();
-      failedCount.value++;
     }
+
+    // Đếm lại từ trạng thái thật của các bước, KHÔNG cộng dồn: một bước có
+    // thể được đánh giá nhiều lần (thử lại), cộng dồn thì kết quả cũ không
+    // bao giờ bị trừ đi.
+    _recount();
+  }
+
+  /// Đếm lại số bước đạt / lỗi / bỏ qua từ trạng thái thật của [steps].
+  ///
+  /// [steps] là nguồn sự thật duy nhất; ba bộ đếm chỉ là bản chiếu của nó.
+  /// Trước đây chúng được duy trì song song bằng `++` nên trôi lệch mỗi khi
+  /// một bước đổi trạng thái lần thứ hai: thử lại Wi-Fi từ LỖI sang ĐẠT thì
+  /// `passedCount` tăng nhưng `failedCount` vẫn giữ nguyên — máy bị chấm
+  /// Loại 5 (bất kỳ lỗi nào -> Loại 5) dù mọi bài đã đạt, và "đã xong" vượt
+  /// quá tổng số bước.
+  void _recount() {
+    var passed = 0, failed = 0, skipped = 0;
+    for (final step in steps) {
+      switch (step.status) {
+        case DiagStatus.passed:
+          passed++;
+        case DiagStatus.failed:
+          failed++;
+        case DiagStatus.skipped:
+          skipped++;
+        default:
+          break;
+      }
+    }
+    passedCount.value = passed;
+    failedCount.value = failed;
+    skippedCount.value = skipped;
   }
 
   Future<void> restartStep(DiagStep step) async {
@@ -1105,6 +1131,9 @@ class TestRunnerController extends GetxController {
 
     step.status = DiagStatus.running;
     step.note = null;
+    // Đếm lại ngay: bước đang chạy lại không còn là LỖI nữa, giao diện và
+    // loại máy không được giữ kết quả cũ trong lúc chờ.
+    _recount();
     steps.refresh();
 
     final result = await _runStepWithTimeout(step);
