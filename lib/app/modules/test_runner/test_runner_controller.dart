@@ -232,7 +232,9 @@ class TestRunnerController extends GetxController {
         title: LocaleKeys.diagnostics_home_step_bt_title.trans(),
         kind: DiagKind.auto,
         phase: DiagPhase.connectivity,
-        timeout: const Duration(seconds: 5),
+        // Trước đây 5s cứng, thấp hơn tổng thời gian cần (chờ adapter + quét)
+        // nên bài hết giờ và bị chấm FAIL dù Bluetooth bật và đã cấp quyền.
+        timeout: DiagnosticsConstants.bluetoothStepTimeout,
         functionAttribute: FunctionAttribute.bluetooth,
         run: _checkBluetooth,
       ),

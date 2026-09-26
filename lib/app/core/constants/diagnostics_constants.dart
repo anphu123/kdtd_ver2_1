@@ -44,12 +44,27 @@ class DiagnosticsConstants {
     'NR',
   ];
 
-  /// Thời gian chờ trạng thái adapter Bluetooth cập nhật.
+  // ==================== NGÂN SÁCH THỜI GIAN BÀI BLUETOOTH ====================
+  //
+  // BA hằng số dưới đây ràng buộc lẫn nhau:
+  //   bluetoothAdapterStateTimeout + bluetoothScanDuration < bluetoothStepTimeout
+  // Vi phạm là bài test hết giờ và bị chấm FAIL dù Bluetooth hoạt động tốt —
+  // từng xảy ra thật khi nâng hạn chờ adapter lên 4s mà quên bước chỉ có 5s.
+  // test/diagnostics_constants_test.dart canh ràng buộc này.
+
+  /// Hạn chờ adapter Bluetooth báo trạng thái thật (khác `unknown`).
   ///
-  /// CoreBluetooth trên iOS thường mất 1-2 giây mới báo `poweredOn` lần đầu
-  /// sau khi khởi tạo CBCentralManager — 500ms trước đây hết giờ trước cả khi
-  /// hệ thống kịp trả lời, khiến bài test luôn fail ở lần chạy đầu.
-  static const Duration bluetoothAdapterStateTimeout = Duration(seconds: 4);
+  /// CoreBluetooth trên iOS thường báo `poweredOn` trong vài trăm mili-giây
+  /// sau khi tạo CBCentralManager; 3 giây là dư dả cho máy chậm.
+  static const Duration bluetoothAdapterStateTimeout = Duration(seconds: 3);
+
+  /// Chu kỳ đọc lại trạng thái adapter trong lúc chờ.
+  static const Duration bluetoothAdapterPollInterval = Duration(
+    milliseconds: 100,
+  );
+
+  /// Thời hạn của cả bài test Bluetooth.
+  static const Duration bluetoothStepTimeout = Duration(seconds: 10);
 
   /// Thời lượng quét thiết bị Bluetooth lân cận.
   static const Duration bluetoothScanDuration = Duration(seconds: 2);

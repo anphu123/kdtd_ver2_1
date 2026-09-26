@@ -239,12 +239,29 @@ class DeviceHardwareService {
     final now = FlutterBluePlus.adapterStateNow;
     if (now != BluetoothAdapterState.unknown) return now;
 
+    // KHÔNG chờ trên stream `adapterState` bằng firstWhere: bên trong
+    // flutter_blue_plus, getter đó gọi native getAdapterState() — lời gọi
+    // TẠO CBCentralManager và trả về `unknown` — rồi MỚI đăng ký nghe sự
+    // kiện đổi trạng thái. iOS bắn `poweredOn` ngay sau khi tạo manager, lọt
+    // vào khe giữa hai bước đó và bị mất: stream kẹt ở `unknown` tới hết giờ.
+    //
+    // Nhưng plugin có một listener TOÀN CỤC (đăng ký trong
+    // _initFlutterBluePlus, TRƯỚC khi manager được tạo) luôn cập nhật
+    // `adapterStateNow` — nó không bao giờ lỡ sự kiện. Nên chỉ cần mở stream
+    // để kích hoạt khởi tạo, rồi đọc lại `adapterStateNow` theo chu kỳ.
+    final initSub = FlutterBluePlus.adapterState.listen((_) {}, onError: (_) {});
     try {
-      return await FlutterBluePlus.adapterState
-          .firstWhere((s) => s != BluetoothAdapterState.unknown)
-          .timeout(DiagnosticsConstants.bluetoothAdapterStateTimeout);
-    } catch (_) {
+      final deadline = DateTime.now().add(
+        DiagnosticsConstants.bluetoothAdapterStateTimeout,
+      );
+      while (DateTime.now().isBefore(deadline)) {
+        final state = FlutterBluePlus.adapterStateNow;
+        if (state != BluetoothAdapterState.unknown) return state;
+        await Future.delayed(DiagnosticsConstants.bluetoothAdapterPollInterval);
+      }
       return FlutterBluePlus.adapterStateNow;
+    } finally {
+      await initSub.cancel();
     }
   }
 
