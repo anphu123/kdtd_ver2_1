@@ -70,6 +70,11 @@ class _TestRunnerPageState extends State<TestRunnerPage> {
 
   @override
   void dispose() {
+    // Rời màn bằng BẤT KỲ đường nào (nút back, vuốt back của iOS, phím back
+    // Android) đều huỷ lượt đang chạy. Đặt ở dispose() thay vì onPressed của
+    // nút back để không sót đường nào. Trang camera đẩy chồng lên KHÔNG làm
+    // màn này dispose nên không bị huỷ nhầm.
+    controller.cancelRun();
     _scrollWorker?.dispose();
     _scrollController.dispose();
     super.dispose();

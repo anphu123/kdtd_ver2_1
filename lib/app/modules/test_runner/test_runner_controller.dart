@@ -54,6 +54,16 @@ class TestRunnerController extends GetxController {
   final phaseProgress = 0.obs;
   final phaseTotal = 0.obs;
 
+  /// Mã của lượt chạy hiện hành. Mỗi lần bắt đầu hoặc huỷ đều tăng lên;
+  /// vòng lặp nào đang cầm mã cũ tức là đã bị huỷ và phải tự dừng.
+  ///
+  /// Dùng mã tăng dần chứ không dùng một cờ bool: thoát rồi vào lại ngay thì
+  /// vòng CŨ (còn đang chờ dở một bài test) phải chết, vòng MỚI phải chạy.
+  /// Một cờ bool bị vòng mới bật lại thì vòng cũ tưởng mình được sống tiếp.
+  int _runGeneration = 0;
+
+  bool _isCancelled(int generation) => generation != _runGeneration;
+
   int get total => steps.length;
   int get completed =>
       passedCount.value + failedCount.value + skippedCount.value;
@@ -645,6 +655,10 @@ class TestRunnerController extends GetxController {
               .toList();
       final targetCams = frontCams.isNotEmpty ? frontCams : _cams;
 
+      // Đã await xin quyền ở trên — người dùng có thể đã rời màn trong lúc
+      // đó. Mở trang camera lúc này là đẩy nó đè lên một màn không liên quan.
+      if (!isRunning.value) return false;
+
       debugPrint(
         '[TestRunner] Mở màn hình kiểm tra Camera trước (${targetCams.length} cam)...',
       );
@@ -686,6 +700,10 @@ class TestRunnerController extends GetxController {
               .where((c) => c.lensDirection != CameraLensDirection.front)
               .toList();
       final targetCams = backCams.isNotEmpty ? backCams : _cams;
+
+      // Đã await xin quyền ở trên — người dùng có thể đã rời màn trong lúc
+      // đó. Mở trang camera lúc này là đẩy nó đè lên một màn không liên quan.
+      if (!isRunning.value) return false;
 
       debugPrint(
         '[TestRunner] Mở màn hình kiểm tra TOÀN BỘ Camera sau (${targetCams.length} cam)...',
@@ -771,6 +789,7 @@ class TestRunnerController extends GetxController {
   // ==================== QUY TRÌNH THỰC THI ====================
   Future<void> startFunctionalDiagnostics() async {
     if (isRunning.value) return;
+    final generation = ++_runGeneration;
 
     debugPrint(
       '\n============================================================',
@@ -795,6 +814,7 @@ class TestRunnerController extends GetxController {
       await _initializeEvaluator();
     }
     await _updateEnvironment();
+    if (_isCancelled(generation)) return;
 
     // Kiểm tra sớm phần cứng sinh trắc học — máy không hỗ trợ thì đánh fail
     // luôn, không cần chờ tới lượt mới biết.
@@ -816,10 +836,17 @@ class TestRunnerController extends GetxController {
     // HỢP ĐẶC BIỆT — theo đúng hành vi bản gốc, KHÔNG nằm trong chuỗi tự
     // động, chỉ chạy khi người dùng tự bấm vào dòng "Cảm ứng màn hình"
     // (xem [runManualScreenStep]).
-    await _runPhase(DiagPhase.connectivity);
-    await _runPhase(DiagPhase.sensors);
-    await _runPhase(DiagPhase.hardware);
-    await _runPhase(DiagPhase.manual);
+    for (final phase in const [
+      DiagPhase.connectivity,
+      DiagPhase.sensors,
+      DiagPhase.hardware,
+      DiagPhase.manual,
+    ]) {
+      await _runPhase(phase, generation);
+      // Bị huỷ thì dừng hẳn: không chạy phase sau, không tổng kết, và nhất
+      // là KHÔNG điều hướng — người dùng đã rời màn này rồi.
+      if (_isCancelled(generation)) return;
+    }
 
     isRunning.value = false;
 
@@ -847,6 +874,7 @@ class TestRunnerController extends GetxController {
     if (step.status != DiagStatus.pending) return;
 
     isRunning.value = true;
+    final generation = ++_runGeneration;
     debugPrint(
       '[TestRunner] Người dùng tự kích hoạt bước: [${step.code}] ${step.title}',
     );
@@ -857,6 +885,7 @@ class TestRunnerController extends GetxController {
     final stopwatch = Stopwatch()..start();
     final result = await _runStepWithTimeout(step);
     stopwatch.stop();
+    if (_isCancelled(generation)) return;
 
     _evaluateStep(step, result);
     debugPrint(
@@ -961,7 +990,7 @@ class TestRunnerController extends GetxController {
     _navigateToResult();
   }
 
-  Future<void> _runPhase(DiagPhase phase) async {
+  Future<void> _runPhase(DiagPhase phase, int generation) async {
     // Bỏ qua step đã có kết quả từ trước (vd: biometrics bị precheck phần
     // cứng đánh fail sớm) — tránh chạy lại đè lên kết quả đã có.
     final phaseSteps =
@@ -981,6 +1010,10 @@ class TestRunnerController extends GetxController {
     DiagLogger.phaseStart(name, phaseSteps.length);
 
     for (final step in phaseSteps) {
+      // Kiểm tra TRƯỚC khi mở bước mới: nhiều bước bật dialog ngay khi bắt
+      // đầu (loa, micro, phím...), chạy tiếp là dialog hiện đè lên màn khác.
+      if (_isCancelled(generation)) return;
+
       debugPrint('[TestRunner] Đang chạy bước: [${step.code}] ${step.title}');
       step.status = DiagStatus.running;
       step.note = _getRunningNote(step.code);
@@ -989,6 +1022,10 @@ class TestRunnerController extends GetxController {
       final stopwatch = Stopwatch()..start();
       final result = await _runStepWithTimeout(step);
       stopwatch.stop();
+
+      // Bị huỷ trong lúc bước đang chạy: bỏ kết quả, không ghi đè trạng
+      // thái — cancelRun() đã đưa bước này về chờ, hoặc lượt mới đã reset.
+      if (_isCancelled(generation)) return;
 
       final elapsedMs = stopwatch.elapsedMilliseconds;
       final minPacingMs = DiagnosticsConstants.minStepPacingMs;
@@ -1097,6 +1134,30 @@ class TestRunnerController extends GetxController {
     // thể được đánh giá nhiều lần (thử lại), cộng dồn thì kết quả cũ không
     // bao giờ bị trừ đi.
     _recount();
+  }
+
+  /// Huỷ lượt kiểm định đang chạy — gọi khi người dùng rời màn Test Runner.
+  ///
+  /// Controller này đăng ký `permanent: true` nên thoát màn KHÔNG làm nó
+  /// chết, `onClose` không bao giờ chạy. Không huỷ tường minh thì vòng lặp
+  /// cứ thế chạy tiếp và bật dialog loa, micro, camera đè lên màn khác.
+  void cancelRun() {
+    if (!isRunning.value) return;
+
+    _runGeneration++;
+    isRunning.value = false;
+
+    // Bước đang dở dang dừng giữa chừng, không có kết quả hợp lệ: trả về
+    // chờ, lần vào sau chạy lại từ đầu.
+    for (final step in steps) {
+      if (step.status == DiagStatus.running) {
+        step.status = DiagStatus.pending;
+        step.note = null;
+      }
+    }
+    _recount();
+    steps.refresh();
+    debugPrint('[TestRunner] Đã huỷ lượt kiểm định — người dùng rời màn hình');
   }
 
   /// Đếm lại số bước đạt / lỗi / bỏ qua từ trạng thái thật của [steps].

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -83,5 +85,81 @@ void main() {
 
     expect(runner.passedCount.value, 0);
     expect(runner.failedCount.value, 1);
+  });
+
+  // Tái hiện lỗi thật: bấm back thoát khỏi màn Test Runner giữa chừng, vòng
+  // lặp vẫn chạy tiếp và bật dialog loa, micro, camera đè lên màn khác —
+  // vì controller đăng ký `permanent: true` nên rời màn không làm nó chết.
+  test('rời màn giữa chừng thì các bước sau KHÔNG chạy nữa', () async {
+    final runner = TestRunnerController();
+    final ran = <String>[];
+    // Giữ bước đầu treo ở giữa chừng, như một bài test đang chạy dở.
+    final firstStepGate = Completer<bool>();
+
+    final wifi = DiagStep(
+      code: 'wifi',
+      title: 'Wi-Fi',
+      kind: DiagKind.auto,
+      phase: DiagPhase.connectivity,
+      run: () {
+        ran.add('wifi');
+        return firstStepGate.future;
+      },
+    );
+    final speaker = DiagStep(
+      code: 'external-speaker',
+      title: 'Loa ngoài',
+      kind: DiagKind.auto,
+      phase: DiagPhase.hardware,
+      run: () async {
+        ran.add('external-speaker');
+        return true;
+      },
+    );
+    runner.steps.assignAll([wifi, speaker]);
+
+    final run = runner.startFunctionalDiagnostics();
+
+    // Đợi tới lúc bước đầu thật sự đang chạy.
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (!ran.contains('wifi')) {
+      if (DateTime.now().isAfter(deadline)) fail('bước wifi không bắt đầu');
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
+    expect(wifi.status, DiagStatus.running);
+
+    // Người dùng thoát màn, rồi bước đang dở mới chạy xong.
+    runner.cancelRun();
+    firstStepGate.complete(true);
+    await run;
+
+    expect(
+      ran,
+      ['wifi'],
+      reason: 'bước kế tiếp không được chạy sau khi đã huỷ',
+    );
+    expect(
+      wifi.status,
+      DiagStatus.pending,
+      reason: 'bước dở dang không được ghi kết quả — lần sau chạy lại',
+    );
+    expect(runner.isRunning.value, isFalse);
+  });
+
+  test('cancelRun() khi không có lượt nào đang chạy thì không làm gì', () {
+    final runner = TestRunnerController();
+    final done = DiagStep(
+      code: 'wifi',
+      title: 'Wi-Fi',
+      kind: DiagKind.auto,
+      status: DiagStatus.passed,
+    );
+    runner.steps.assignAll([done]);
+
+    // Test Runner xong thì điều hướng đi, màn dispose và gọi cancelRun() —
+    // lúc đó không được đụng vào kết quả đã có.
+    runner.cancelRun();
+
+    expect(done.status, DiagStatus.passed);
   });
 }
