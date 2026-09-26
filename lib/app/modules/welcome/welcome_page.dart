@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Trans;
 import 'package:kdtd_ver2_1/app/core/theme/app_colors.dart';
+import 'package:kdtd_ver2_1/app/data/services/permission_bootstrap.dart';
 import 'package:kdtd_ver2_1/app/core/theme/app_text_styles.dart';
 import 'package:kdtd_ver2_1/app/routes/app_routes.dart';
 import 'package:kdtd_ver2_1/generated/locale_keys.g.dart';
@@ -45,9 +46,20 @@ class _WelcomePageState extends State<WelcomePage>
     // thái cuối thay vì cố chạy hiệu ứng nhẹ hơn.
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
       _intro.value = 1;
+      _bootstrapPermissions();
     } else if (!_intro.isAnimating && _intro.value == 0) {
-      _intro.forward();
+      // Đợi hiệu ứng vào chạy xong rồi mới hỏi quyền: hộp thoại của hệ điều
+      // hành bật lên giữa chừng sẽ đè mất animation và trông như app giật.
+      _intro.forward().whenComplete(_bootstrapPermissions);
     }
+  }
+
+  /// Xin sẵn mọi quyền ngay trên màn này, để lúc bấm "Bắt đầu" là vào chạy
+  /// test luôn, không phải dừng lại ở màn Cấp quyền. Welcome đang giải thích
+  /// app sắp kiểm định thiết bị nên hộp thoại hiện ở đây có đủ ngữ cảnh.
+  void _bootstrapPermissions() {
+    if (!mounted) return;
+    PermissionBootstrap.requestAllAtLaunch();
   }
 
   @override

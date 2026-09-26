@@ -4,6 +4,7 @@ import 'package:get/get.dart' hide Trans;
 
 import 'package:kdtd_ver2_1/app/data/model/device_cosmetic_survey.dart';
 import 'package:kdtd_ver2_1/app/data/model/diag_step.dart';
+import 'package:kdtd_ver2_1/app/data/services/permission_bootstrap.dart';
 import 'package:kdtd_ver2_1/app/data/services/device_hardware_service.dart';
 import 'package:kdtd_ver2_1/app/data/services/diag_logger.dart';
 import 'package:kdtd_ver2_1/app/data/services/diagnostic_grade_service.dart';
@@ -37,6 +38,7 @@ class DiagnosticsHomeController extends GetxController {
   String get modelName => (_osModel?['model'] as String?) ?? '';
   String get marketingName => (_osModel?['marketingName'] as String?) ?? '';
   String get deviceId => (_osModel?['deviceId'] as String?) ?? '';
+
   /// RAM/ROM làm tròn LÊN mốc phổ biến (GB), null nếu không đọc được.
   int? get ramGbValue =>
       roundUpToStandardGb(info['ram']?['totalBytes'], standardRamGb);
@@ -51,6 +53,7 @@ class DiagnosticsHomeController extends GetxController {
     if (model.isEmpty) return '';
     return '${model}_${ram}_$rom';
   }
+
   int? get batteryLevel => info['battery']?['level'] as int?;
   bool get isWifiConnected => info['wifi']?['connected'] == true;
   bool get isSamsung => vendor.toLowerCase() == 'samsung';
@@ -130,17 +133,20 @@ class DiagnosticsHomeController extends GetxController {
       'platform': platform,
       'ram': ramGb,
       'rom': romGb,
-      'wifi': info['wifi']?['connected'] == true
-          ? {
-              'connected': true,
-              'ssid': info['wifi']?['ssid'],
-              'ip': info['wifi']?['ip'],
-            }
-          : {'connected': false},
+      'wifi':
+          info['wifi']?['connected'] == true
+              ? {
+                'connected': true,
+                'ssid': info['wifi']?['ssid'],
+                'ip': info['wifi']?['ip'],
+              }
+              : {'connected': false},
     };
 
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('[DiagnosticsHome] DEVICE_INFO_RESPONSE:\n${encoder.convert(response)}');
+    debugPrint(
+      '[DiagnosticsHome] DEVICE_INFO_RESPONSE:\n${encoder.convert(response)}',
+    );
   }
 
   // Hệ điều hành báo thấp hơn dung lượng ghi trên hộp (máy 8GB → ~7.4 GiB,
@@ -166,8 +172,10 @@ class DiagnosticsHomeController extends GetxController {
     if (isRunning.value) return;
 
     if (isUpgradeEligible.value) {
-      debugPrint('[DiagnosticsHome] Bỏ qua nhập serial do đã nhập đúng trước đó...');
-      Get.toNamed(AppRoutes.permissionCheck);
+      debugPrint(
+        '[DiagnosticsHome] Bỏ qua nhập serial do đã nhập đúng trước đó...',
+      );
+      await PermissionBootstrap.continueToDiagnostics();
       return;
     }
 
@@ -188,10 +196,13 @@ class DiagnosticsHomeController extends GetxController {
     isRunning.value = false;
 
     // Đảm bảo TestRunnerController được khởi tạo và nhận info ban đầu để chạy Function Check
-    debugPrint('[DiagnosticsHome] Khởi tạo TestRunnerController và bắt đầu Function Check...');
-    final testRunner = Get.isRegistered<TestRunnerController>()
-        ? Get.find<TestRunnerController>()
-        : Get.put(TestRunnerController(), permanent: true);
+    debugPrint(
+      '[DiagnosticsHome] Khởi tạo TestRunnerController và bắt đầu Function Check...',
+    );
+    final testRunner =
+        Get.isRegistered<TestRunnerController>()
+            ? Get.find<TestRunnerController>()
+            : Get.put(TestRunnerController(), permanent: true);
     testRunner.setInitialInfo(info);
 
     Get.toNamed(AppRoutes.testRunner);
