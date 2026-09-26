@@ -138,6 +138,22 @@ class DeviceHardwareService {
   }
 
   /// Trạng thái Wi-Fi
+  /// Xin quyền vị trí (để đọc tên Wi-Fi) nếu máy đang ở trên Wi-Fi.
+  ///
+  /// Tách khỏi [getWifiInfo] để chạy ngoài vòng đếm giờ của bài test — xem
+  /// `DiagStep.prepare`. Không ở trên Wi-Fi thì không cần tên mạng, không hỏi.
+  static Future<void> ensureWifiPermission() async {
+    final conn = await Connectivity().checkConnectivity();
+    final onWifi =
+        conn.contains(ConnectivityResult.wifi) ||
+        conn.contains(ConnectivityResult.ethernet);
+    if (!onWifi) return;
+    await PermissionGate.ensure(
+      Permission.locationWhenInUse,
+      name: LocaleKeys.permission_location_name.trans(),
+    );
+  }
+
   static Future<Map<String, dynamic>> getWifiInfo() async {
     final wifiEnabled = await _invoke<bool>('isWifiEnabled');
     final conn = await Connectivity().checkConnectivity();
@@ -148,10 +164,9 @@ class DeviceHardwareService {
     var permissionDenied = false;
     if (onWifi) {
       try {
-        if (await PermissionGate.ensure(
-          Permission.locationWhenInUse,
-          name: LocaleKeys.permission_location_name.trans(),
-        )) {
+        // CHỈ ĐỌC trạng thái quyền, không hỏi: việc hỏi nằm ở
+        // [ensureWifiPermission], chạy ngoài vòng đếm giờ của bài test.
+        if (await Permission.locationWhenInUse.isGranted) {
           ssid = await NetworkInfo().getWifiName();
         } else {
           permissionDenied = true;
@@ -194,15 +209,28 @@ class DeviceHardwareService {
   }
 
   /// Quét Bluetooth
+  static Permission get _bluetoothPermission =>
+      Platform.isIOS ? Permission.bluetooth : Permission.bluetoothScan;
+
+  /// Xin quyền Bluetooth. Tách khỏi [getBluetoothInfo] để chạy ngoài vòng
+  /// đếm giờ của bài test — xem `DiagStep.prepare`. Máy mới cài, hộp thoại
+  /// xin quyền từng hiện ngay trong bài test và thời gian người dùng bấm
+  /// "Cho phép" bị tính vào thời hạn của bài.
+  static Future<void> ensureBluetoothPermission() async {
+    await PermissionGate.ensure(
+      _bluetoothPermission,
+      name: LocaleKeys.permission_bluetooth_name.trans(),
+    );
+  }
+
   static Future<Map<String, dynamic>> getBluetoothInfo() async {
     // Bài test chỉ QUÉT thiết bị lân cận, không kết nối tới cái nào. Trên
     // Android 12+ việc đó chỉ cần BLUETOOTH_SCAN; BLUETOOTH_CONNECT là quyền
     // để kết nối / đọc tên & danh sách thiết bị đã ghép đôi nên không xin ở
     // đây (xin thừa chỉ tổ hiện thêm một hộp thoại cho kỹ thuật viên bấm).
-    final permGranted = await PermissionGate.ensure(
-      Platform.isIOS ? Permission.bluetooth : Permission.bluetoothScan,
-      name: LocaleKeys.permission_bluetooth_name.trans(),
-    );
+    // CHỈ ĐỌC trạng thái quyền, không hỏi: việc hỏi nằm ở
+    // [ensureBluetoothPermission], chạy ngoài vòng đếm giờ của bài test.
+    final permGranted = await _bluetoothPermission.isGranted;
 
     final btState = await _resolveAdapterState();
 
@@ -293,11 +321,16 @@ class DeviceHardwareService {
   }
 
   /// Độ chính xác GPS
-  static Future<Map<String, dynamic>> getLocationAccuracy() async {
+  /// Xin quyền vị trí. Tách khỏi [getLocationAccuracy] để chạy ngoài vòng
+  /// đếm giờ của bài test — xem `DiagStep.prepare`.
+  static Future<void> ensureLocationPermission() async {
     await PermissionGate.ensure(
       Permission.location,
       name: LocaleKeys.permission_location_name.trans(),
     );
+  }
+
+  static Future<Map<String, dynamic>> getLocationAccuracy() async {
     final perm = await Geolocator.checkPermission();
     final svc = await Geolocator.isLocationServiceEnabled();
     double? accuracy;

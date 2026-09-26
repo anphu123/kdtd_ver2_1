@@ -81,6 +81,15 @@ class DiagStep {
   /// Hàm thực thi cho test tự động
   final Future<bool> Function()? run;
 
+  /// Pha chuẩn bị KHÔNG tính giờ, chạy trước [run] ở bước tự động.
+  ///
+  /// Dành cho mọi thứ phải chờ NGƯỜI: hộp thoại xin quyền, dialog hướng dẫn,
+  /// đi vào Cài đặt rồi quay lại. [timeout] chỉ nên đo việc của MÁY (dò GPS,
+  /// quét Bluetooth) — thời gian phản ứng của người không có giới hạn trước,
+  /// đặt chung vào [timeout] là bước hết giờ và bị chấm FAIL oan ngay lúc
+  /// người dùng đang làm đúng theo hướng dẫn của app.
+  final Future<void> Function()? prepare;
+
   /// Hàm tương tác cho test thủ công
   final Future<bool> Function()? interact;
 
@@ -103,6 +112,7 @@ class DiagStep {
     this.phase = DiagPhase.hardware,
     this.timeout = const Duration(seconds: 10),
     this.run,
+    this.prepare,
     this.interact,
     this.status = DiagStatus.pending,
     this.note,

@@ -225,6 +225,7 @@ class TestRunnerController extends GetxController {
         phase: DiagPhase.connectivity,
         timeout: const Duration(seconds: 5),
         functionAttribute: FunctionAttribute.wifi,
+        prepare: DeviceHardwareService.ensureWifiPermission,
         run: _snapWifi,
       ),
       DiagStep(
@@ -236,6 +237,7 @@ class TestRunnerController extends GetxController {
         // nên bài hết giờ và bị chấm FAIL dù Bluetooth bật và đã cấp quyền.
         timeout: DiagnosticsConstants.bluetoothStepTimeout,
         functionAttribute: FunctionAttribute.bluetooth,
+        prepare: DeviceHardwareService.ensureBluetoothPermission,
         run: _checkBluetooth,
       ),
       DiagStep(
@@ -245,6 +247,7 @@ class TestRunnerController extends GetxController {
         phase: DiagPhase.sensors,
         timeout: const Duration(seconds: 10),
         functionAttribute: FunctionAttribute.location,
+        prepare: _prepareLocation,
         run: _snapLocation,
       ),
       DiagStep(
@@ -361,21 +364,23 @@ class TestRunnerController extends GetxController {
     return ok;
   }
 
+  /// Pha chuẩn bị của bài Vị trí — KHÔNG tính giờ (xem DiagStep.prepare).
+  ///
+  /// Dịch vụ vị trí (GPS) đang TẮT ở mức hệ thống khác với việc chưa cấp
+  /// quyền: đó là cài đặt người dùng tự bật được ngay, không phải lỗi phần
+  /// cứng, nên mời họ mở Cài đặt bật lên trước khi kết luận. Việc này trước
+  /// đây nằm TRONG bước 10 giây — người dùng mở Cài đặt, bật GPS, quay lại
+  /// thì bài đã hết giờ và bị chấm FAIL, ngay lúc đang làm đúng hướng dẫn.
+  Future<void> _prepareLocation() async {
+    await DeviceHardwareService.ensureLocationPermission();
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      await _promptEnableLocationService();
+    }
+  }
+
   Future<bool> _snapLocation() async {
     info['location'] = await DeviceHardwareService.getLocationAccuracy();
-    var loc = info['location'] as Map<String, dynamic>;
-
-    // serviceOn=false nghĩa là Dịch vụ vị trí (GPS) đang TẮT ở mức hệ thống
-    // — khác với việc CHƯA cấp quyền. Đây là cài đặt người dùng có thể tự
-    // bật ngay, KHÔNG phải lỗi phần cứng, nên không nên auto-fail luôn mà
-    // cho cơ hội mở Cài Đặt bật rồi thử lại trước khi kết luận.
-    if (loc['serviceOn'] != true) {
-      final enabled = await _promptEnableLocationService();
-      if (enabled) {
-        info['location'] = await DeviceHardwareService.getLocationAccuracy();
-        loc = info['location'] as Map<String, dynamic>;
-      }
-    }
+    final loc = info['location'] as Map<String, dynamic>;
 
     final ok = loc['serviceOn'] == true;
     debugPrint('[TestRunner] Kết quả GPS/Định vị: $ok ($loc)');
@@ -1063,6 +1068,8 @@ class TestRunnerController extends GetxController {
     try {
       bool result;
       if (step.kind == DiagKind.auto && step.run != null) {
+        // Pha chờ người chạy TRƯỚC, ngoài vòng đếm giờ — xem DiagStep.prepare.
+        if (step.prepare != null) await step.prepare!();
         result = await step.run!().timeout(
           step.timeout,
           onTimeout: () {
